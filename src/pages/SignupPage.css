@@ -1,0 +1,40 @@
+.signup-app { height: 100vh; overflow: hidden; }
+.signup-app > main { display: flex; min-height: 0; }
+.signup-page { position: relative; display: grid; width: 100%; min-height: 0; place-items: center; overflow: hidden; padding: 24px; background: #fff; isolation: isolate; }
+.signup-content { position: relative; z-index: 1; width: min(100%, 760px); margin: auto; text-align: center; }
+.signup-content > .eyebrow { margin-bottom: 9px; }
+.signup-content h1 { margin: 0; color: #111817; font-family: 'Poppins', sans-serif; font-size: clamp(25px, 2.4vw, 34px); font-weight: 800; line-height: 1.25; }
+.signup-intro { margin: 9px 0 28px; color: #66736f; font-size: 14px; }
+.signup-form { width: min(100%, 620px); margin: 0 auto; }
+.signup-profiles { display: flex; flex-direction: column; gap: 16px; }
+.signup-profile { display: flex; width: 100%; min-height: 96px; align-items: center; gap: 20px; padding: 16px 24px; border: 1px solid rgba(35, 70, 59, .2); border-radius: 13px; color: #101615; text-align: left; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.signup-profile:hover { transform: translateY(-2px); box-shadow: 0 7px 17px rgba(27, 60, 50, .12); }
+.signup-profile.student { background: linear-gradient(105deg, #d3f2c5 0%, #fbfff8 100%); }
+.signup-profile.host { background: linear-gradient(105deg, #d2b6e7 0%, #fcf9ff 100%); }
+.signup-profile.owner { background: linear-gradient(105deg, #f8c8ec 0%, #fffaff 100%); }
+.signup-profile.selected { border-color: #008b8c; box-shadow: 0 0 0 2px rgba(0, 139, 140, .2); }
+.signup-profile-icon { display: grid; width: 44px; flex: 0 0 44px; place-items: center; font-size: 34px; }
+.signup-profile-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 4px; }
+.signup-profile-copy strong { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 700; line-height: 1.3; }
+.signup-profile-copy small { color: #5c6662; font-family: 'Inter', sans-serif; font-size: 12px; line-height: 1.4; }
+.signup-profile-arrow { width: 12px; height: 12px; flex: 0 0 auto; margin-right: 4px; border-top: 2.5px solid currentColor; border-right: 2.5px solid currentColor; transform: rotate(45deg); }
+.signup-continue { display: inline-flex; min-width: 175px; min-height: 45px; align-items: center; justify-content: center; gap: 12px; margin-top: 20px; padding: 0 22px; border: 0; border-radius: 999px; color: #fff; background: #008b8c; font-family: 'Montserrat Alternates', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .18s, opacity .18s; }
+.signup-continue:hover:not(:disabled) { background: #007477; }
+.signup-continue:disabled { opacity: .45; cursor: not-allowed; }
+.signup-feedback { margin: 12px auto 0; color: #28645d; font-size: 11px; line-height: 1.5; }
+.signup-decoration { position: absolute; z-index: -1; display: block; pointer-events: none; }
+.signup-teal { top: -120px; right: -100px; width: 280px; height: 500px; border-radius: 0 0 55% 65%; background: #147d79; transform: rotate(-9deg); }
+.signup-purple { bottom: -270px; left: -130px; width: 470px; height: 510px; border-radius: 50% 50% 0 0; background: #b99bd1; transform: rotate(12deg); }
+@media (max-width: 700px) {
+  .signup-page { padding: 20px 17px; }
+  .signup-intro { margin-bottom: 22px; font-size: 12px; }
+  .signup-profiles { gap: 12px; }
+  .signup-profile { min-height: 82px; gap: 13px; padding: 13px 16px; }
+  .signup-profile-icon { width: 36px; flex-basis: 36px; font-size: 29px; }
+  .signup-profile-copy strong { font-size: 14px; }
+  .signup-profile-copy small { font-size: 10px; }
+  .signup-profile-arrow { width: 9px; height: 9px; }
+  .signup-continue { margin-top: 17px; }
+  .signup-teal { width: 130px; height: 300px; right: -56px; top: -95px; }
+  .signup-purple { width: 230px; height: 260px; bottom: -155px; left: -70px; }
+}
