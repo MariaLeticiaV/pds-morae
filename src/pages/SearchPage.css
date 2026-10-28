@@ -119,6 +119,9 @@
 .listing-tags { display: flex; flex-wrap: wrap; gap: 4px; }.listing-tags span { padding: 5px 7px; border-radius: 6px; color: #087b7b; background: #b9e4e1; font-size: 8px; white-space: nowrap; }
 .listing-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 7px; margin-top: 9px; color: #679d9b; font-size: 9px; }
 .listing-footer > span:first-child { display: inline-flex; align-items: center; gap: 4px; }.host-label { position: relative; padding-left: 21px; color: #088183; font-size: 8px; line-height: 1.35; text-align: right; }.host-label svg { position: absolute; left: 0; top: 0; }
+.host-profile-link { display: inline-flex; border-radius: 4px; text-decoration: none; transition: color .18s ease; }
+.host-profile-link:hover { color: #005f61; text-decoration: underline; }
+.host-profile-link:focus-visible { outline: 2px solid #008b8c; outline-offset: 3px; }
 .results-aside { display: flex; min-width: 0; flex-direction: column; gap: 12px; }
 .map-illustration { position: relative; min-height: 244px; overflow: hidden; border-radius: 19px; background: #d8e2dc; }
 .map-water { position: absolute; top: 0; right: -24%; width: 51%; height: 110%; border-radius: 50% 0 0 50%; background: #a5dafa; transform: rotate(-9deg); }

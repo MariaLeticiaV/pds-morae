@@ -6,8 +6,8 @@ import './SearchPage.css';
 const properties = [
   { id: 1, name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
   { id: 2, name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
-  { id: 3, name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', scene: 'room' },
-  { id: 4, name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', scene: 'flat' },
+  { id: 3, name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
+  { id: 4, name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
 ];
 
 function Icon({ name, size = 20, fill = 'none' }) {
@@ -63,7 +63,7 @@ function PropertyCard({ property, favorite, onFavorite }) {
         </div>
         <h3>{property.name}</h3>
         <div className="listing-tags">{property.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
-        <div className="listing-footer"><span><Icon name="bed" size={15} /> {property.rooms} {property.rooms === 1 ? 'quarto' : 'quartos'} · {property.baths} banheiro{property.baths > 1 ? 's' : ''}</span><span className="host-label"><Icon name="user" size={15} /> Anunciante<br />{property.host}</span></div>
+        <div className="listing-footer"><span><Icon name="bed" size={15} /> {property.rooms} {property.rooms === 1 ? 'quarto' : 'quartos'} · {property.baths} banheiro{property.baths > 1 ? 's' : ''}</span>{property.profileId ? <Link className="host-label host-profile-link" to={`/usuarios/${property.profileId}`} aria-label={`Ver perfil de ${property.profileName}`}><Icon name="user" size={15} /><span>Anunciante<br />{property.profileName}</span></Link> : <span className="host-label"><Icon name="user" size={15} /><span>Anunciante<br />{property.host}</span></span>}</div>
       </div>
     </article>
   );

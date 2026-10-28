@@ -5,17 +5,19 @@ import { PlaceholderPage } from '../pages/PlaceholderPage.jsx';
 import { SearchPage } from '../pages/SearchPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
+import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
   const isSearchPage = pathname === '/buscar';
   const isLoginPage = pathname === '/login';
   const isSignupPage = pathname === '/cadastro';
-  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage;
+  const isUserProfilePage = pathname.startsWith('/usuarios/');
+  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage;
 
   return (
-    <div className={`app-shell${isSearchPage ? ' dashboard-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
-      {!isSearchPage && <header className="site-header">
+    <div className={`app-shell${isSearchPage || isUserProfilePage ? ' dashboard-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
+      {!isSearchPage && !isUserProfilePage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -34,6 +36,7 @@ export default function App() {
           <Route path="/buscar" element={<SearchPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
+          <Route path="/usuarios/:id" element={<UserProfilePage />} />
           <Route path="*" element={<PlaceholderPage />} />
         </Routes>
       </main>
