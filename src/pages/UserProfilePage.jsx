@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
+import { LineIcon } from '../components/LineIcon.jsx';
 import './UserProfilePage.css';
 
 const profiles = {
@@ -20,27 +21,6 @@ const profiles = {
 
 const currentUser = { name: 'Você', initials: 'AL', course: 'Ciência da Computação', period: '5º período' };
 const sharedPoints = ['Ambas buscam apartamento compartilhado', 'Ambas preferem morar até 5 km do campus', 'Ambas não fumam', 'Ambas valorizam um ambiente tranquilo', 'Ambas gostam de manter o ambiente organizado'];
-
-function LineIcon({ name, size = 18 }) {
-  const paths = {
-    person: <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>,
-    graduation: <><path d="m2.5 9 9.5-5 9.5 5-9.5 5-9.5-5Z" /><path d="M6 11v5c3.5 3 8.5 3 12 0v-5M21.5 9v6" /></>,
-    calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2" /><path d="M7.5 3v4M16.5 3v4M3.5 10h17" /></>,
-    home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v12h14V9M9 21v-7h6v7" /></>,
-    pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
-    money: <><circle cx="12" cy="12" r="9" /><path d="M15.5 8.5c-.7-.7-1.8-1-3.2-1-1.8 0-3 .8-3 2s1 1.8 3 2.2 3 1 3 2.3-1.2 2.2-3.2 2.2c-1.5 0-2.7-.5-3.6-1.3M12.3 6v12" /></>,
-    homeGroup: <><path d="M3 10 12 4l9 6M5 9v11h14V9M9 20v-6h6v6" /><circle cx="12" cy="10" r="1.5" /></>,
-    users: <><circle cx="9" cy="8" r="3" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0M16 5.5a3 3 0 0 1 0 5.8M17 14a5 5 0 0 1 3.5 5" /></>,
-    moon: <path d="M20.5 14A8.5 8.5 0 0 1 10 3.5 8.5 8.5 0 1 0 20.5 14Z" />,
-    smokeFree: <><path d="M3 15h13v4H3zM18 15h3v4h-3M5 5l14 14M14 6c0-1.5 1.5-2 1.5-3M18 8c0-1.5 1.5-2 1.5-3" /></>,
-    star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" />,
-    message: <><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.7 8.7 0 0 1-3.2-.6L4 20l1.4-3.7A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /><path d="M8 12h8M8 9h5" /></>,
-    compatibility: <><circle cx="9" cy="9" r="4" /><circle cx="15" cy="9" r="4" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M8.5 20a6.5 6.5 0 0 1 13 0" /></>,
-    bell: <><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></>,
-    emptyReview: <><path d="M4 5h16v12H9l-5 4V5Z" /><path d="M8 9h8M8 13h5" /></>,
-  };
-  return <svg className="profile-line-icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
-}
 
 function ProfileIcon({ name }) { return <span className="profile-icon-badge" aria-hidden="true"><LineIcon name={name} size={19} /></span>; }
 
@@ -90,6 +70,7 @@ function CompatibilityModal({ profile, onClose }) {
 
 export function UserProfilePage() {
   const { id } = useParams();
+  const isOwnProfile = !id;
   const profile = profiles[id] ?? profiles['ana-beatriz'];
   const [showCompatibility, setShowCompatibility] = useState(false);
   const [activeTab, setActiveTab] = useState('sobre');
@@ -100,11 +81,11 @@ export function UserProfilePage() {
         <Link className="dashboard-brand" to="/buscar" aria-label="Moraê, explorar moradias"><Logo /></Link>
         <nav className="dashboard-nav" aria-label="Menu do buscador">
           <Link to="/"><SidebarIcon name="home" />Início</Link>
-          <Link className="selected" to="/buscar"><SidebarIcon name="search" />Buscar vagas</Link>
+          <Link className={!isOwnProfile ? 'selected' : ''} to="/buscar"><SidebarIcon name="search" />Buscar vagas</Link>
           <Link className="announce-nav" to="/anunciar"><SidebarIcon name="announce" />Anunciar imóvel</Link>
           <Link to="/mensagens"><SidebarIcon name="message" />Minhas Mensagens</Link>
           <Link to="/buscar"><SidebarIcon name="heart" />Meus Favoritos</Link>
-          <Link to="/perfil"><SidebarIcon name="user" />Meu Perfil</Link>
+          <Link className={isOwnProfile ? 'selected' : ''} to="/perfil"><SidebarIcon name="user" />Meu Perfil</Link>
         </nav>
         <div className="sidebar-note"><SidebarIcon name="shield" /><p>Busque com mais tranquilidade. Converse com anunciantes verificados.</p></div>
         <span className="sidebar-version">Moraê · Maceió, AL</span>

@@ -1,0 +1,93 @@
+.my-profile-dashboard { --profile-teal: #008b8c; --profile-ink: #285d5e; --profile-muted: #87adae; --profile-mint: #e5f8ef; background: #fff; }
+.my-profile-main { background: #fff; }
+.my-profile-content { display: flex; width: 100%; max-width: 1720px; flex-direction: column; gap: 14px; margin: 0 auto; padding: 18px clamp(18px, 2vw, 32px) 40px; }
+.my-profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.my-profile-heading h1 { margin: 0; color: #078889; font-family: 'Poppins', sans-serif; font-size: 22px; }
+.my-profile-kicker { margin: 0 0 2px; color: #84a7a5; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.my-edit-button, .my-save, .my-cancel { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; gap: 7px; padding: 0 16px; border: 1px solid #008b8c; border-radius: 22px; color: #fff; background: #008b8c; font: 600 11px 'Montserrat Alternates',sans-serif; cursor: pointer; }
+.my-cancel { color: #527574; border-color: #d2e8e2; background: #fff; }
+.my-profile-actions { display: flex; gap: 8px; }
+.my-profile-toast { position: fixed; z-index: 10; right: 22px; bottom: 20px; margin: 0; padding: 13px 18px; border-radius: 10px; color: #fff; background: #078889; box-shadow: 0 8px 25px #153e3b35; font-size: 12px; }
+.my-profile-hero { position: relative; display: flex; min-height: 205px; align-items: center; gap: 34px; overflow: hidden; padding: 22px clamp(24px, 4vw, 55px); border: 5px solid #e5f8ef; border-radius: 24px; background: #fff; }
+.my-avatar-area { position: relative; z-index: 1; flex: 0 0 auto; }
+.my-avatar { display: grid; width: 145px; height: 145px; place-items: center; overflow: hidden; border: 0; border-radius: 50%; color: #fff; background: #d9dde2; font-family: 'Poppins',sans-serif; font-size: 34px; font-weight: 800; cursor: default; }
+.my-avatar:disabled { opacity: 1; }
+.my-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.my-camera-button { position: absolute; right: 0; bottom: 0; display: grid; width: 36px; height: 36px; place-items: center; border: 3px solid #fff; border-radius: 50%; color: #fff; background: #008b8c; cursor: pointer; }
+.my-photo-input { display: none; }
+.my-profile-identity { position: relative; z-index: 1; }
+.my-profile-identity h2 { margin: 0; color: #078889; font-family: 'Poppins',sans-serif; font-size: 27px; }
+.my-profile-identity > p { display: flex; align-items: center; gap: 6px; margin: 4px 0 12px; color: #6ca6a5; font-size: 12px; }
+.my-profile-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.my-profile-tags span { padding: 8px 13px; border-radius: 20px; color: #078889; background: #e7f8ef; font-size: 11px; font-weight: 700; }
+.my-hero-orbit { position: absolute; pointer-events: none; }
+.my-orbit-green { top: -96px; right: -18px; width: 190px; height: 190px; border-radius: 50%; background: #c9efc0; }
+.my-orbit-pink { right: -60px; bottom: -130px; width: 165px; height: 260px; border-radius: 50% 0 0 50%; background: #f5c7ec; transform: rotate(22deg); }
+.my-profile-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px 36px; padding: 24px clamp(20px,3vw,42px); border: 5px solid #e5f8ef; border-radius: 24px; }
+.my-profile-summary > div { display: flex; align-items: center; gap: 12px; }
+.my-summary-icon { display: grid; width: 45px; height: 45px; flex: 0 0 45px; place-items: center; border-radius: 50%; color: #008b8c; background: #e8faf1; }
+.my-status-icon { width: 45px; height: 45px; flex-basis: 45px; }
+.my-profile-summary > div > span:last-child { display: flex; flex-direction: column; gap: 3px; }
+.my-profile-summary small { color: #078889; font-size: 12px; }
+.my-profile-summary strong { color: #8aaeb0; font-size: 12px; font-weight: 500; }
+.my-profile-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 16px 20px; border: 5px solid #e5f8ef; border-radius: 24px; scrollbar-width: thin; }
+.my-profile-tabs a { flex: 1 0 auto; padding: 10px 14px; border-radius: 24px; color: #078889; background: #e7f8ef; font-size: 11px; font-weight: 700; text-align: center; white-space: nowrap; }
+.my-profile-tabs a:first-child, .my-profile-tabs a:hover { color: #fff; background: #078889; }
+.my-profile-columns { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(290px,.75fr); gap: 16px; align-items: stretch; }
+.my-profile-card { min-width: 0; padding: 20px 24px; border: 5px solid #e5f8ef; border-radius: 24px; scroll-margin-top: 84px; }
+.my-profile-card h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; color: #078889; font-family: 'Poppins',sans-serif; font-size: 17px; }
+.my-fields-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(6, minmax(52px,auto)); grid-template-columns: repeat(2,minmax(0,1fr)); column-gap: 30px; }
+.my-fields-grid > :nth-child(n+6) { border-left: 1px solid #d8dfdd; padding-left: 26px; }
+.my-field { display: flex; min-width: 0; min-height: 55px; align-items: center; gap: 10px; padding: 5px 4px; }
+.my-field-icon { display: grid; width: 40px; height: 40px; flex: 0 0 40px; place-items: center; border-radius: 50%; color: #078889; background: #e8faf1; }
+.my-field-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 2px; }
+.my-field-label { color: #078889; font-size: 11px; }
+.my-field-value { overflow-wrap: anywhere; color: #88aeb0; font-size: 11px; line-height: 1.35; }
+.my-field input, .my-field select { width: 100%; min-width: 0; padding: 5px 6px; border: 1px solid #cce7e0; border-radius: 6px; outline-color: #008b8c; color: #456b6d; background: #fbfefd; font: 11px 'Montserrat Alternates',sans-serif; }
+.my-security-card { display: flex; flex-direction: column; }
+.my-security-card h2 { padding-bottom: 10px; border-bottom: 1px solid #d8dfdd; }
+.my-verified-row { display: flex; align-items: center; gap: 11px; padding: 13px 4px; border-bottom: 1px solid #d8dfdd; }
+.my-verified-row > span { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 50%; color: #fff; background: #56c66c; font-size: 17px; }
+.my-verified-row > div { display: flex; flex-direction: column; gap: 3px; }
+.my-verified-row strong { color: #078889; font-size: 11px; }
+.my-verified-row small { color: #88aeb0; font-size: 11px; }
+.my-password-button { display: flex; align-items: center; gap: 12px; margin: 20px 2px 0; padding: 16px; border: 0; border-radius: 13px; color: #ca2999; background: #f8c9ef; text-align: left; cursor: pointer; }
+.my-password-button span { display: flex; flex-direction: column; gap: 3px; }
+.my-password-button strong { font: 700 11px 'Montserrat Alternates',sans-serif; }
+.my-password-button small { color: #d87cc0; font-size: 10px; }
+.my-preferences-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.my-preferences-grid .my-field { align-items: flex-start; }
+.my-preferences-grid .my-field-icon { margin-top: 2px; }
+.my-habits-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.my-about-card p { margin: 0; color: #668486; font-size: 12px; line-height: 1.7; }
+.my-about-editor { display: flex; flex-direction: column; gap: 7px; color: #078889; font-size: 11px; }
+.my-about-editor textarea { width: 100%; resize: vertical; padding: 10px; border: 1px solid #cce7e0; border-radius: 8px; outline-color: #008b8c; color: #456b6d; background: #fbfefd; font: 12px/1.6 'Montserrat Alternates',sans-serif; }
+@media(max-width: 1050px) {
+  .my-profile-columns { grid-template-columns: 1fr; }
+  .my-profile-summary { gap: 15px; }
+  .my-preferences-grid, .my-habits-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width: 650px) {
+  .my-profile-content { gap: 10px; padding: 12px 10px 25px; }
+  .my-profile-heading h1 { font-size: 18px; }
+  .my-edit-button, .my-save, .my-cancel { min-height: 34px; padding: 0 10px; font-size: 9px; }
+  .my-profile-hero { min-height: 145px; gap: 14px; padding: 14px; border-width: 3px; }
+  .my-avatar { width: 80px; height: 80px; font-size: 23px; }
+  .my-camera-button { width: 29px; height: 29px; }
+  .my-profile-identity h2 { font-size: 18px; }
+  .my-profile-identity > p { margin: 4px 0 8px; font-size: 10px; }
+  .my-profile-tags { gap: 4px; }
+  .my-profile-tags span { padding: 5px 7px; font-size: 8px; }
+  .my-profile-summary { gap: 12px 8px; padding: 14px 10px; border-width: 3px; }
+  .my-summary-icon, .my-status-icon { width: 33px; height: 33px; flex-basis: 33px; }
+  .my-profile-summary small, .my-profile-summary strong { font-size: 9px; }
+  .my-profile-tabs { padding: 8px; border-width: 3px; }
+  .my-profile-tabs a { padding: 8px 10px; font-size: 9px; }
+  .my-profile-card { padding: 13px 11px; border-width: 3px; border-radius: 17px; }
+  .my-profile-card h2 { font-size: 14px; }
+  .my-fields-grid { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: 1fr; }
+  .my-fields-grid > :nth-child(n+6) { border-left: 0; padding-left: 4px; }
+  .my-field { min-height: 50px; }
+  .my-field-icon { width: 34px; height: 34px; flex-basis: 34px; }
+  .my-preferences-grid, .my-habits-grid { grid-template-columns: 1fr; gap: 5px; }
+}
