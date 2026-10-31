@@ -8,6 +8,7 @@ import { SignupPage } from '../pages/SignupPage.jsx';
 import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 import { MyProfilePage } from '../pages/MyProfilePage.jsx';
 import { MessagesPage } from '../pages/MessagesPage.jsx';
+import { AnnouncePropertyPage } from '../pages/AnnouncePropertyPage.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -15,12 +16,13 @@ export default function App() {
   const isLoginPage = pathname === '/login';
   const isSignupPage = pathname === '/cadastro';
   const isMessagesPage = pathname === '/mensagens';
+  const isAnnouncePage = pathname === '/anunciar';
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
-  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage || isMessagesPage;
+  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage;
 
   return (
-    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage ? ' dashboard-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && <header className="site-header">
+    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage ? ' dashboard-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -40,6 +42,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
+          <Route path="/anunciar" element={<AnnouncePropertyPage />} />
           <Route path="/perfil" element={<MyProfilePage />} />
           <Route path="/usuarios/:id" element={<UserProfilePage />} />
           <Route path="*" element={<PlaceholderPage />} />

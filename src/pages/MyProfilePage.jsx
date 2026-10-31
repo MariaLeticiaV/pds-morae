@@ -65,8 +65,10 @@ export function MyProfilePage() {
         <Link className="dashboard-brand" to="/buscar" aria-label="Moraê, explorar moradias"><Logo /></Link>
         <nav className="dashboard-nav" aria-label="Menu do estudante">
           <SideLink to="/" icon="home">Início</SideLink>
+          <SideLink to="/buscar" icon="search">Buscar vagas</SideLink>
+          <SideLink to="/anunciar" icon="homeGroup">Anunciar imóvel</SideLink>
           <SideLink to="/mensagens" icon="messages">Minhas Mensagens</SideLink>
-          <SideLink to="/buscar" icon="heart">Meus Favoritos</SideLink>
+          <SideLink to="/buscar?favoritos=1" icon="heart">Meus Favoritos</SideLink>
           <SideLink to="/perfil" icon="user" selected>Meu Perfil</SideLink>
         </nav>
         <span className="sidebar-version">Moraê · Maceió, AL</span>

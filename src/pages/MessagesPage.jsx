@@ -76,8 +76,10 @@ export function MessagesPage() {
         <Link className="dashboard-brand" to="/" aria-label="Moraê, página inicial"><Logo /></Link>
         <nav className="dashboard-nav" aria-label="Menu do estudante">
           <Link to="/"><LineIcon name="home" />Início</Link>
+          <Link to="/buscar"><LineIcon name="search" />Buscar vagas</Link>
+          <Link to="/anunciar"><LineIcon name="homeGroup" />Anunciar imóvel</Link>
           <Link className="selected" to="/mensagens"><LineIcon name="message" />Minhas Mensagens</Link>
-          <Link to="/buscar"><LineIcon name="heart" />Meus Favoritos</Link>
+          <Link to="/buscar?favoritos=1"><LineIcon name="heart" />Meus Favoritos</Link>
           <Link to="/perfil"><LineIcon name="user" />Meu Perfil</Link>
         </nav>
         <span className="sidebar-version">Moraê · Maceió, AL</span>

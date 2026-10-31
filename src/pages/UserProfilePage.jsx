@@ -84,7 +84,7 @@ export function UserProfilePage() {
           <Link className={!isOwnProfile ? 'selected' : ''} to="/buscar"><SidebarIcon name="search" />Buscar vagas</Link>
           <Link className="announce-nav" to="/anunciar"><SidebarIcon name="announce" />Anunciar imóvel</Link>
           <Link to="/mensagens"><SidebarIcon name="message" />Minhas Mensagens</Link>
-          <Link to="/buscar"><SidebarIcon name="heart" />Meus Favoritos</Link>
+          <Link to="/buscar?favoritos=1"><SidebarIcon name="heart" />Meus Favoritos</Link>
           <Link className={isOwnProfile ? 'selected' : ''} to="/perfil"><SidebarIcon name="user" />Meu Perfil</Link>
         </nav>
         <div className="sidebar-note"><SidebarIcon name="shield" /><p>Busque com mais tranquilidade. Converse com anunciantes verificados.</p></div>

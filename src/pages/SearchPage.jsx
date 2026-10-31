@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import './SearchPage.css';
@@ -83,7 +83,7 @@ function MapPanel({ onViewMap }) {
 }
 
 export function SearchPage() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialCampus = searchParams.get('campus') ?? '';
   const [query, setQuery] = useState(initialCampus);
   const [location, setLocation] = useState(initialCampus);
@@ -94,10 +94,26 @@ export function SearchPage() {
   const [expandedFilters, setExpandedFilters] = useState(false);
   const [wifiOnly, setWifiOnly] = useState(false);
   const [furnishedOnly, setFurnishedOnly] = useState(false);
-  const [favorites, setFavorites] = useState([]);
-  const [showFavorites, setShowFavorites] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const savedFavorites = JSON.parse(localStorage.getItem('morae.favorites') || '[]');
+      return Array.isArray(savedFavorites) ? savedFavorites.filter(Number.isInteger) : [];
+    } catch (error) {
+      console.error('Não foi possível carregar os imóveis favoritos.', error);
+      return [];
+    }
+  });
+  const showFavorites = searchParams.get('favoritos') === '1';
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('morae.favorites', JSON.stringify(favorites));
+    } catch (error) {
+      console.error('Não foi possível salvar os imóveis favoritos.', error);
+    }
+  }, [favorites]);
 
   const filteredProperties = useMemo(() => properties.filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
@@ -112,6 +128,15 @@ export function SearchPage() {
 
   function toggleFavorite(id) {
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  }
+
+  function setShowFavorites(show) {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (show) next.set('favoritos', '1');
+      else next.delete('favoritos');
+      return next;
+    });
   }
 
   function submitSearch(event) {
