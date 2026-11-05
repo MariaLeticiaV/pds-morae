@@ -58,7 +58,17 @@ export function HomePage() {
         <span className="hero-orbit orbit-two" aria-hidden="true" />
       </section>
 
-      <section className="audience-section" id="como-funciona" aria-labelledby="audience-title">
+      <section className="how-it-works" id="como-funciona" aria-labelledby="how-title">
+        <p className="eyebrow">Do cadastro à nova moradia</p>
+        <h2 id="how-title">Como funciona a Moraê?</h2>
+        <div className="how-steps">
+          <article><span>01</span><div><h3>Escolha seu perfil</h3><p>Cadastre-se como estudante, aluno ofertador ou proprietário.</p></div></article>
+          <article><span>02</span><div><h3>Encontre sua conexão</h3><p>Busque anúncios ou pessoas compatíveis com sua rotina e necessidades.</p></div></article>
+          <article><span>03</span><div><h3>Converse e combine</h3><p>Fale diretamente com o anunciante para conhecer o imóvel e alinhar os detalhes.</p></div></article>
+        </div>
+      </section>
+
+      <section className="audience-section" id="perfis" aria-labelledby="audience-title">
         <p className="eyebrow">Um espaço para cada etapa</p>
         <h2 id="audience-title">Como você deseja usar a Moraê?</h2>
         <div className="audience-grid">

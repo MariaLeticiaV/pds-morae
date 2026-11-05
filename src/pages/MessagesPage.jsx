@@ -109,12 +109,6 @@ export function MessagesPage() {
         </header>
 
         <div className="messages-content">
-          <section className="messages-hero">
-            <div className="messages-hero-copy"><LineIcon name="message" size={62} /><div><h1>Minhas Mensagens</h1><p>Converse com estudantes, proprietários e acompanhe suas conversas.</p></div></div>
-            <div className="messages-hero-art"><img src="/assets/morae-symbol.png" alt="" /><p>Boas conversas<br />levam a grandes<br />moradias! <span>♡</span></p></div>
-            <span className="messages-orbit messages-orbit-green" /><span className="messages-orbit messages-orbit-pink" />
-          </section>
-
           <section className="messages-workspace" aria-label="Conversas">
             <aside className="conversation-list-panel">
               <div className="conversation-filters" role="tablist" aria-label="Filtrar conversas">{filters.map((filter) => <button key={filter} role="tab" aria-selected={activeFilter === filter} className={activeFilter === filter ? 'active' : ''} type="button" onClick={() => setActiveFilter(filter)}>{filter}</button>)}</div>

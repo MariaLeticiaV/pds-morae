@@ -180,7 +180,7 @@ export function SignupPage() {
         <CheckGroup label="Comodidades disponíveis" name="amenities" options={amenities} values={answers.amenities} onToggle={toggleOption} />
         <TextAreaField label="Regras da casa" name="houseRules" placeholder="Ex.: horário de silêncio, visitas e uso das áreas comuns..." value={answers.houseRules} onChange={updateAnswer} />
         <TextAreaField label="Sobre a vaga" name="listingDescription" placeholder="Conte sobre o ambiente e o que procura em um morador..." value={answers.listingDescription} onChange={updateAnswer} />
-        <UploadField label="Fotos da casa" name="listingPhotos" multiple answers={answers} onChange={updateAnswer} />
+        <UploadField label="Fotos da casa" name="listingPhotos" required multiple answers={answers} onChange={updateAnswer} />
       </div>
     </>;
   }
@@ -206,7 +206,7 @@ export function SignupPage() {
         <CheckGroup label="Características" name="propertyAmenities" options={amenities} values={answers.propertyAmenities} onToggle={toggleOption} />
         <TextAreaField label="Descrição do imóvel" name="propertyDescription" placeholder="Conte sobre o imóvel, localização e diferenciais..." value={answers.propertyDescription} onChange={updateAnswer} maxLength="1000" />
         <TextAreaField label="Regras e informações adicionais" name="propertyRules" placeholder="Ex.: horário de silêncio e regras do condomínio..." value={answers.propertyRules} onChange={updateAnswer} maxLength="500" />
-        <UploadField label="Fotos do imóvel" name="propertyPhotos" multiple answers={answers} onChange={updateAnswer} />
+        <UploadField label="Fotos do imóvel" name="propertyPhotos" required multiple answers={answers} onChange={updateAnswer} />
       </div>
     </>;
   }

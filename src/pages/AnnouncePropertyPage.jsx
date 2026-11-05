@@ -37,6 +37,7 @@ export function AnnouncePropertyPage() {
   const [photos, setPhotos] = useState([]);
   const [video, setVideo] = useState(null);
   const [status, setStatus] = useState('');
+  const [photoError, setPhotoError] = useState('');
   const [submittedListing, setSubmittedListing] = useState(null);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const formRef = useRef(null);
@@ -72,6 +73,7 @@ export function AnnouncePropertyPage() {
     if (images.length < selected.length) setStatus('Selecione arquivos de imagem para adicionar às fotos.');
     else if (images.length > remaining) setStatus('O anúncio aceita no máximo 10 fotos.');
     else setStatus('');
+    if (images.length) setPhotoError('');
   }
 
   function addPhotos(event) {
@@ -85,6 +87,12 @@ export function AnnouncePropertyPage() {
 
   function submitAnnouncement(event) {
     event.preventDefault();
+    if (photos.length === 0) {
+      setPhotoError('Adicione pelo menos uma foto do imóvel para continuar.');
+      document.getElementById('property-photos')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setPhotoError('');
     const formData = new FormData(event.currentTarget);
     const listingData = {
       ...Object.fromEntries(formData.entries()),
@@ -193,6 +201,7 @@ export function AnnouncePropertyPage() {
                 <small>JPG, PNG ou WEBP · até 10 fotos</small>
                 <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={addPhotos} />
               </label>
+              {photoError && <p className="announce-photo-error" role="alert">{photoError}</p>}
               {photoPreviews.length > 0 && <div className="announce-photo-grid">{photoPreviews.map(({ file, url }, index) => <figure key={`${file.name}-${index}`}><img src={url} alt={`Prévia ${index + 1}: ${file.name}`} /><figcaption>{file.name}<button type="button" onClick={() => removePhoto(index)} aria-label={`Remover ${file.name}`}>×</button></figcaption></figure>)}</div>}
               <FormField label="Vídeo (opcional)" className="announce-video-field"><input type="file" accept="video/*" onChange={(event) => { setVideo(event.target.files?.[0] ?? null); setStatus(''); }} />{video && <small>{video.name}</small>}</FormField>
             </section>

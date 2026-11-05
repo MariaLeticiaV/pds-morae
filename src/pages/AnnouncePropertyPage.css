@@ -48,6 +48,7 @@
 .announce-upload strong { font-size: 13px; }
 .announce-upload span { color: #668f8e; font-size: 11px; }
 .announce-upload small { color: #94aaa7; font-size: 10px; }
+.announce-photo-error { margin: 10px 0 0; color: #b4235a; font-size: 11px; font-weight: 600; }
 .announce-upload input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
 .announce-photo-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(130px,1fr)); gap: 12px; margin-top: 16px; }
 .announce-photo-grid figure { min-width: 0; margin: 0; overflow: hidden; border: 1px solid #d6e8e4; border-radius: 9px; background: #fff; }

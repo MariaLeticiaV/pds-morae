@@ -125,6 +125,26 @@
 .active-search-card > button { grid-column: 2; min-height: 29px; border: 1px solid #9b70cf; border-radius: 6px; color: #7653a3; background: transparent; font-family: inherit; font-size: 10px; font-weight: 600; cursor: pointer; }
 .safety-card { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 16px; background: #fce0f4; }.safety-card strong { color: #c8309a; }.safety-card p { color: #db83bd; }
 .empty-results { display: flex; min-height: 240px; flex-direction: column; align-items: center; justify-content: center; padding: 25px; border: 1px dashed #bad8d4; border-radius: 16px; color: #689592; text-align: center; }.empty-results > span { color: #008b8c; font-size: 36px; }.empty-results h3 { margin: 8px 0 3px; color: #286865; font-size: 16px; }.empty-results p { max-width: 370px; font-size: 11px; line-height: 1.6; }.empty-results button { padding: 8px 16px; border: 0; border-radius: 18px; color: white; background: #008b8c; font-family: inherit; font-size: 11px; cursor: pointer; }
+.favorites-banner { position:relative; display:flex; min-height:158px; align-items:center; gap:20px; overflow:hidden; padding:24px 30px; border:1px solid #f2d4e7; border-radius:18px; background:linear-gradient(110deg,#fce8f5 0%,#fff8fc 53%,#e8f8ef 100%); }
+.favorites-banner-icon { z-index:1; display:grid; width:66px; height:66px; flex:0 0 66px; place-items:center; border-radius:50%; color:#d74791; background:#fff; box-shadow:0 4px 14px #a5376d1c; }
+.favorites-banner > div { z-index:1; }
+.favorites-kicker { margin:0 0 4px; color:#bd5b91; font-size:10px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; }
+.favorites-banner h1 { margin:0; color:#285d5e; font:800 clamp(21px,2.4vw,30px)/1.2 'Poppins',sans-serif; }
+.favorites-banner > div > p:last-child { margin:7px 0 0; color:#587d7b; font-size:12px; }
+.favorites-banner > strong { z-index:1; display:flex; min-width:74px; flex-direction:column; align-items:center; margin-left:auto; color:#bd3b84; font:800 24px 'Poppins',sans-serif; }
+.favorites-banner > strong small { color:#76566b; font:600 9px 'Montserrat Alternates',sans-serif; white-space:nowrap; }
+.favorites-banner-orbit { position:absolute; right:-46px; bottom:-115px; width:220px; height:220px; border:28px solid #c9efc066; border-radius:50%; }
+.favorites-results-layout { grid-template-columns:minmax(0,1fr); max-width:1250px; margin-right:auto; margin-left:auto; }
+.favorites-listing-section { min-width:0; padding:22px; border:1px solid #d8ebe5; border-radius:17px; background:#fff; box-shadow:0 5px 18px #183c3510; }
+.favorites-listing-section .section-heading { margin-bottom:8px; }
+.favorites-listing-section .section-heading h2 { color:#b84283; }
+.favorites-listing-section .result-count { padding:5px 9px; border-radius:14px; color:#a23c76; background:#fce8f4; }
+.favorites-help { margin:0 0 17px; color:#68817c; font-size:11px; }
+.favorites-empty { display:flex; min-height:260px; flex-direction:column; align-items:center; justify-content:center; padding:26px; border:1px dashed #e8c6dc; border-radius:14px; color:#718b85; background:linear-gradient(140deg,#fffafd,#f8fffb); text-align:center; }
+.favorites-empty > span { display:grid; width:54px; height:54px; place-items:center; border-radius:50%; color:#d74791; background:#fce8f4; }
+.favorites-empty h3 { margin:12px 0 2px; color:#385e59; font:700 17px 'Poppins',sans-serif; }
+.favorites-empty p { max-width:350px; margin:5px 0 15px; font-size:11px; line-height:1.6; }
+.favorites-empty button { display:flex; align-items:center; gap:7px; padding:9px 16px; border:0; border-radius:20px; color:#fff; background:#008b8c; font:600 11px 'Montserrat Alternates',sans-serif; cursor:pointer; }
 @media (max-width: 1120px) {
   .dashboard-content { padding-right: 22px; padding-left: 22px; }
   .results-layout { grid-template-columns: minmax(0, 1fr) 240px; gap: 17px; }
@@ -150,4 +170,5 @@
   .results-layout { gap: 14px; margin-top: 19px; }.section-heading { flex-wrap: wrap; gap: 7px; }.section-heading h2 { font-size: 15px; }.section-heading h2 svg { width: 21px; }.result-count { font-size: 9px; }.see-all { font-size: 10px; }
   .listing-grid { grid-template-columns: 1fr; gap: 12px; }.listing-image-wrap { height: 175px; }.listing-content h3 { font-size: 12px; }.listing-main-line > strong { font-size: 16px; }.listing-location { font-size: 10px; }.listing-tags span { font-size: 9px; }
   .results-aside { display: flex; }.map-illustration { min-height: 230px; }.active-search-card, .safety-card { padding: 12px; }
+  .favorites-banner { min-height:132px; gap:10px; padding:16px 13px; border-radius:14px; }.favorites-banner-icon { width:44px; height:44px; flex-basis:44px; }.favorites-banner-icon svg { width:23px; height:23px; }.favorites-kicker { font-size:8px; }.favorites-banner h1 { font-size:19px; }.favorites-banner > div > p:last-child { max-width:190px; font-size:9px; line-height:1.45; }.favorites-banner > strong { min-width:44px; font-size:19px; }.favorites-banner > strong small { max-width:58px; font-size:7px; white-space:normal; text-align:center; }.favorites-listing-section { padding:13px 10px; }.favorites-listing-section .section-heading { align-items:flex-start; }.favorites-help { font-size:9px; }.favorites-empty { min-height:220px; padding:20px 12px; }
 }

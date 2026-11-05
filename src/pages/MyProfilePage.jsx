@@ -1,5 +1,5 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import './MyProfilePage.css';
@@ -26,8 +26,23 @@ export function MyProfilePage() {
   const [draft, setDraft] = useState(profile);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState('');
+  const [activeTab, setActiveTab] = useState(() => window.location.hash.slice(1) || 'informacoes');
   const photoInput = useRef(null);
   const initials = useMemo(() => profile.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase(), [profile.name]);
+
+  useEffect(() => {
+    const sectionId = window.location.hash.slice(1);
+    if (!sectionId) return;
+    setActiveTab(sectionId);
+    requestAnimationFrame(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }, []);
+
+  function openProfileSection(event, sectionId) {
+    event.preventDefault();
+    setActiveTab(sectionId);
+    window.history.pushState(null, '', `/perfil#${sectionId}`);
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   function update(key, value) { setDraft((current) => ({ ...current, [key]: value })); }
   function beginEdit() { setDraft(profile); setEditing(true); setMessage(''); }
@@ -83,7 +98,7 @@ export function MyProfilePage() {
             <div><span className="my-summary-icon"><Icon name="money" /></span><span><small>Valor máximo</small><strong>{profile.budget}</strong></span></div>
           </section>
           <nav className="my-profile-tabs" aria-label="Seções do perfil">
-            <a className="active" href="#informacoes">Informações Pessoais</a><a href="#preferencias">Preferências de Moradia</a><a href="#habitos">Hábitos e Rotinas</a><a href="#apresentacao">Apresentação Pessoal</a><a href="#configuracoes">Configurações</a>
+            <a className={activeTab === 'informacoes' ? 'active' : ''} href="#informacoes" onClick={(event) => openProfileSection(event, 'informacoes')}>Informações Pessoais</a><a className={activeTab === 'preferencias' ? 'active' : ''} href="#preferencias" onClick={(event) => openProfileSection(event, 'preferencias')}>Preferências de Moradia</a><a className={activeTab === 'habitos' ? 'active' : ''} href="#habitos" onClick={(event) => openProfileSection(event, 'habitos')}>Hábitos e Rotinas</a><a className={activeTab === 'apresentacao' ? 'active' : ''} href="#apresentacao" onClick={(event) => openProfileSection(event, 'apresentacao')}>Apresentação Pessoal</a><a className={activeTab === 'configuracoes' ? 'active' : ''} href="#configuracoes" onClick={(event) => openProfileSection(event, 'configuracoes')}>Configurações</a>
           </nav>
           <div className="my-profile-columns">
             <section className="my-profile-card my-personal-card" id="informacoes"><h2>Informações Pessoais</h2><div className="my-fields-grid">

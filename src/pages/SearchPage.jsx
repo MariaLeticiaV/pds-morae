@@ -124,11 +124,11 @@ export function SearchPage() {
 
   const filteredProperties = useMemo(() => properties.filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
-    const matchesPlace = !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
-    const matchesType = type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
-    const matchesBudget = !budget || property.price <= Number(budget);
-    const matchesRooms = rooms === 'Qualquer' || property.rooms >= Number(rooms);
-    const matchesAmenities = (!wifiOnly || property.tags.includes('WI-FI')) && (!furnishedOnly || property.tags.includes('Mobiliado'));
+    const matchesPlace = showFavorites || !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
+    const matchesType = showFavorites || type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
+    const matchesBudget = showFavorites || !budget || property.price <= Number(budget);
+    const matchesRooms = showFavorites || rooms === 'Qualquer' || property.rooms >= Number(rooms);
+    const matchesAmenities = showFavorites || ((!wifiOnly || property.tags.includes('WI-FI')) && (!furnishedOnly || property.tags.includes('Mobiliado')));
     const matchesFavorite = !showFavorites || favorites.includes(property.id);
     return matchesPlace && matchesType && matchesBudget && matchesRooms && matchesAmenities && matchesFavorite;
   }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites]);
@@ -152,6 +152,11 @@ export function SearchPage() {
     setShowFavorites(false);
   }
 
+  function exploreProperties() {
+    setShowFavorites(false);
+    setLocation(''); setQuery(''); setType('Todos'); setRooms('Qualquer'); setBudget(''); setWifiOnly(false); setFurnishedOnly(false);
+  }
+
   return (
     <div className="search-dashboard">
       <DashboardSidebar active={showFavorites ? 'favorites' : 'search'} />
@@ -172,13 +177,13 @@ export function SearchPage() {
         </header>
 
         <main className="dashboard-content">
-          <section className="welcome-banner">
+          {showFavorites ? <section className="favorites-banner"><span className="favorites-banner-icon"><Icon name="heart" size={31} fill="currentColor" /></span><div><p className="favorites-kicker">Sua seleção pessoal</p><h1>Moradias salvas</h1><p>Encontre rapidamente os anúncios que chamaram sua atenção.</p></div><strong>{favorites.length}<small>{favorites.length === 1 ? ' imóvel salvo' : ' imóveis salvos'}</small></strong><span className="favorites-banner-orbit" /></section> : <section className="welcome-banner">
             <div className="welcome-copy"><span className="welcome-home-icon"><Icon name="home" size={36} /></span><div><h1>Encontre o lugar ideal<br className="wide-break" /> para morar!</h1><p>Filtre por cidade, bairro, tipo de imóvel e muito mais para encontrar<br className="wide-break" /> a moradia perfeita para você.</p></div></div>
             <div className="welcome-art"><div className="brand-watermark"><Logo /></div><p>Mais que um imóvel,<br /> conexões que fazem<br /> sentido. <span>♡</span></p></div>
             <span className="banner-circle circle-pink" /><span className="banner-circle circle-green" />
-          </section>
+          </section>}
 
-          <form className={`filter-panel${expandedFilters ? ' filters-expanded' : ''}`} onSubmit={submitSearch}>
+          {!showFavorites && <form className={`filter-panel${expandedFilters ? ' filters-expanded' : ''}`} onSubmit={submitSearch}>
             <label className="filter-control location-control"><span><Icon name="pin" />Localização</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cidade, bairro, universidade..." /></label>
             <label className="filter-control"><span><Icon name="home" />Tipo de imóvel</span><div className="select-control-wrap"><select value={type} onChange={(event) => setType(event.target.value)}><option>Todos</option><option>República</option><option>Quarto</option><option>Apartamento</option><option>Casa</option></select><span className="filter-chevron" aria-hidden="true" /></div></label>
             <label className="filter-control"><span><Icon name="bed" />Quartos</span><div className="select-control-wrap"><select value={rooms} onChange={(event) => setRooms(event.target.value)}><option>Qualquer</option><option value="1">1 ou mais</option><option value="2">2 ou mais</option><option value="3">3 ou mais</option></select><span className="filter-chevron" aria-hidden="true" /></div></label>
@@ -186,18 +191,19 @@ export function SearchPage() {
             <button className="apply-filters" type="submit"><Icon name="search" size={21} />Buscar</button>
             <button className="more-filters" type="button" aria-expanded={expandedFilters} onClick={() => setExpandedFilters((value) => !value)}><Icon name="filter" size={20} />Mais filtros <span className="more-chevron" aria-hidden="true" /></button>
             {expandedFilters && <div className="extra-filter-options"><label><input type="checkbox" checked={wifiOnly} onChange={(event) => setWifiOnly(event.target.checked)} /> Wi-Fi incluso</label><label><input type="checkbox" checked={furnishedOnly} onChange={(event) => setFurnishedOnly(event.target.checked)} /> Mobiliado</label><button type="button" onClick={() => { setType('Todos'); setRooms('Qualquer'); setBudget(''); setWifiOnly(false); setFurnishedOnly(false); setLocation(''); setQuery(''); }}>Limpar filtros</button></div>}
-          </form>
+          </form>}
 
-          <div className="results-layout">
-            <section className="listing-section">
-              <div className="section-heading"><h2><Icon name="home" size={26} />{showFavorites ? 'Meus Favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={() => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>Ver todos <Icon name="arrow" size={19} /></button></div>
-              {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={() => { setLocation(''); setQuery(''); setType('Todos'); setRooms('Qualquer'); setBudget(''); setWifiOnly(false); setFurnishedOnly(false); setShowFavorites(false); }}>Limpar busca</button></div>}
+          <div className={`results-layout${showFavorites ? ' favorites-results-layout' : ''}`}>
+            <section className={`listing-section${showFavorites ? ' favorites-listing-section' : ''}`}>
+              <div className="section-heading"><h2><Icon name={showFavorites ? 'heart' : 'home'} size={26} fill={showFavorites ? 'currentColor' : 'none'} />{showFavorites ? 'Sua lista de favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={showFavorites ? exploreProperties : () => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>{showFavorites ? 'Explorar imóveis' : 'Ver todos'} <Icon name="arrow" size={19} /></button></div>
+              {showFavorites && <p className="favorites-help">Os anúncios que você favoritar ficam guardados aqui para consultar depois.</p>}
+              {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : showFavorites ? <div className="favorites-empty"><span><Icon name="heart" size={28} /></span><h3>Seus favoritos começam aqui</h3><p>Toque no coração de um anúncio para salvá-lo nesta lista.</p><button type="button" onClick={exploreProperties}>Explorar imóveis <Icon name="arrow" size={17} /></button></div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={exploreProperties}>Limpar busca</button></div>}
             </section>
-            <aside className="results-aside">
+            {!showFavorites && <aside className="results-aside">
               <MapPanel onViewMap={() => setViewMap((value) => !value)} />
               <div className="active-search-card"><div className="aside-icon purple"><Icon name="search" size={20} /></div><div><strong>{viewMap ? 'Mapa demonstrativo' : 'Sua busca está ativa'}</strong><p>{viewMap ? 'O mapa é ilustrativo e não representa a localização exata dos anúncios.' : 'Mostrando imóveis que combinam com seus filtros.'}</p></div><button onClick={() => setExpandedFilters(true)}>Editar filtros</button></div>
               <div className="safety-card"><span className="aside-icon pink"><Icon name="shield" size={21} /></span><div><strong>Fique seguro!</strong><p>Converse diretamente com anunciantes e procure perfis verificados na plataforma.</p></div></div>
-            </aside>
+            </aside>}
           </div>
         </main>
       </div>

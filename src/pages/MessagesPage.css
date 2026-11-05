@@ -1,6 +1,7 @@
-.messages-dashboard { display:flex; width:100%; min-width:0; min-height:0; color:#285747; background:#fff; font-family:'Montserrat Alternates',sans-serif; }
-.messages-main { display:flex; min-width:0; min-height:0; flex:1; flex-direction:column; overflow:auto; background:#fff; }
-.messages-topbar { min-height:85px; }
+.messages-dashboard { display:flex; width:100%; min-width:0; min-height:0; height:100%; flex:1; color:#285747; background:#fff; font-family:'Montserrat Alternates',sans-serif; }
+.messages-app > main { height:0; min-height:0; flex:1; overflow:hidden; }
+.messages-main { display:flex; min-width:0; min-height:0; flex:1; flex-direction:column; overflow:hidden; background:#fff; }
+.messages-topbar { min-height:85px; flex:0 0 85px; }
 .messages-global-search { display:flex; width:min(100%,570px); min-height:45px; align-items:center; gap:13px; padding:0 16px; border:1px solid #aad9d9; border-radius:28px; color:#008b8c; }
 .messages-global-search input { width:100%; min-width:0; border:0; outline:0; color:#305f60; background:transparent; font:12px 'Montserrat Alternates',sans-serif; }
 .messages-global-search input::placeholder { color:#72b8b9; }
@@ -9,20 +10,8 @@
 .messages-divider { width:1px; height:27px; background:#d9e0df; }
 .messages-user-avatar { display:grid; width:39px; height:39px; place-items:center; border:3px solid #f1f3f5; border-radius:50%; color:#fff; background:#8d9a9f; font:17px Inter,sans-serif; }
 .messages-chevron { width:7px; height:7px; margin:-4px 2px 0 1px; border-right:1.8px solid #7b8581; border-bottom:1.8px solid #7b8581; transform:rotate(45deg); }
-.messages-content { display:flex; width:100%; max-width:1760px; min-height:0; flex:1; flex-direction:column; gap:18px; margin:0 auto; padding:14px clamp(20px,3vw,50px) 24px; }
-.messages-hero { position:relative; display:flex; min-height:170px; flex:0 0 170px; align-items:center; justify-content:space-between; overflow:hidden; padding:22px 28px; border-radius:20px; background:linear-gradient(105deg,#e8f9f0 0%,#e8f9f0 72%,#fff0f7 100%); }
-.messages-hero-copy { position:relative; z-index:1; display:flex; align-items:center; gap:18px; color:#008b8c; }
-.messages-hero-copy > svg { flex:0 0 auto; stroke-width:1.8; }
-.messages-hero-copy h1 { margin:0; color:#078889; font-family:'Poppins',sans-serif; font-size:clamp(25px,2.5vw,38px); line-height:1.18; }
-.messages-hero-copy p { margin:9px 0 0; color:#69b7b4; font-size:clamp(11px,1vw,16px); }
-.messages-hero-art { position:relative; z-index:1; display:flex; align-items:center; gap:22px; padding:0 30px 0 15px; }
-.messages-hero-art img { width:150px; height:145px; object-fit:contain; }
-.messages-hero-art p { margin:0; color:#56a9a5; font-family:cursive; font-size:clamp(15px,1.6vw,24px); font-style:italic; line-height:1.2; transform:rotate(-7deg); }
-.messages-hero-art p span { display:inline-block; margin-left:8px; color:#008b8c; font:35px sans-serif; transform:rotate(18deg); }
-.messages-orbit { position:absolute; pointer-events:none; }
-.messages-orbit-green { top:-125px; right:-20px; width:190px; height:190px; border-radius:50%; background:#c7efc9; }
-.messages-orbit-pink { right:-45px; bottom:-105px; width:140px; height:185px; border-radius:60% 0 0 0; background:#f6c8eb; transform:rotate(20deg); }
-.messages-workspace { display:grid; min-height:500px; flex:1; grid-template-columns:minmax(320px,.78fr) minmax(0,1.35fr); gap:20px; }
+.messages-content { display:flex; width:100%; max-width:1760px; min-width:0; min-height:0; flex:1; flex-direction:column; margin:0 auto; padding:12px clamp(16px,2.4vw,38px) 16px; }
+.messages-workspace { display:grid; min-width:0; min-height:0; flex:1; grid-template-columns:minmax(300px,.78fr) minmax(0,1.35fr); gap:16px; }
 .conversation-list-panel,.chat-panel { min-width:0; min-height:0; overflow:hidden; border:1px solid #a9dada; border-radius:20px; background:#fff; box-shadow:0 3px 5px #143e3a27; }
 .conversation-list-panel { display:flex; flex-direction:column; padding:16px 22px 11px; }
 .conversation-filters { display:flex; justify-content:space-between; gap:5px; margin:0 0 14px; }
@@ -72,9 +61,7 @@
 .send-button { display:grid; width:42px; height:46px; flex:0 0 42px; place-items:center; border:0; color:#008b8c; background:transparent; cursor:pointer; }
 .send-button:hover { color:#006e70; transform:translateX(2px); }
 @media(max-width:1050px) {
-  .messages-content { padding-right:20px; padding-left:20px; }
-  .messages-hero-art { gap:10px; padding-right:12px; }
-  .messages-hero-art img { width:110px; }
+  .messages-content { padding-right:16px; padding-left:16px; }
   .messages-workspace { grid-template-columns:minmax(285px,.85fr) minmax(0,1.2fr); gap:12px; }
   .conversation-list-panel { padding-right:12px; padding-left:12px; }
   .conversation-filters button { padding:0 8px; font-size:10px; }
@@ -89,16 +76,9 @@
   .messages-user-avatar { width:29px; height:29px; }
   .messages-divider { height:22px; }
   .messages-chevron { display:none; }
-  .messages-content { gap:10px; padding:10px 9px 16px; }
-  .messages-hero { min-height:120px; flex-basis:120px; padding:12px; border-radius:14px; }
-  .messages-hero-copy { gap:8px; }
-  .messages-hero-copy > svg { width:34px; height:34px; }
-  .messages-hero-copy h1 { font-size:17px; }
-  .messages-hero-copy p { max-width:230px; margin-top:5px; font-size:9px; line-height:1.4; }
-  .messages-hero-art { gap:0; padding:0; }
-  .messages-hero-art img { width:58px; height:65px; }
-  .messages-hero-art p { display:none; }
-  .messages-workspace { min-height:570px; grid-template-columns:1fr; grid-template-rows:minmax(205px,.7fr) minmax(350px,1.3fr); gap:10px; }
+  .messages-topbar { min-height:68px; flex-basis:68px; }
+  .messages-content { padding:8px 8px 10px; }
+  .messages-workspace { min-height:0; grid-template-columns:1fr; grid-template-rows:minmax(145px,.58fr) minmax(0,1.42fr); gap:8px; }
   .conversation-list-panel { padding:8px; }
   .conversation-filters { justify-content:flex-start; gap:3px; margin-bottom:7px; overflow-x:auto; }
   .conversation-filters button { min-height:30px; padding:0 10px; font-size:9px; }
