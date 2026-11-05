@@ -3,7 +3,7 @@ import { OwnerSidebar } from './OwnerDashboardPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
-import { getDemoUser } from '../utils/demoUser.js';
+import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
 import './MyProfilePage.css';
 
 const initialProfile = {
@@ -15,22 +15,63 @@ const initialProfile = {
   photo: '',
 };
 
+function profileFromSignup(user) {
+  if (!user) return initialProfile;
+  const data = user.profile ?? {};
+  const demoDefaults = {
+    ...initialProfile, name: user.name, gender: '', cpf: '', email: '', phone: '', birthDate: '',
+    course: '', period: '', enrollment: '', university: '', campus: '', status: '', housing: '', location: '', amenities: '', budget: '',
+    organization: '', environment: '', smoking: '', guests: '', about: 'Adicione uma apresentação para que outras pessoas conheçam seu perfil.', photo: '',
+  };
+  const amenityValues = data.amenities ?? data.propertyAmenities ?? [];
+  const budgetValue = data.budget || data.propertyRent || data.rent;
+  return {
+    ...demoDefaults,
+    ...data,
+    name: user.name,
+    phone: data.phone || data.mobile || '',
+    birthDate: data.birthDate || '',
+    course: data.course || '',
+    period: data.period || '',
+    enrollment: data.enrollment || '',
+    university: data.university || data.institution || '',
+    campus: data.campus || '',
+    status: data.status || (user.role === 'proprietario' ? 'Proprietário' : user.role === 'ofertante' ? 'Ofertando vaga' : 'Em procura'),
+    housing: data.housing || data.housingType || data.propertyType || '',
+    location: data.location || [data.preferredNeighborhoods, data.propertyNeighborhood, data.propertyCity, data.city, data.distance].filter(Boolean).join(' · '),
+    amenities: Array.isArray(amenityValues) ? amenityValues.join(', ') : amenityValues,
+    budget: data.budget || (budgetValue ? `R$ ${budgetValue}${/^\d/.test(String(budgetValue)) ? '/mês' : ''}` : ''),
+    organization: data.organization || '',
+    environment: data.environment || '',
+    smoking: data.smoking || '',
+    guests: data.guests || data.visitors || '',
+    about: data.about || data.aboutMe || data.listingDescription || data.propertyDescription || demoDefaults.about,
+    photo: data.photo || '',
+  };
+}
+
+function loadProfile(user) {
+  const storageKey = user ? `morae.profile.${user.role || 'estudante'}` : 'morae.profile.ana-beatriz';
+  const baseProfile = profileFromSignup(user);
+  try { return { ...baseProfile, ...JSON.parse(localStorage.getItem(storageKey) || '{}') }; }
+  catch { return baseProfile; }
+}
+
 function Field({ label, value, icon, editing, onChange, type = 'text', options }) {
-  return <label className="my-field"><span className="my-field-icon"><Icon name={icon} size={20} /></span><span className="my-field-copy"><span className="my-field-label">{label}</span>{editing ? options ? <select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select> : <input type={type} value={value} onChange={(event) => onChange(event.target.value)} /> : <span className="my-field-value">{type === 'date' && value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : value}</span>}</span></label>;
+  return <label className="my-field"><span className="my-field-icon"><Icon name={icon} size={20} /></span><span className="my-field-copy"><span className="my-field-label">{label}</span>{editing ? options ? <select aria-label={label} value={value ?? ''} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select> : <input aria-label={label} type={type} value={value ?? ''} onChange={(event) => onChange(event.target.value)} /> : <span className="my-field-value">{type === 'date' && value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : value}</span>}</span></label>;
 }
 
 export function MyProfilePage() {
   const demoUser = getDemoUser();
-  const [profile, setProfile] = useState(() => {
-    try { return { ...initialProfile, ...JSON.parse(localStorage.getItem('morae.profile.ana-beatriz') || '{}') }; }
-    catch { return initialProfile; }
-  });
+  const profileStorageKey = `morae.profile.${demoUser?.role || 'estudante'}`;
+  const [profile, setProfile] = useState(() => loadProfile(demoUser));
   const [draft, setDraft] = useState(profile);
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState(() => window.location.hash.slice(1) || 'informacoes');
   const photoInput = useRef(null);
   const initials = useMemo(() => profile.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase(), [profile.name]);
+  const roleLabel = demoUser?.role === 'proprietario' ? 'Proprietário' : demoUser?.role === 'ofertante' ? 'Aluno ofertador' : 'Estudante';
 
   useEffect(() => {
     const sectionId = window.location.hash.slice(1);
@@ -47,12 +88,19 @@ export function MyProfilePage() {
   }
 
   function update(key, value) { setDraft((current) => ({ ...current, [key]: value })); }
-  function beginEdit() { setDraft(profile); setEditing(true); setMessage(''); }
-  function cancelEdit() { setDraft(profile); setEditing(false); }
+  function beginEdit() {
+    setDraft(profile);
+    setEditing(true);
+    setMessage('Modo de edição ativado. Altere os campos e salve.');
+    window.setTimeout(() => setMessage(''), 3500);
+    requestAnimationFrame(() => document.getElementById('informacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  }
+  function cancelEdit() { setDraft(profile); setEditing(false); setMessage(''); }
   function saveProfile(event) {
     event.preventDefault();
     setProfile(draft);
-    localStorage.setItem('morae.profile.ana-beatriz', JSON.stringify(draft));
+    localStorage.setItem(profileStorageKey, JSON.stringify(draft));
+    if (demoUser) saveDemoUser(draft.name, demoUser.role, { ...demoUser.profile, ...draft });
     setEditing(false);
     setMessage('Perfil atualizado com sucesso.');
     window.setTimeout(() => setMessage(''), 3500);
@@ -65,7 +113,8 @@ export function MyProfilePage() {
       const nextProfile = { ...profile, photo: String(reader.result) };
       setProfile(nextProfile);
       setDraft(nextProfile);
-      localStorage.setItem('morae.profile.ana-beatriz', JSON.stringify(nextProfile));
+      localStorage.setItem(profileStorageKey, JSON.stringify(nextProfile));
+      if (demoUser) saveDemoUser(nextProfile.name, demoUser.role, { ...demoUser.profile, ...nextProfile });
       setMessage('Foto de perfil atualizada.');
       window.setTimeout(() => setMessage(''), 3500);
     };
@@ -81,7 +130,7 @@ export function MyProfilePage() {
           <label className="profile-search"><Icon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
           <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><Link to="/perfil" className="profile-greeting-link"><span className="profile-small-avatar">{(demoUser?.name || profile.name).charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {demoUser?.name || profile.name}</span><span className="profile-top-chevron" /></Link></div>
         </header>
-        <form className="my-profile-content" onSubmit={saveProfile}>
+        <form className={`my-profile-content${editing ? ' is-editing' : ''}`} onSubmit={saveProfile}>
           <div className="my-profile-heading"><div><p className="my-profile-kicker">Minha conta</p><h1>Meu Perfil</h1></div>{editing ? <div className="my-profile-actions"><button type="button" className="my-cancel" onClick={cancelEdit}>Cancelar</button><button type="submit" className="my-save">Salvar alterações</button></div> : <button type="button" className="my-edit-button" onClick={beginEdit}><Icon name="edit" size={17} />Editar perfil</button>}</div>
           {message && <p className="my-profile-toast" role="status">{message}</p>}
           <section className="my-profile-hero">
@@ -90,7 +139,7 @@ export function MyProfilePage() {
               {editing && <button type="button" className="my-camera-button" onClick={() => photoInput.current?.click()} aria-label="Enviar foto"><Icon name="camera" size={17} /></button>}
               <input ref={photoInput} className="my-photo-input" type="file" accept="image/*" onChange={choosePhoto} />
             </div>
-            <div className="my-profile-identity"><h2>{profile.name}</h2><p><Icon name="school" size={17} /> Estudante · {profile.university}</p><div className="my-profile-tags"><span>{profile.period}</span><span>{profile.course}</span><span>Moradia Estudantil</span></div></div>
+            <div className="my-profile-identity"><h2>{profile.name}</h2><p><Icon name={roleLabel === 'Estudante' ? 'school' : 'homeGroup'} size={17} /> {roleLabel}{profile.university ? ` · ${profile.university}` : ''}</p><div className="my-profile-tags">{[profile.period, profile.course, profile.university || (roleLabel === 'Proprietário' ? 'Imóveis residenciais' : roleLabel === 'Aluno ofertador' ? 'Oferece vaga' : 'Moradia Estudantil')].filter(Boolean).map((tag) => <span key={tag}>{tag}</span>)}</div></div>
             <span className="my-hero-orbit my-orbit-green" /><span className="my-hero-orbit my-orbit-pink" />
           </section>
           <section className="my-profile-summary" aria-label="Resumo do perfil">
@@ -120,16 +169,16 @@ export function MyProfilePage() {
             <section className="my-profile-card my-security-card" id="configuracoes"><h2><Icon name="shield" size={27} />Segurança da Conta</h2><div className="my-verified-row"><span>✓</span><div><strong>E-mail verificado</strong><small>{profile.email}</small></div></div><div className="my-verified-row"><span>✓</span><div><strong>Telefone verificado</strong><small>{profile.phone}</small></div></div><button type="button" className="my-password-button" onClick={() => setMessage('A alteração de senha ficará disponível quando a autenticação estiver conectada.')}>🔒 <span><strong>Deseja alterar sua senha?</strong><small>Mantenha sua conta sempre segura.</small></span></button></section>
           </div>
           <section className="my-profile-card my-preferences-card" id="preferencias"><h2>Preferências de Moradia</h2><div className="my-preferences-grid">
-            <Field label="Tipo de Moradia" icon="homeGroup" value={shown.housing} editing={editing} onChange={(value) => update('housing', value)} options={['República ou apartamento compartilhado', 'Apartamento compartilhado', 'República', 'Kitnet', 'Quarto individual']} />
+            <Field label="Tipo de Moradia" icon="homeGroup" value={shown.housing} editing={editing} onChange={(value) => update('housing', value)} options={['República ou apartamento compartilhado', 'Apartamento compartilhado', 'República', 'Kitnet', 'Quarto individual', 'Casa', 'Apartamento', 'Quarto']} />
             <Field label="Localização" icon="pin" value={shown.location} editing={editing} onChange={(value) => update('location', value)} />
             <Field label="Comodidades" icon="home" value={shown.amenities} editing={editing} onChange={(value) => update('amenities', value)} />
             <Field label="Valor Máximo" icon="money" value={shown.budget} editing={editing} onChange={(value) => update('budget', value)} />
           </div></section>
           <section className="my-profile-card my-habits-card" id="habitos"><h2>Hábitos e Rotina</h2><div className="my-habits-grid">
-            <Field label="Organização" icon="person" value={shown.organization} editing={editing} onChange={(value) => update('organization', value)} options={['Organizada', 'Muito organizada', 'Flexível']} />
-            <Field label="Ambiente" icon="home" value={shown.environment} editing={editing} onChange={(value) => update('environment', value)} options={['Ambiente tranquilo', 'Ambiente sociável', 'Sem preferência']} />
-            <Field label="Tabagismo" icon="person" value={shown.smoking} editing={editing} onChange={(value) => update('smoking', value)} options={['Não fumante', 'Fumante', 'Prefiro não informar']} />
-            <Field label="Visitas" icon="person" value={shown.guests} editing={editing} onChange={(value) => update('guests', value)} options={['Recebe visitas às vezes', 'Recebe visitas frequentemente', 'Prefere não receber visitas']} />
+            <Field label="Organização" icon="person" value={shown.organization} editing={editing} onChange={(value) => update('organization', value)} options={['Organizada', 'Muito organizada', 'Flexível', 'Mais ou menos', 'Estou melhorando']} />
+            <Field label="Ambiente" icon="home" value={shown.environment} editing={editing} onChange={(value) => update('environment', value)} options={['Ambiente tranquilo', 'Ambiente sociável', 'Sem preferência', 'Silenciosos', 'Movimentados', 'Indiferente']} />
+            <Field label="Tabagismo" icon="person" value={shown.smoking} editing={editing} onChange={(value) => update('smoking', value)} options={['Não fumante', 'Fumante', 'Prefiro não informar', 'Sim', 'Às vezes', 'Não']} />
+            <Field label="Visitas" icon="person" value={shown.guests} editing={editing} onChange={(value) => update('guests', value)} options={['Recebe visitas às vezes', 'Recebe visitas frequentemente', 'Prefere não receber visitas', 'Raramente', 'Às vezes', 'Frequentemente']} />
           </div></section>
           <section className="my-profile-card my-about-card" id="apresentacao"><h2>Apresentação Pessoal</h2>{editing ? <label className="my-about-editor"><span>Conte um pouco sobre você</span><textarea rows="5" value={shown.about} onChange={(event) => update('about', event.target.value)} /></label> : <p>{profile.about}</p>}</section>
         </form>

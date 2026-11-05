@@ -46,6 +46,8 @@
 .my-field-label { color: #078889; font-size: 11px; }
 .my-field-value { overflow-wrap: anywhere; color: #88aeb0; font-size: 11px; line-height: 1.35; }
 .my-field input, .my-field select { width: 100%; min-width: 0; padding: 5px 6px; border: 1px solid #cce7e0; border-radius: 6px; outline-color: #008b8c; color: #456b6d; background: #fbfefd; font: 11px 'Montserrat Alternates',sans-serif; }
+.my-profile-content.is-editing .my-field input, .my-profile-content.is-editing .my-field select, .my-profile-content.is-editing .my-about-editor textarea { border-color:#55b9b5; background:#f3fcf8; }
+.my-profile-content.is-editing .my-field input:focus, .my-profile-content.is-editing .my-field select:focus, .my-profile-content.is-editing .my-about-editor textarea:focus { outline:2px solid #008b8c; outline-offset:1px; }
 .my-security-card { display: flex; flex-direction: column; }
 .my-security-card h2 { padding-bottom: 10px; border-bottom: 1px solid #d8dfdd; }
 .my-verified-row { display: flex; align-items: center; gap: 11px; padding: 13px 4px; border-bottom: 1px solid #d8dfdd; }

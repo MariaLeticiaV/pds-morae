@@ -25,8 +25,8 @@ function TextAreaField({ label, name, placeholder, value, onChange, maxLength })
   return <label className="signup-field signup-field-wide"><span>{label}</span><textarea name={name} placeholder={placeholder} value={value ?? ''} maxLength={maxLength} onChange={onChange} rows="3" /></label>;
 }
 
-function CheckGroup({ label, name, options, values = [], onToggle }) {
-  return <fieldset className="signup-field signup-check-group"><legend>{label}</legend><div className="signup-check-options">{options.map((option) => <label key={option}><input type="checkbox" checked={values.includes(option)} onChange={() => onToggle(name, option)} />{option}</label>)}</div></fieldset>;
+function CheckGroup({ label, name, options, values = [], onToggle, required = false }) {
+  return <fieldset className="signup-field signup-check-group" aria-required={required}><legend>{label}{required && <b> *</b>}</legend><div className="signup-check-options">{options.map((option) => <label key={option}><input type="checkbox" checked={values.includes(option)} onChange={() => onToggle(name, option)} />{option}</label>)}</div></fieldset>;
 }
 
 function UploadField({ label, name, accept = 'image/*,.pdf', required = false, answers, onChange, multiple = false }) {
@@ -48,12 +48,14 @@ export function SignupPage() {
   const [answers, setAnswers] = useState({ state: 'Alagoas', propertyState: 'Alagoas', listingState: 'Alagoas' });
   const [completed, setCompleted] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [stepError, setStepError] = useState('');
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   function updateAnswer(event) {
     const { name, type, value, files } = event.target;
     setAnswers((current) => ({ ...current, [name]: type === 'file' ? (event.target.multiple ? [...files] : files[0]) : value }));
     if (name === 'password' || name === 'confirmPassword') setPasswordError('');
+    setStepError('');
   }
 
   function toggleOption(name, option) {
@@ -61,6 +63,7 @@ export function SignupPage() {
       const selected = current[name] ?? [];
       return { ...current, [name]: selected.includes(option) ? selected.filter((item) => item !== option) : [...selected, option] };
     });
+    setStepError('');
   }
 
   function chooseProfile(id) {
@@ -77,10 +80,18 @@ export function SignupPage() {
       setPasswordError('As senhas não coincidem. Confira os campos e tente novamente.');
       return;
     }
+    if (profileId !== 'proprietario' && activeStep === 2) {
+      const requiredHabits = ['sleepTime', 'studyAtHome', 'organization', 'visitors', 'smoking', 'pets', 'cleaning', 'environment'];
+      if (requiredHabits.some((key) => !answers[key]) || !answers.lifestyle?.length) {
+        setStepError('Responda às perguntas obrigatórias e selecione ao menos uma característica do seu perfil.');
+        return;
+      }
+    }
     setPasswordError('');
+    setStepError('');
     if (activeStep < activeProfile.steps.length) setActiveStep((step) => step + 1);
     else {
-      saveDemoUser(answers.fullName, profileId);
+      saveDemoUser(answers.fullName, profileId, answers);
       setCompleted(true);
     }
     pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -136,15 +147,15 @@ export function SignupPage() {
     return <>
       <p className="signup-step-intro">Conte um pouco sobre seus hábitos e sua rotina. Isso ajuda a encontrar pessoas que combinam com você.</p>
       <div className="signup-form-grid">
-        <SelectField label="Que horas costuma dormir?" name="sleepTime" options={['Antes das 21h', '21h–23h', '23h–01h', 'Depois da 01h']} value={answers.sleepTime} onChange={updateAnswer} />
-        <SelectField label="Estuda em casa?" name="studyAtHome" options={['Sim', 'Às vezes', 'Não']} value={answers.studyAtHome} onChange={updateAnswer} />
-        <SelectField label="Nível de organização" name="organization" options={['Muito organizado', 'Mais ou menos', 'Estou melhorando']} value={answers.organization} onChange={updateAnswer} />
-        <SelectField label="Costuma receber visitas?" name="visitors" options={['Raramente', 'Às vezes', 'Frequentemente']} value={answers.visitors} onChange={updateAnswer} />
-        <SelectField label="Você fuma?" name="smoking" options={['Sim', 'Às vezes', 'Não']} value={answers.smoking} onChange={updateAnswer} />
-        <SelectField label="Possui animais de estimação?" name="pets" options={['Sim', 'Não']} value={answers.pets} onChange={updateAnswer} />
-        <SelectField label="Rotina de limpeza" name="cleaning" options={['Diária', 'Semanal', 'Flexível']} value={answers.cleaning} onChange={updateAnswer} />
-        <SelectField label="Prefere ambientes" name="environment" options={['Silenciosos', 'Movimentados', 'Indiferente']} value={answers.environment} onChange={updateAnswer} />
-        <CheckGroup label="Como você se define?" name="lifestyle" options={studentProfileOptions} values={answers.lifestyle} onToggle={toggleOption} />
+        <SelectField label="Que horas costuma dormir?" name="sleepTime" options={['Antes das 21h', '21h–23h', '23h–01h', 'Depois da 01h']} required value={answers.sleepTime} onChange={updateAnswer} />
+        <SelectField label="Estuda em casa?" name="studyAtHome" options={['Sim', 'Às vezes', 'Não']} required value={answers.studyAtHome} onChange={updateAnswer} />
+        <SelectField label="Nível de organização" name="organization" options={['Muito organizado', 'Mais ou menos', 'Estou melhorando']} required value={answers.organization} onChange={updateAnswer} />
+        <SelectField label="Costuma receber visitas?" name="visitors" options={['Raramente', 'Às vezes', 'Frequentemente']} required value={answers.visitors} onChange={updateAnswer} />
+        <SelectField label="Você fuma?" name="smoking" options={['Sim', 'Às vezes', 'Não']} required value={answers.smoking} onChange={updateAnswer} />
+        <SelectField label="Possui animais de estimação?" name="pets" options={['Sim', 'Não']} required value={answers.pets} onChange={updateAnswer} />
+        <SelectField label="Rotina de limpeza" name="cleaning" options={['Diária', 'Semanal', 'Flexível']} required value={answers.cleaning} onChange={updateAnswer} />
+        <SelectField label="Prefere ambientes" name="environment" options={['Silenciosos', 'Movimentados', 'Indiferente']} required value={answers.environment} onChange={updateAnswer} />
+        <CheckGroup label="Como você se define?" name="lifestyle" options={studentProfileOptions} values={answers.lifestyle} onToggle={toggleOption} required />
         <TextAreaField label="Apresentação pessoal (opcional)" name="aboutMe" placeholder="Conte um pouco sobre você, sua rotina e seus interesses..." value={answers.aboutMe} onChange={updateAnswer} />
       </div>
     </>;
@@ -283,6 +294,7 @@ export function SignupPage() {
         <div className="signup-flow-heading"><p className="eyebrow">Etapa {activeStep} de {activeProfile.steps.length}</p><h1 id="signup-flow-title">{activeProfile.steps[activeStep - 1]}</h1></div>
         <form className="signup-stage-form" onSubmit={submitStep}>
           {renderStep()}
+          {stepError && <p className="signup-step-error" role="alert">{stepError}</p>}
           <div className="signup-stage-actions">
             {activeStep > 1 && <button className="signup-secondary-button" type="button" onClick={() => setActiveStep((step) => step - 1)}>← Voltar</button>}
             <button className="signup-continue" type="submit">{activeStep === activeProfile.steps.length ? 'Finalizar cadastro' : 'Avançar'} <span aria-hidden="true">→</span></button>

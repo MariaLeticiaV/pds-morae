@@ -9,12 +9,18 @@ export function getDemoUser() {
   }
 }
 
-export function saveDemoUser(name, role) {
+export function saveDemoUser(name, role, profile = {}) {
   const normalizedName = String(name ?? '').trim();
   if (!normalizedName) return;
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: normalizedName, role }));
+    const savedProfile = Object.fromEntries(Object.entries(profile ?? {}).filter(([key, value]) => {
+      if (/password|document|proof|photos/i.test(key)) return false;
+      return ['string', 'number', 'boolean'].includes(typeof value)
+        || (Array.isArray(value) && value.every((item) => ['string', 'number', 'boolean'].includes(typeof item)));
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ name: normalizedName, role, profile: savedProfile }));
+    localStorage.setItem(`morae.profile.${role || 'estudante'}`, JSON.stringify(savedProfile));
   } catch {
     // The demo can continue even if browser storage is unavailable.
   }
