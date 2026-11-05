@@ -1,7 +1,5 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Logo } from '../components/Logo.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import './AnnouncePropertyPage.css';
 
@@ -113,7 +111,7 @@ export function AnnouncePropertyPage() {
           </section>}
 
           {!submittedListing && <nav className="announce-steps" aria-label="Etapas do formulário">
-            {steps.map((step, index) => <a href={`#${step.id}`} key={step.id}><span>{index + 1}</span>{step.label}</a>)}
+            {steps.map((step, index) => <a href={`#${step.id}`} key={step.id}><span>{index + 1}</span><small>{step.label}</small></a>)}
           </nav>}
 
           <form ref={formRef} className="announce-form" hidden={Boolean(submittedListing)} onSubmit={submitAnnouncement} onInput={() => setStatus('')}>
