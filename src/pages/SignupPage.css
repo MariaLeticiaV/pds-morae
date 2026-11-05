@@ -36,6 +36,7 @@
 .signup-field { display: flex; min-width: 0; flex-direction: column; gap: 7px; color: #285747; font-size: 12px; font-weight: 600; }
 .signup-field > span:first-child, .signup-field legend { color: #087f80; }
 .signup-field b { color: #cc488d; }
+.signup-password-error { grid-column: 1 / -1; margin: -7px 0 0; color: #b4235a; font-size: 11px; font-weight: 600; }
 .signup-field input:not([type='checkbox']):not([type='file']), .signup-field select, .signup-field textarea { width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid #9bd1d1; border-radius: 8px; outline-color: #008b8c; color: #23463b; background: #fff; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; font-weight: 500; }
 .signup-field input::placeholder, .signup-field textarea::placeholder { color: #909a97; }
 .signup-field textarea { min-height: 82px; resize: vertical; }

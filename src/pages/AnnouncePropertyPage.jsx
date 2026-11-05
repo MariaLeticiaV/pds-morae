@@ -68,6 +68,7 @@ export function AnnouncePropertyPage() {
       amenities: formData.getAll('amenities'),
       photos: photoPreviews,
       videoName: video?.name ?? '',
+      approvalStatus: 'pending',
     });
     document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -99,12 +100,18 @@ export function AnnouncePropertyPage() {
 
           {submittedListing && <section className="announce-status-card">
             <h2>Acompanhe o status do seu anúncio</h2>
-            <div className="announce-status-timeline">
+            {(() => {
+              const approvalStatus = submittedListing.approvalStatus ?? 'pending';
+              const decisionMade = approvalStatus === 'approved' || approvalStatus === 'rejected';
+              return <>
+            <div className={`announce-status-timeline${approvalStatus === 'rejected' ? ' has-rejection' : ''}`}>
               <div className="completed"><span>✓</span><strong>Cadastro concluído</strong></div>
-              <div className="in-review"><span>2</span><strong>Em análise</strong></div>
-              <div><span>3</span><strong>Aprovado e publicado</strong></div>
-              <div><span>4</span><strong>Reprovado</strong></div>
+              <div className={decisionMade ? 'completed' : 'in-review'}><span>{decisionMade ? '✓' : '2'}</span><strong>Em análise</strong></div>
+              <div className={approvalStatus === 'approved' ? 'approved' : approvalStatus === 'rejected' ? 'rejected' : ''}><span>{approvalStatus === 'approved' ? '✓' : approvalStatus === 'rejected' ? '×' : '3'}</span><strong>{approvalStatus === 'approved' ? 'Aprovado' : approvalStatus === 'rejected' ? 'Reprovado' : 'Aprovação'}</strong></div>
             </div>
+            <p className={`announce-decision-message ${approvalStatus}`} role="status">{approvalStatus === 'approved' ? 'Seu anúncio foi aprovado e já pode ser visualizado pelos estudantes.' : approvalStatus === 'rejected' ? `Seu anúncio não foi aprovado.${submittedListing.rejectionReason ? ` Motivo: ${submittedListing.rejectionReason}` : ' Confira as orientações e ajuste as informações para enviá-lo novamente.'}` : 'Aguardando a análise da equipe. O resultado da aprovação será exibido aqui.'}</p>
+              </>;
+            })()}
           </section>}
 
           {!submittedListing && <section className="announce-hero">
@@ -189,7 +196,7 @@ export function AnnouncePropertyPage() {
                   <p className="announce-listing-location">{[submittedListing.neighborhood, submittedListing.city, submittedListing.state].filter(Boolean).join(' - ')}</p>
                   <p className="announce-listing-type">{submittedListing.propertyType} <span>·</span> {submittedListing.rooms} {submittedListing.rooms === '1' ? 'quarto' : 'quartos'} <span>·</span> {submittedListing.bathrooms} {submittedListing.bathrooms === '1' ? 'banheiro' : 'banheiros'}</p>
                   <strong className="announce-listing-price">{Number(submittedListing.rent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<small>/mês</small></strong>
-                  <span className="announce-review-badge">Em análise</span>
+                  <span className={`announce-review-badge ${submittedListing.approvalStatus === 'approved' ? 'approved' : submittedListing.approvalStatus === 'rejected' ? 'rejected' : ''}`}>{submittedListing.approvalStatus === 'approved' ? 'Aprovado' : submittedListing.approvalStatus === 'rejected' ? 'Reprovado' : 'Em análise'}</span>
                 </div>
               </div>
               {submittedListing.photos.length > 1 && <div className="announce-submitted-photos" aria-label="Fotos enviadas">{submittedListing.photos.map(({ file, url }, index) => <img src={url} alt={`Foto ${index + 1} do imóvel: ${file.name}`} key={`${file.name}-${index}`} />)}</div>}

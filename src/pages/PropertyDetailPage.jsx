@@ -22,7 +22,7 @@ export function PropertyDetailPage() {
   const { id } = useParams();
   const { pathname } = useLocation();
   const user = getDemoUser();
-  const isOwner = user?.role === 'proprietario' || pathname.startsWith('/proprietario') || pathname.startsWith('/ofertante');
+  const isOwner = user?.role === 'proprietario' || user?.role === 'ofertante' || pathname.startsWith('/proprietario') || pathname.startsWith('/ofertante');
   const role = user?.role === 'ofertante' || pathname.startsWith('/ofertante') ? 'ofertante' : 'proprietario';
   const [query, setQuery] = useState('');
   const [interested, setInterested] = useState(false);

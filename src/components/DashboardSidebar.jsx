@@ -1,6 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Logo } from './Logo.jsx';
 import { LineIcon } from './LineIcon.jsx';
+import { getDemoUser } from '../utils/demoUser.js';
+import { OwnerSidebar } from '../pages/OwnerDashboardPage.jsx';
 import './DashboardSidebar.css';
 
 const menuItems = [
@@ -23,6 +25,10 @@ function getActiveItem(pathname, search) {
 
 export function DashboardSidebar({ active }) {
   const { pathname, search } = useLocation();
+  const role = getDemoUser()?.role;
+  if (role === 'proprietario' || role === 'ofertante') {
+    return <OwnerSidebar pathname={pathname} role={role} />;
+  }
   const currentItem = active ?? getActiveItem(pathname, search);
 
   return (

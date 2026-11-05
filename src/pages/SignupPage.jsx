@@ -47,11 +47,13 @@ export function SignupPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [answers, setAnswers] = useState({});
   const [completed, setCompleted] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   function updateAnswer(event) {
     const { name, type, value, files } = event.target;
     setAnswers((current) => ({ ...current, [name]: type === 'file' ? (event.target.multiple ? [...files] : files[0]) : value }));
+    if (name === 'password' || name === 'confirmPassword') setPasswordError('');
   }
 
   function toggleOption(name, option) {
@@ -66,10 +68,16 @@ export function SignupPage() {
     setActiveStep(1);
     setAnswers({});
     setCompleted(false);
+    setPasswordError('');
   }
 
   function submitStep(event) {
     event.preventDefault();
+    if (activeStep === 1 && answers.password !== answers.confirmPassword) {
+      setPasswordError('As senhas não coincidem. Confira os campos e tente novamente.');
+      return;
+    }
+    setPasswordError('');
     if (activeStep < activeProfile.steps.length) setActiveStep((step) => step + 1);
     else {
       saveDemoUser(answers.fullName, profileId);
@@ -83,6 +91,9 @@ export function SignupPage() {
       <div className="signup-form-grid">
         <Field label="Nome completo" name="fullName" required value={answers.fullName} onChange={updateAnswer} />
         <Field label="E-mail" name="email" type="email" required placeholder="seuemail@exemplo.com" value={answers.email} onChange={updateAnswer} />
+        <Field label="Crie uma senha" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" value={answers.password} onChange={updateAnswer} />
+        <Field label="Confirme sua senha" name="confirmPassword" type="password" required minLength={8} autoComplete="new-password" placeholder="Digite a senha novamente" value={answers.confirmPassword} onChange={updateAnswer} />
+        {passwordError && <p className="signup-password-error" role="alert">{passwordError}</p>}
         <Field label="CPF" name="cpf" required placeholder="000.000.000-00" value={answers.cpf} onChange={updateAnswer} />
         <Field label="Data de nascimento" name="birthDate" type="date" required value={answers.birthDate} onChange={updateAnswer} />
         <SelectField label="País" name="country" options={['Brasil', 'Outro']} required value={answers.country} onChange={updateAnswer} />
@@ -104,6 +115,9 @@ export function SignupPage() {
       <div className="signup-form-grid">
         <Field label="Nome completo" name="fullName" required value={answers.fullName} onChange={updateAnswer} />
         <Field label="E-mail" name="email" type="email" required value={answers.email} onChange={updateAnswer} />
+        <Field label="Crie uma senha" name="password" type="password" required minLength={8} autoComplete="new-password" placeholder="Mínimo de 8 caracteres" value={answers.password} onChange={updateAnswer} />
+        <Field label="Confirme sua senha" name="confirmPassword" type="password" required minLength={8} autoComplete="new-password" placeholder="Digite a senha novamente" value={answers.confirmPassword} onChange={updateAnswer} />
+        {passwordError && <p className="signup-password-error" role="alert">{passwordError}</p>}
         <Field label="CPF" name="cpf" required placeholder="000.000.000-00" value={answers.cpf} onChange={updateAnswer} />
         <Field label="Celular" name="phone" type="tel" required placeholder="(00) 00000-0000" value={answers.phone} onChange={updateAnswer} />
         <Field label="Data de nascimento" name="birthDate" type="date" required value={answers.birthDate} onChange={updateAnswer} />
