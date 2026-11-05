@@ -1,3 +1,4 @@
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import './SignupPage.css';
 
@@ -39,7 +40,9 @@ function Progress({ steps, activeStep }) {
 
 export function SignupPage() {
   const pageRef = useRef(null);
-  const [profileId, setProfileId] = useState('');
+  const [searchParams] = useSearchParams();
+  const requestedProfile = searchParams.get('perfil');
+  const [profileId, setProfileId] = useState(() => profiles.some(({ id }) => id === requestedProfile) ? requestedProfile : '');
   const [activeStep, setActiveStep] = useState(1);
   const [answers, setAnswers] = useState({});
   const [completed, setCompleted] = useState(false);
@@ -202,7 +205,6 @@ export function SignupPage() {
       <h3 className="signup-section-title">Documentos do imóvel</h3>
       <div className="signup-form-grid">
         <UploadField label="Escritura ou contrato de compra e venda" name="propertyDeed" required answers={answers} onChange={updateAnswer} />
-        <UploadField label="Matrícula atualizada" name="propertyRegistry" required answers={answers} onChange={updateAnswer} />
         <UploadField label="IPTU" name="propertyTax" required answers={answers} onChange={updateAnswer} />
       </div>
     </>;
@@ -248,7 +250,8 @@ export function SignupPage() {
   }
 
   if (completed) {
-    return <section ref={pageRef} className="signup-page signup-page-flow"><span className="signup-decoration signup-teal" aria-hidden="true" /><span className="signup-decoration signup-purple" aria-hidden="true" /><div className="signup-flow-card signup-success"><span className="signup-success-mark">✓</span><p className="eyebrow">Cadastro preenchido</p><h1>Pronto para continuar!</h1><p>As informações do perfil <strong>{activeProfile.title}</strong> foram preenchidas nesta demonstração. O envio será integrado ao backend.</p><button className="signup-secondary-button" type="button" onClick={() => chooseProfile('')}>Voltar aos perfis</button></div></section>;
+    const destination = profileId === 'proprietario' ? '/proprietario' : profileId === 'ofertante' ? '/ofertante' : '/buscar';
+    return <Navigate to={destination} replace />;
   }
 
   return (

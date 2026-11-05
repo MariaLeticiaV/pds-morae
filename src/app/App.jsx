@@ -9,6 +9,7 @@ import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 import { MyProfilePage } from '../pages/MyProfilePage.jsx';
 import { MessagesPage } from '../pages/MessagesPage.jsx';
 import { AnnouncePropertyPage } from '../pages/AnnouncePropertyPage.jsx';
+import { OwnerDashboardPage } from '../pages/OwnerDashboardPage.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -17,12 +18,14 @@ export default function App() {
   const isSignupPage = pathname === '/cadastro';
   const isMessagesPage = pathname === '/mensagens';
   const isAnnouncePage = pathname === '/anunciar';
+  const isOwnerPage = pathname.startsWith('/proprietario');
+  const isOffererPage = pathname.startsWith('/ofertante');
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
-  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage;
+  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage;
 
   return (
-    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage ? ' dashboard-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && <header className="site-header">
+    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage ? ' dashboard-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -43,6 +46,8 @@ export default function App() {
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
           <Route path="/anunciar" element={<AnnouncePropertyPage />} />
+          <Route path="/proprietario/*" element={<OwnerDashboardPage />} />
+          <Route path="/ofertante/*" element={<OwnerDashboardPage role="ofertante" />} />
           <Route path="/perfil" element={<MyProfilePage />} />
           <Route path="/usuarios/:id" element={<UserProfilePage />} />
           <Route path="*" element={<PlaceholderPage />} />
