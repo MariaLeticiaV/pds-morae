@@ -1,0 +1,29 @@
+.dashboard-sidebar { position: relative; z-index: 3; display: flex; flex: 0 0 244px; flex-direction: column; min-height: 0; padding: 9px 19px 18px; border-right: 1px solid #e5e8e7; background: #fff; box-shadow: 1px 0 5px rgba(20,56,53,.04); }
+.dashboard-brand { display: flex; height: 97px; flex: 0 0 97px; align-items: center; justify-content: center; border-bottom: 1px solid #eef1f0; }
+.dashboard-brand .logo-mark { width: 88px; height: 84px; }
+.dashboard-nav { display: flex; flex-direction: column; gap: 8px; margin-top: 42px; }
+.dashboard-nav a { position: relative; display: flex; width: 100%; min-height: 45px; align-items: center; gap: 14px; padding: 0 14px; border: 0; border-radius: 9px; color: #285747; background: transparent; font-family: inherit; font-size: 12px; font-weight: 600; text-align: left; transition: background .18s ease,color .18s ease; }
+.dashboard-nav a:hover,.dashboard-nav a.selected { color: #007d80; background: #e1f2ed; }
+.dashboard-nav a svg { flex: 0 0 auto; }
+.dashboard-nav a > span { min-width: 0; }
+.sidebar-note { display: flex; gap: 10px; align-items: flex-start; margin-top: auto; padding: 13px 11px; border-radius: 10px; color: #a04e92; background: #fce6f7; font-size: 10px; line-height: 1.5; }
+.sidebar-note svg { flex: 0 0 auto; }
+.sidebar-note p { margin: 0; }
+.sidebar-version { padding: 14px 8px 0; color: #91a2a0; font-size: 9px; text-align: center; }
+@media (max-width:1120px) { .dashboard-sidebar { flex-basis: 205px; padding-right: 13px; padding-left: 13px; } }
+@media (max-width:820px) {
+  .dashboard-sidebar { flex-basis: 74px; align-items: center; padding: 8px 7px; }
+  .dashboard-brand { width: 56px; height: 77px; flex-basis: 77px; border: 0; }
+  .dashboard-brand .logo-mark { width: 54px; height: 55px; }
+  .dashboard-nav { width: 100%; align-items: center; gap: 9px; margin-top: 22px; }
+  .dashboard-nav a { width: 50px; min-height: 46px; justify-content: center; gap: 0; padding: 0; overflow: hidden; font-size: 0; }
+  .dashboard-nav a svg { width: 22px; height: 22px; }
+  .sidebar-note,.sidebar-version { display: none; }
+}
+@media (max-width:560px) {
+  .dashboard-sidebar { flex-basis: 56px; padding: 7px 3px; }
+  .dashboard-brand { width: 48px; height: 57px; flex-basis: 57px; }
+  .dashboard-brand .logo-mark { width: 46px; height: 49px; }
+  .dashboard-nav { margin-top: 18px; }
+  .dashboard-nav a { width: 43px; min-height: 42px; }
+}

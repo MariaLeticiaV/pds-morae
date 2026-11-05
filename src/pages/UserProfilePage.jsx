@@ -1,6 +1,6 @@
+import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Logo } from '../components/Logo.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import './UserProfilePage.css';
 
@@ -23,19 +23,6 @@ const currentUser = { name: 'Você', initials: 'AL', course: 'Ciência da Comput
 const sharedPoints = ['Ambas buscam apartamento compartilhado', 'Ambas preferem morar até 5 km do campus', 'Ambas não fumam', 'Ambas valorizam um ambiente tranquilo', 'Ambas gostam de manter o ambiente organizado'];
 
 function ProfileIcon({ name }) { return <span className="profile-icon-badge" aria-hidden="true"><LineIcon name={name} size={19} /></span>; }
-
-function SidebarIcon({ name }) {
-  const paths = {
-    home: <><path d="m3 10 9-7 9 7" /><path d="M5 9v12h14V9M9 21v-7h6v7" /></>,
-    announce: <><path d="m3 10 9-7 9 7" /><path d="M5 9v12h9M9 21v-7h6v4" /><path d="M19 14v7m-3.5-3.5h7" /></>,
-    message: <><path d="M20 11.5a7.5 7.5 0 0 1-8 7.5 8.7 8.7 0 0 1-3.2-.6L4 20l1.4-3.7A7.3 7.3 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z" /><path d="M8 12h8M8 9h5" /></>,
-    heart: <path d="M20.8 8.7c0 5.2-8.8 10.3-8.8 10.3S3.2 13.9 3.2 8.7A4.7 4.7 0 0 1 12 6.1a4.7 4.7 0 0 1 8.8 2.6Z" />,
-    user: <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>,
-    search: <><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.3 4.3" /></>,
-    shield: <><path d="M12 3 20 6v5c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-3Z" /><path d="m9 12 2 2 4-4" /></>,
-  };
-  return <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
-}
 
 function CompatibilityModal({ profile, onClose }) {
   useEffect(() => {
@@ -77,19 +64,7 @@ export function UserProfilePage() {
 
   return (
     <div className="user-profile-dashboard">
-      <aside className="dashboard-sidebar profile-sidebar">
-        <Link className="dashboard-brand" to="/buscar" aria-label="Moraê, explorar moradias"><Logo /></Link>
-        <nav className="dashboard-nav" aria-label="Menu do buscador">
-          <Link to="/"><SidebarIcon name="home" />Início</Link>
-          <Link className={!isOwnProfile ? 'selected' : ''} to="/buscar"><SidebarIcon name="search" />Buscar vagas</Link>
-          <Link className="announce-nav" to="/anunciar"><SidebarIcon name="announce" />Anunciar imóvel</Link>
-          <Link to="/mensagens"><SidebarIcon name="message" />Minhas Mensagens</Link>
-          <Link to="/buscar?favoritos=1"><SidebarIcon name="heart" />Meus Favoritos</Link>
-          <Link className={isOwnProfile ? 'selected' : ''} to="/perfil"><SidebarIcon name="user" />Meu Perfil</Link>
-        </nav>
-        <div className="sidebar-note"><SidebarIcon name="shield" /><p>Busque com mais tranquilidade. Converse com anunciantes verificados.</p></div>
-        <span className="sidebar-version">Moraê · Maceió, AL</span>
-      </aside>
+      <DashboardSidebar active={isOwnProfile ? 'profile' : 'search'} />
 
       <main className="user-profile-main">
         <header className="dashboard-topbar profile-topbar">

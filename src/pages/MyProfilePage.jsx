@@ -1,6 +1,5 @@
+import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Logo } from '../components/Logo.jsx';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
 import './MyProfilePage.css';
 
@@ -15,10 +14,6 @@ const initialProfile = {
 
 function Field({ label, value, icon, editing, onChange, type = 'text', options }) {
   return <label className="my-field"><span className="my-field-icon"><Icon name={icon} size={20} /></span><span className="my-field-copy"><span className="my-field-label">{label}</span>{editing ? options ? <select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select> : <input type={type} value={value} onChange={(event) => onChange(event.target.value)} /> : <span className="my-field-value">{type === 'date' && value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : value}</span>}</span></label>;
-}
-
-function SideLink({ to, icon, children, selected }) {
-  return <Link className={selected ? 'selected' : ''} to={to}><Icon name={icon} />{children}</Link>;
 }
 
 export function MyProfilePage() {
@@ -61,18 +56,7 @@ export function MyProfilePage() {
 
   return (
     <div className="user-profile-dashboard my-profile-dashboard">
-      <aside className="dashboard-sidebar profile-sidebar">
-        <Link className="dashboard-brand" to="/buscar" aria-label="Moraê, explorar moradias"><Logo /></Link>
-        <nav className="dashboard-nav" aria-label="Menu do estudante">
-          <SideLink to="/" icon="home">Início</SideLink>
-          <SideLink to="/buscar" icon="search">Buscar vagas</SideLink>
-          <SideLink to="/anunciar" icon="homeGroup">Anunciar imóvel</SideLink>
-          <SideLink to="/mensagens" icon="messages">Minhas Mensagens</SideLink>
-          <SideLink to="/buscar?favoritos=1" icon="heart">Meus Favoritos</SideLink>
-          <SideLink to="/perfil" icon="user" selected>Meu Perfil</SideLink>
-        </nav>
-        <span className="sidebar-version">Moraê · Maceió, AL</span>
-      </aside>
+      <DashboardSidebar active='profile' />
       <main className="user-profile-main my-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><Icon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>

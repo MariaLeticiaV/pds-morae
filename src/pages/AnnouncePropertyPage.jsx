@@ -1,3 +1,4 @@
+import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
@@ -80,18 +81,7 @@ export function AnnouncePropertyPage() {
 
   return (
     <div className="announce-dashboard">
-      <aside className="dashboard-sidebar announce-sidebar">
-        <Link className="dashboard-brand" to="/" aria-label="Moraê, página inicial"><Logo /></Link>
-        <nav className="dashboard-nav" aria-label="Menu principal">
-          <Link to="/"><LineIcon name="home" />Início</Link>
-          <Link to="/buscar"><LineIcon name="search" />Buscar vagas</Link>
-          <Link className="selected" to="/anunciar"><LineIcon name="homeGroup" />Anunciar imóvel</Link>
-          <Link to="/mensagens"><LineIcon name="message" />Minhas Mensagens</Link>
-          <Link to="/buscar?favoritos=1"><LineIcon name="heart" />Meus Favoritos</Link>
-          <Link to="/perfil"><LineIcon name="user" />Meu Perfil</Link>
-        </nav>
-        <span className="sidebar-version">Moraê · Maceió, AL</span>
-      </aside>
+      <DashboardSidebar active='announce' />
 
       <main className="announce-main">
         <header className="dashboard-topbar announce-topbar">

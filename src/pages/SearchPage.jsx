@@ -1,3 +1,4 @@
+import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
@@ -147,19 +148,7 @@ export function SearchPage() {
 
   return (
     <div className="search-dashboard">
-      <aside className="dashboard-sidebar">
-        <Link className="dashboard-brand" to="/" aria-label="Moraê, voltar ao início"><Logo /></Link>
-        <nav className="dashboard-nav" aria-label="Menu do buscador">
-          <Link to="/"><Icon name="home" />Início</Link>
-          <Link className={!showFavorites ? 'selected' : ''} to="/buscar" onClick={() => setShowFavorites(false)}><Icon name="search" />Buscar vagas</Link>
-          <Link className="announce-nav" to="/anunciar"><Icon name="announce" />Anunciar imóvel</Link>
-          <Link to="/mensagens"><Icon name="message" />Minhas Mensagens</Link>
-          <button className={showFavorites ? 'selected' : ''} onClick={() => setShowFavorites(true)}><Icon name="heart" />Meus Favoritos{favorites.length > 0 && <span className="nav-count">{favorites.length}</span>}</button>
-          <Link to="/perfil"><Icon name="user" />Meu Perfil</Link>
-        </nav>
-        <div className="sidebar-note"><Icon name="shield" size={19} /><p>Busque com mais tranquilidade. Converse com anunciantes verificados.</p></div>
-        <span className="sidebar-version">Moraê · Maceió, AL</span>
-      </aside>
+      <DashboardSidebar active={showFavorites ? 'favorites' : 'search'} />
 
       <div className="dashboard-main">
         <header className="dashboard-topbar">
