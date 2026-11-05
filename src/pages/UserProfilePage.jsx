@@ -2,6 +2,7 @@ import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
+import { getDemoUser } from '../utils/demoUser.js';
 import './UserProfilePage.css';
 
 const profiles = {
@@ -57,6 +58,8 @@ function CompatibilityModal({ profile, onClose }) {
 
 export function UserProfilePage() {
   const { id } = useParams();
+  const demoUser = getDemoUser();
+  const displayName = demoUser?.name || 'Aluno';
   const isOwnProfile = !id;
   const profile = profiles[id] ?? profiles['ana-beatriz'];
   const [showCompatibility, setShowCompatibility] = useState(false);
@@ -69,7 +72,7 @@ export function UserProfilePage() {
       <main className="user-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><span aria-hidden="true">⌕</span><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="profile-small-avatar">A</span><span>Olá, Aluno</span><span className="profile-top-chevron" /></div>
+          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {displayName}</span><span className="profile-top-chevron" /></div>
         </header>
         <div className="profile-page-content">
           <section className="profile-hero">

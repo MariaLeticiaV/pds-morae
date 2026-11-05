@@ -1,0 +1,43 @@
+.property-detail-shell { --detail-teal:#008b8c; --detail-ink:#23463b; display:flex; width:100%; min-width:0; min-height:0; height:100%; color:var(--detail-ink); background:#f7f6f2; font-family:'Montserrat Alternates',sans-serif; }
+.property-detail-main { display:flex; min-width:0; flex:1; flex-direction:column; overflow:auto; }
+.property-detail-topbar { color:var(--detail-teal); font-size:13px; font-weight:600; }
+.property-detail-greeting { margin-left:auto; }
+.detail-back-link,.property-detail-back { color:var(--detail-teal); text-decoration:none; }
+.property-detail-content { width:min(100%,1280px); margin:0 auto; padding:22px clamp(18px,3vw,44px) 42px; }
+.property-detail-back { display:inline-block; margin-bottom:18px; font-size:13px; font-weight:600; }
+.property-detail-grid { display:grid; grid-template-columns:minmax(0,1fr) 280px; align-items:start; gap:20px; }
+.property-detail-card,.property-contact-card { overflow:hidden; border:1px solid #c7e7e4; border-radius:18px; background:white; box-shadow:0 4px 15px rgba(35,70,59,.06); }
+.property-detail-card > .owner-property-photo { min-height:310px; }
+.property-detail-copy { padding:25px 30px 30px; }
+.property-detail-eyebrow { color:#008b8c; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+.property-detail-copy h1 { margin:8px 0 12px; color:#008b8c; font-size:clamp(24px,3vw,34px); line-height:1.2; }
+.property-detail-location { display:flex; flex-wrap:wrap; align-items:center; gap:8px; color:#476e6a; font-size:13px; }
+.property-detail-location span { margin-left:6px; color:#789190; }
+.property-detail-price { display:block; margin:18px 0; color:#007d80; font-size:25px; }
+.property-detail-price small { margin-left:5px; font-size:14px; font-weight:500; }
+.property-detail-description { max-width:750px; color:#47615e; font-size:14px; line-height:1.7; }
+.property-detail-copy h2 { margin:25px 0 13px; color:#007d80; font-size:17px; }
+.property-detail-facts { display:flex; flex-wrap:wrap; gap:12px; }
+.property-detail-facts span { display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:12px; color:#315d59; background:#effaf6; font-size:12px; }
+.property-detail-facts svg,.property-safety-note svg { width:19px; height:19px; color:#008b8c; }
+.property-detail-amenities { display:flex; flex-wrap:wrap; gap:9px; }
+.property-detail-amenities span { padding:8px 12px; border-radius:20px; color:#007d80; background:#e6f8ef; font-size:12px; }
+.property-contact-card { display:flex; align-items:center; flex-direction:column; padding:23px 20px; text-align:center; }
+.property-contact-card h2 { align-self:flex-start; margin:0 0 16px; color:#007d80; font-size:17px; }
+.property-host-avatar { display:grid; width:58px; height:58px; place-items:center; margin:0 0 10px; border-radius:50%; color:#007d80; background:#d9f3ee; font-size:24px; font-weight:700; }
+.property-contact-card > strong { color:#23463b; font-size:15px; }
+.property-contact-card > span { margin-top:5px; color:#789190; font-size:11px; }
+.property-message-button,.property-interest-button { display:flex; width:100%; min-height:42px; align-items:center; justify-content:center; gap:8px; margin-top:17px; border:1px solid #008b8c; border-radius:24px; color:white; background:#008b8c; font-family:inherit; font-size:12px; font-weight:600; text-decoration:none; cursor:pointer; }
+.property-message-button svg { width:17px; height:17px; }
+.property-interest-button { margin-top:9px; color:#007d80; background:white; }
+.property-safety-note { display:flex; gap:8px; margin:20px 0 0; color:#617c79; font-size:11px; line-height:1.5; text-align:left; }
+.property-detail-empty { padding:50px; color:#23463b; font-family:'Montserrat Alternates',sans-serif; }
+.property-detail-empty a { color:#008b8c; }
+.owner-detail-shell .property-detail-content { padding-top:26px; }
+.owner-detail-shell .property-detail-card > .owner-property-photo { min-height:300px; }
+.owner-property-card { cursor:pointer; transition:box-shadow .18s ease,transform .18s ease; }
+.owner-property-card:hover,.owner-property-card:focus-visible { outline:none; box-shadow:0 7px 20px rgba(0,115,115,.14); transform:translateY(-2px); }
+.listing-card { cursor:pointer; transition:box-shadow .18s ease,transform .18s ease; }
+.listing-card:hover,.listing-card:focus-visible { outline:2px solid #9ed8d5; outline-offset:2px; box-shadow:0 8px 20px rgba(35,70,59,.14); transform:translateY(-2px); }
+@media(max-width:800px) { .property-detail-grid { grid-template-columns:minmax(0,1fr); } .property-contact-card { align-items:stretch; } .property-contact-card h2 { align-self:auto; } .property-host-avatar { align-self:center; } .property-contact-card > strong,.property-contact-card > span { text-align:center; } }
+@media(max-width:600px) { .property-detail-topbar { min-height:60px; padding:10px 13px; } .property-detail-topbar > span:nth-child(2) { display:none; } .property-detail-content { padding:15px 12px 25px; } .property-detail-card > .owner-property-photo,.owner-detail-shell .property-detail-card > .owner-property-photo { min-height:205px; } .property-detail-copy { padding:18px; } .property-detail-copy h1 { font-size:22px; } .property-detail-copy h2 { font-size:15px; } .property-detail-description { font-size:12px; } }

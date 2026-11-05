@@ -1,5 +1,6 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
+import { saveDemoUser } from '../utils/demoUser.js';
 import './SignupPage.css';
 
 const profiles = [
@@ -70,7 +71,10 @@ export function SignupPage() {
   function submitStep(event) {
     event.preventDefault();
     if (activeStep < activeProfile.steps.length) setActiveStep((step) => step + 1);
-    else setCompleted(true);
+    else {
+      saveDemoUser(answers.fullName, profileId);
+      setCompleted(true);
+    }
     pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -78,6 +82,7 @@ export function SignupPage() {
     return <>
       <div className="signup-form-grid">
         <Field label="Nome completo" name="fullName" required value={answers.fullName} onChange={updateAnswer} />
+        <Field label="E-mail" name="email" type="email" required placeholder="seuemail@exemplo.com" value={answers.email} onChange={updateAnswer} />
         <Field label="CPF" name="cpf" required placeholder="000.000.000-00" value={answers.cpf} onChange={updateAnswer} />
         <Field label="Data de nascimento" name="birthDate" type="date" required value={answers.birthDate} onChange={updateAnswer} />
         <SelectField label="País" name="country" options={['Brasil', 'Outro']} required value={answers.country} onChange={updateAnswer} />

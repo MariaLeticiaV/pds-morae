@@ -1,7 +1,8 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
+import { getDemoUser } from '../utils/demoUser.js';
 import './SearchPage.css';
 
 const properties = [
@@ -48,8 +49,10 @@ function PropertyIllustration({ scene }) {
 }
 
 function PropertyCard({ property, favorite, onFavorite }) {
+  const navigate = useNavigate();
+  function openProperty() { navigate(`/imoveis/${property.id}`); }
   return (
-    <article className="listing-card">
+    <article className="listing-card" role="link" tabIndex={0} aria-label={`Ver detalhes de ${property.name}`} onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
       <div className="listing-image-wrap">
         <PropertyIllustration scene={property.scene} />
         <span className="listing-photo-count">1 / 6</span>
@@ -107,6 +110,9 @@ export function SearchPage() {
   const showFavorites = searchParams.get('favoritos') === '1';
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
+  const demoUser = getDemoUser();
+  const displayName = demoUser?.name || 'Aluno';
+  const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
 
   useEffect(() => {
     try {
@@ -160,7 +166,7 @@ export function SearchPage() {
           <div className="topbar-actions">
             <button className="icon-button notification-button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><Icon name="bell" size={22} /><i /></button>
             <span className="topbar-divider" />
-            <button className="profile-menu" onClick={() => setNotification('Olá, Aluno! Seu perfil ainda está em demonstração.')}><span className="profile-avatar">A</span><span>Olá, Aluno</span><span className="chevron" aria-hidden="true" /></button>
+            <button className="profile-menu" onClick={() => setNotification(`Olá, ${displayName}! Seu perfil está em demonstração.`)}><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></button>
           </div>
           {notification && <div className="notification-popover"><button onClick={() => setNotification('')} aria-label="Fechar"><Icon name="close" size={15} /></button>{notification}</div>}
         </header>

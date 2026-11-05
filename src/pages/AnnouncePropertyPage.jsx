@@ -1,6 +1,7 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { LineIcon } from '../components/LineIcon.jsx';
+import { getDemoUser } from '../utils/demoUser.js';
 import './AnnouncePropertyPage.css';
 
 const steps = [
@@ -25,6 +26,8 @@ function SectionHeading({ title, description }) {
 }
 
 export function AnnouncePropertyPage() {
+  const displayName = getDemoUser()?.name || 'Aluno';
+  const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const [photos, setPhotos] = useState([]);
   const [video, setVideo] = useState(null);
   const [status, setStatus] = useState('');
@@ -84,7 +87,7 @@ export function AnnouncePropertyPage() {
       <main className="announce-main">
         <header className="dashboard-topbar announce-topbar">
           <label className="announce-global-search"><LineIcon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="announce-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="announce-user-avatar">A</span><span>Olá, Aluno</span></div>
+          <div className="announce-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="announce-user-avatar">{avatarInitial}</span><span>Olá, {displayName}</span></div>
         </header>
 
         <div className="announce-content">

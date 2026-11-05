@@ -1,6 +1,7 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useMemo, useRef, useState } from 'react';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
+import { getDemoUser } from '../utils/demoUser.js';
 import './MyProfilePage.css';
 
 const initialProfile = {
@@ -17,6 +18,7 @@ function Field({ label, value, icon, editing, onChange, type = 'text', options }
 }
 
 export function MyProfilePage() {
+  const demoUser = getDemoUser();
   const [profile, setProfile] = useState(() => {
     try { return { ...initialProfile, ...JSON.parse(localStorage.getItem('morae.profile.ana-beatriz') || '{}') }; }
     catch { return initialProfile; }
@@ -60,7 +62,7 @@ export function MyProfilePage() {
       <main className="user-profile-main my-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><Icon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><span className="profile-small-avatar">{initials[0]}</span><span>Olá, {profile.name.split(' ')[0]}</span><span className="profile-top-chevron" /></div>
+          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><span className="profile-small-avatar">{(demoUser?.name || profile.name).charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {demoUser?.name || profile.name}</span><span className="profile-top-chevron" /></div>
         </header>
         <form className="my-profile-content" onSubmit={saveProfile}>
           <div className="my-profile-heading"><div><p className="my-profile-kicker">Minha conta</p><h1>Meu Perfil</h1></div>{editing ? <div className="my-profile-actions"><button type="button" className="my-cancel" onClick={cancelEdit}>Cancelar</button><button type="submit" className="my-save">Salvar alterações</button></div> : <button type="button" className="my-edit-button" onClick={beginEdit}><Icon name="edit" size={17} />Editar perfil</button>}</div>
