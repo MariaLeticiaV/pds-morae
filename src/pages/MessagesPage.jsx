@@ -1,6 +1,6 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import './MessagesPage.css';
@@ -105,7 +105,7 @@ export function MessagesPage() {
       <main className="messages-main">
         <header className="dashboard-topbar messages-topbar">
           <label className="messages-global-search"><LineIcon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="messages-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="messages-divider" /><span className="messages-user-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="messages-chevron" /></div>
+          <div className="messages-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="messages-divider" /><span className="messages-user-avatar">{avatarInitial}</span><Link to="/perfil">Olá, {displayName}</Link><span className="messages-chevron" /></div>
         </header>
 
         <div className="messages-content">

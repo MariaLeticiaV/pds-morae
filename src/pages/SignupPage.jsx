@@ -45,7 +45,7 @@ export function SignupPage() {
   const requestedProfile = searchParams.get('perfil');
   const [profileId, setProfileId] = useState(() => profiles.some(({ id }) => id === requestedProfile) ? requestedProfile : '');
   const [activeStep, setActiveStep] = useState(1);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState({ state: 'Alagoas', propertyState: 'Alagoas', listingState: 'Alagoas' });
   const [completed, setCompleted] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const activeProfile = profiles.find(({ id }) => id === profileId);
@@ -66,7 +66,7 @@ export function SignupPage() {
   function chooseProfile(id) {
     setProfileId(id);
     setActiveStep(1);
-    setAnswers({});
+    setAnswers({ state: 'Alagoas', propertyState: 'Alagoas', listingState: 'Alagoas' });
     setCompleted(false);
     setPasswordError('');
   }
@@ -97,7 +97,7 @@ export function SignupPage() {
         <Field label="CPF" name="cpf" required placeholder="000.000.000-00" value={answers.cpf} onChange={updateAnswer} />
         <Field label="Data de nascimento" name="birthDate" type="date" required value={answers.birthDate} onChange={updateAnswer} />
         <SelectField label="País" name="country" options={['Brasil', 'Outro']} required value={answers.country} onChange={updateAnswer} />
-        <SelectField label="Estado" name="state" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.state} onChange={updateAnswer} />
+        <SelectField label="Estado" name="state" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.state ?? 'Alagoas'} onChange={updateAnswer} />
         <Field label="Cidade" name="city" required value={answers.city} onChange={updateAnswer} />
         <Field label="Universidade ou instituição" name="university" required value={answers.university} onChange={updateAnswer} />
         <Field label="Campus" name="campus" required value={answers.campus} onChange={updateAnswer} />
@@ -125,7 +125,7 @@ export function SignupPage() {
         <Field label="CEP" name="zip" required placeholder="00000-000" value={answers.zip} onChange={updateAnswer} />
         <Field label="Endereço" name="address" required placeholder="Rua, avenida e número" value={answers.address} onChange={updateAnswer} />
         <Field label="Cidade" name="city" required value={answers.city} onChange={updateAnswer} />
-        <SelectField label="Estado" name="state" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.state} onChange={updateAnswer} />
+        <SelectField label="Estado" name="state" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.state ?? 'Alagoas'} onChange={updateAnswer} />
         <Field label="Bairro" name="neighborhood" required value={answers.neighborhood} onChange={updateAnswer} />
       </div>
       <p className="signup-privacy">Seus dados estão seguros. Usaremos essas informações apenas para cadastro e validação na plataforma.</p>
@@ -175,6 +175,7 @@ export function SignupPage() {
         <Field label="Vagas disponíveis" name="vacancies" type="number" min="1" required value={answers.vacancies} onChange={updateAnswer} />
         <Field label="Valor do aluguel (R$)" name="rent" type="number" min="0" required value={answers.rent} onChange={updateAnswer} />
         <Field label="Despesas mensais aproximadas (R$)" name="expenses" type="number" min="0" required value={answers.expenses} onChange={updateAnswer} />
+        <SelectField label="Estado do imóvel" name="listingState" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.listingState ?? 'Alagoas'} onChange={updateAnswer} />
         <Field label="Distância do campus" name="campusDistance" placeholder="Ex.: 1,5 km" value={answers.campusDistance} onChange={updateAnswer} />
         <Field label="Bairro" name="neighborhood" required value={answers.neighborhood} onChange={updateAnswer} />
         <CheckGroup label="Comodidades disponíveis" name="amenities" options={amenities} values={answers.amenities} onToggle={toggleOption} />
@@ -190,7 +191,7 @@ export function SignupPage() {
       <p className="signup-step-intro">Informe os detalhes do imóvel que deseja anunciar.</p>
       <div className="signup-form-grid">
         <Field label="CEP" name="propertyZip" required value={answers.propertyZip} onChange={updateAnswer} />
-        <Field label="Estado" name="propertyState" required value={answers.propertyState} onChange={updateAnswer} />
+        <SelectField label="Estado do imóvel" name="propertyState" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.propertyState ?? 'Alagoas'} onChange={updateAnswer} />
         <Field label="Cidade" name="propertyCity" required value={answers.propertyCity} onChange={updateAnswer} />
         <Field label="Bairro" name="propertyNeighborhood" required value={answers.propertyNeighborhood} onChange={updateAnswer} />
         <Field label="Rua" name="propertyStreet" required value={answers.propertyStreet} onChange={updateAnswer} />

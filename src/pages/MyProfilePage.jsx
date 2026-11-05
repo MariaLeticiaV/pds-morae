@@ -1,5 +1,7 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
+import { OwnerSidebar } from './OwnerDashboardPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import './MyProfilePage.css';
@@ -73,11 +75,11 @@ export function MyProfilePage() {
 
   return (
     <div className="user-profile-dashboard my-profile-dashboard">
-      <DashboardSidebar active='profile' />
+      {demoUser?.role === 'proprietario' || demoUser?.role === 'ofertante' ? <OwnerSidebar pathname="/perfil" role={demoUser.role} /> : <DashboardSidebar active='profile' />}
       <main className="user-profile-main my-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><Icon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><span className="profile-small-avatar">{(demoUser?.name || profile.name).charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {demoUser?.name || profile.name}</span><span className="profile-top-chevron" /></div>
+          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><Link to="/perfil" className="profile-greeting-link"><span className="profile-small-avatar">{(demoUser?.name || profile.name).charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {demoUser?.name || profile.name}</span><span className="profile-top-chevron" /></Link></div>
         </header>
         <form className="my-profile-content" onSubmit={saveProfile}>
           <div className="my-profile-heading"><div><p className="my-profile-kicker">Minha conta</p><h1>Meu Perfil</h1></div>{editing ? <div className="my-profile-actions"><button type="button" className="my-cancel" onClick={cancelEdit}>Cancelar</button><button type="submit" className="my-save">Salvar alterações</button></div> : <button type="button" className="my-edit-button" onClick={beginEdit}><Icon name="edit" size={17} />Editar perfil</button>}</div>

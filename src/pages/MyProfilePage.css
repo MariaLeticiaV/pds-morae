@@ -1,5 +1,7 @@
 .my-profile-dashboard { --profile-teal: #008b8c; --profile-ink: #285d5e; --profile-muted: #87adae; --profile-mint: #e5f8ef; background: #fff; }
 .my-profile-main { background: #fff; }
+.my-profile-main .profile-top-actions { display:flex; align-items:center; gap:9px; color:#168485; font-size:10px; font-weight:600; }
+.my-profile-main .profile-greeting-link { display:flex; align-items:center; gap:9px; color:inherit; }
 .my-profile-content { display: flex; width: 100%; max-width: 1720px; flex-direction: column; gap: 14px; margin: 0 auto; padding: 18px clamp(18px, 2vw, 32px) 40px; }
 .my-profile-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .my-profile-heading h1 { margin: 0; color: #078889; font-family: 'Poppins', sans-serif; font-size: 22px; }

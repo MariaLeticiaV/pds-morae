@@ -48,7 +48,7 @@ export function PropertyDetailPage() {
   return <div className={`property-detail-shell${isOwner ? ' owner-detail-shell' : ''}`}>
     {isOwner ? <OwnerSidebar pathname={pathname} role={role} /> : <DashboardSidebar active="search" />}
     <main className="property-detail-main">
-      {isOwner ? <OwnerTopbar query={query} setQuery={setQuery} role={role} /> : <header className="dashboard-topbar property-detail-topbar"><Link className="detail-back-link" to={backPath}>← Voltar</Link><span>Detalhes do imóvel</span><span className="property-detail-greeting">Olá, {user?.name || 'Aluno'}</span></header>}
+      {isOwner ? <OwnerTopbar query={query} setQuery={setQuery} role={role} /> : <header className="dashboard-topbar property-detail-topbar"><Link className="detail-back-link" to={backPath}>← Voltar</Link><span>Detalhes do imóvel</span><Link className="property-detail-greeting" to="/perfil">Olá, {user?.name || 'Aluno'}</Link></header>}
       <div className="property-detail-content">
         <Link className="property-detail-back" to={backPath}>← Voltar aos anúncios</Link>
         <div className="property-detail-grid">

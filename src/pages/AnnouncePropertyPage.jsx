@@ -1,6 +1,6 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing, saveDemoListing } from '../utils/demoListings.js';
@@ -125,7 +125,7 @@ export function AnnouncePropertyPage() {
       <main className="announce-main">
         <header className="dashboard-topbar announce-topbar">
           <label className="announce-global-search"><LineIcon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="announce-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="announce-user-avatar">{avatarInitial}</span><span>Olá, {displayName}</span></div>
+          <div className="announce-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><span className="announce-user-avatar">{avatarInitial}</span><Link to="/perfil">Olá, {displayName}</Link></div>
         </header>
 
         <div className="announce-content">
@@ -166,7 +166,7 @@ export function AnnouncePropertyPage() {
               <SectionHeading title="Endereço do imóvel" description="Informe onde o imóvel está localizado." />
               <div className="announce-fields-grid address-fields">
                 <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="Digite o CEP" required /></FormField>
-                <FormField label="Estado *"><select name="state" defaultValue="" autoComplete="address-level1" required><option value="" disabled>Selecione</option><option value="AL">Alagoas</option><option value="PE">Pernambuco</option><option value="SE">Sergipe</option><option value="BA">Bahia</option></select></FormField>
+                <FormField label="Estado *"><select name="state" defaultValue="AL" autoComplete="address-level1" required><option value="" disabled>Selecione</option><option value="AL">Alagoas</option><option value="PE">Pernambuco</option><option value="SE">Sergipe</option><option value="BA">Bahia</option></select></FormField>
                 <FormField label="Rua *" className="field-wide"><input name="street" autoComplete="street-address" placeholder="Ex.: Rua Exemplo" required /></FormField>
                 <FormField label="Número *"><input name="number" inputMode="numeric" placeholder="Ex.: 11243" required /></FormField>
                 <FormField label="Complemento"><input name="complement" placeholder="Ex.: Ap. 110, Bloco A" /></FormField>

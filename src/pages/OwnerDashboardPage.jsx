@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
@@ -75,7 +75,7 @@ export function OwnerTopbar({ query, setQuery, role }) {
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   return <header className="dashboard-topbar owner-topbar">
     <label className="owner-search"><LineIcon name="search" size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={isOfferer ? 'Buscar por pessoa, vaga ou contrato...' : 'Buscar por imóvel, interessado ou contrato...'} aria-label={`Buscar no painel do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`} /></label>
-    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><button className="profile-menu" type="button" onClick={() => setNotice((open) => !open)}><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" /></button></div>
+    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><Link className="profile-menu" to="/perfil"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" /></Link></div>
     {notice && <div className="owner-notice"><strong>Olá, {displayName}!</strong><span>Você tem interessados aguardando resposta.</span></div>}
   </header>;
 }
@@ -143,16 +143,30 @@ function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) 
   const isOfferer = role === 'ofertante';
   const roleProperties = isOfferer ? offererListings : properties;
   const roleApplicants = isOfferer ? offererApplicants : applicants;
+  const [applicantStatuses, setApplicantStatuses] = useState(() => {
+    const initialStatuses = Object.fromEntries(roleApplicants.map((applicant) => [`${applicant.property}:${applicant.id}:${applicant.name}`, applicant.status]));
+    try { return { ...initialStatuses, ...JSON.parse(localStorage.getItem(`morae.applicant-statuses.${role}`) || '{}') }; }
+    catch { return initialStatuses; }
+  });
   const [filter, setFilter] = useState('Todos');
   const property = roleProperties.find(({ id }) => id === selectedProperty) ?? roleProperties[0];
-  const filteredApplicants = roleApplicants.filter((applicant) => (applicant.property === property.id) && (filter === 'Todos' || applicant.status === filter) && (!query || `${applicant.name} ${applicant.course} ${applicant.university}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))));
+  const statusFor = (applicant) => applicantStatuses[`${applicant.property}:${applicant.id}:${applicant.name}`] ?? applicant.status;
+  const propertyApplicants = roleApplicants.filter((applicant) => applicant.property === property.id);
+  const filteredApplicants = propertyApplicants.filter((applicant) => (filter === 'Todos' || statusFor(applicant) === filter) && (!query || `${applicant.name} ${applicant.course} ${applicant.university}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))));
   const filters = ['Todos', 'Em conversa', 'Aguardando resposta', 'Recusado'];
+  useEffect(() => {
+    try { localStorage.setItem(`morae.applicant-statuses.${role}`, JSON.stringify(applicantStatuses)); }
+    catch { /* A ação continua disponível durante a sessão, mesmo sem armazenamento local. */ }
+  }, [applicantStatuses, role]);
+  function rejectApplicant(applicant) {
+    setApplicantStatuses((current) => ({ ...current, [`${applicant.property}:${applicant.id}:${applicant.name}`]: 'Recusado' }));
+  }
   return <div className="owner-content">
     <section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="users" size={28} /></span><div><h1>{isOfferer ? 'Interessados na sua vaga' : 'Interessados no seu imóvel'}</h1><p>Pessoas que demonstraram interesse no seu anúncio e estão em contato com você.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
     <section className="owner-selected-property"><PropertyPhoto type={property.image} /><div><h2>{property.title}</h2><p><LineIcon name="pin" size={14} />{property.neighborhood} · Maceió/AL</p><div><span><LineIcon name="home" size={13} />{property.type}</span><span><LineIcon name="homeGroup" size={13} />{property.room}</span><span><LineIcon name="users" size={13} />{property.residents} moradores</span></div></div><span className="owner-status published">Ativo</span><Link to={`/imoveis/${property.id}`}>Ver anúncio <LineIcon name="arrow" size={15} /></Link></section>
     <label className="owner-property-select">{isOfferer ? 'Vaga selecionada' : 'Imóvel selecionado'}<select value={property.id} onChange={(event) => setSelectedProperty(event.target.value)}>{roleProperties.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}</select></label>
-    <div className="owner-applicant-toolbar"><div className="owner-applicant-filters" role="group" aria-label="Filtrar interessados">{filters.map((item) => <button className={filter === item ? 'active' : ''} type="button" onClick={() => setFilter(item)} key={item}>{item}<small>{item === 'Todos' ? roleApplicants.filter((applicant) => applicant.property === property.id).length : roleApplicants.filter((applicant) => applicant.property === property.id && applicant.status === item).length}</small></button>)}</div><label className="owner-sort">Ordenar por<select defaultValue="recent"><option value="recent">Mais recentes</option><option value="name">Nome</option></select></label></div>
-    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant, index) => { const contactId = `estudante-${applicant.name.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-')}`; const chatParams = new URLSearchParams({ contato: contactId, nome: applicant.name, papel: 'Estudante', imovel: property.title }); return <article className="owner-applicant-card" key={`${applicant.name}-${index}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p></div><span className={`owner-applicant-status ${applicant.status === 'Em conversa' ? 'chatting' : applicant.status === 'Recusado' ? 'declined' : 'waiting'}`}>{applicant.status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to={`/mensagens?${chatParams.toString()}`}><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link></div></article>; }) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
+    <div className="owner-applicant-toolbar"><div className="owner-applicant-filters" role="group" aria-label="Filtrar interessados">{filters.map((item) => <button className={filter === item ? 'active' : ''} type="button" onClick={() => setFilter(item)} key={item}>{item}<small>{item === 'Todos' ? propertyApplicants.length : propertyApplicants.filter((applicant) => statusFor(applicant) === item).length}</small></button>)}</div><label className="owner-sort">Ordenar por<select defaultValue="recent"><option value="recent">Mais recentes</option><option value="name">Nome</option></select></label></div>
+    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant) => { const status = statusFor(applicant); const contactId = `estudante-${applicant.name.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-')}`; const chatParams = new URLSearchParams({ contato: contactId, nome: applicant.name, papel: 'Estudante', imovel: property.title }); return <article className="owner-applicant-card" key={`${applicant.property}:${applicant.id}:${applicant.name}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p></div><span className={`owner-applicant-status ${status === 'Em conversa' ? 'chatting' : status === 'Recusado' ? 'declined' : 'waiting'}`}>{status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to={`/mensagens?${chatParams.toString()}`}><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link>{status !== 'Recusado' && <button type="button" onClick={() => rejectApplicant(applicant)} aria-label={`Recusar ${applicant.name}`}>Recusar</button>}</div></article>; }) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
   </div>;
 }
 
