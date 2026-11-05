@@ -1,5 +1,6 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import './MessagesPage.css';
@@ -36,6 +37,7 @@ function MessageBubble({ message }) {
 }
 
 export function MessagesPage() {
+  const [searchParams] = useSearchParams();
   const displayName = getDemoUser()?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const [conversations, setConversations] = useState(initialConversations);
@@ -44,11 +46,35 @@ export function MessagesPage() {
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState('');
   const [attachment, setAttachment] = useState(null);
+  const requestedContactId = searchParams.get('contato');
+  const requestedContactName = searchParams.get('nome');
+  const requestedContactRole = searchParams.get('papel') || 'Anunciante';
+  const requestedListingName = searchParams.get('imovel');
+  useEffect(() => {
+    if (!requestedContactId) return;
+    setConversations((current) => {
+      const existing = current.find((conversation) => conversation.id === requestedContactId);
+      if (existing) return current;
+      const contactName = requestedContactName || 'Anunciante';
+      const listingContext = requestedListingName ? ` sobre ${requestedListingName}` : '';
+      return [{
+        id: requestedContactId,
+        name: contactName,
+        role: requestedContactRole,
+        time: 'Agora',
+        online: false,
+        unread: 0,
+        preview: `Inicie uma conversa${listingContext}.`,
+        messages: [{ id: 1, fromMe: false, text: `Olá! Esta conversa é com ${contactName}. Você pode conversar sobre o anúncio${requestedListingName ? ` “${requestedListingName}”` : ''} por aqui.`, time: 'Agora' }],
+      }, ...current];
+    });
+    setActiveId(requestedContactId);
+  }, [requestedContactId, requestedContactName, requestedContactRole, requestedListingName]);
   const activeConversation = conversations.find((conversation) => conversation.id === activeId) ?? conversations[0];
   const visibleConversations = useMemo(() => conversations.filter((conversation) => {
     const matchesFilter = activeFilter === 'Todas'
-      || (activeFilter === 'Proprietários' && conversation.role === 'Proprietária')
-      || (activeFilter === 'Estudantes' && conversation.role === 'Estudante')
+      || (activeFilter === 'Proprietários' && conversation.role.toLocaleLowerCase('pt-BR').includes('propriet'))
+      || (activeFilter === 'Estudantes' && (conversation.role.toLocaleLowerCase('pt-BR').includes('estudante') || conversation.role.toLocaleLowerCase('pt-BR').includes('ofertador')))
       || (activeFilter === 'Suporte' && conversation.role === 'Suporte');
     const query = search.trim().toLocaleLowerCase('pt-BR');
     return matchesFilter && (!query || `${conversation.name} ${conversation.role} ${conversation.preview}`.toLocaleLowerCase('pt-BR').includes(query));

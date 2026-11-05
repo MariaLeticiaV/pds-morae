@@ -3,6 +3,7 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
+import { getDemoListing } from '../utils/demoListings.js';
 import './OwnerDashboardPage.css';
 
 const properties = [
@@ -85,15 +86,17 @@ export function PropertyPhoto({ type }) {
 
 function PropertyCard({ property, query = '', basePath = '/proprietario' }) {
   const navigate = useNavigate();
-  const matchesQuery = !query || `${property.title} ${property.neighborhood} ${property.type}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'));
+  const savedListing = getDemoListing(property.id);
+  const displayedProperty = savedListing ? { ...property, title: savedListing.listingTitle || property.title, neighborhood: savedListing.neighborhood || property.neighborhood, type: savedListing.propertyType || property.type, room: savedListing.rooms ? `${savedListing.rooms} quartos` : property.room, rent: Number(savedListing.rent || property.rent) } : property;
+  const matchesQuery = !query || `${displayedProperty.title} ${displayedProperty.neighborhood} ${displayedProperty.type}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'));
   if (!matchesQuery) return null;
-  const openProperty = () => navigate(`/imoveis/${property.id}`);
-  return <article className="owner-property-card" role="link" tabIndex={0} aria-label={`Ver detalhes de ${property.title}`} onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
-    <PropertyPhoto type={property.image} />
-    <div className="owner-property-info"><div className="owner-property-title-row"><h3>{property.title}</h3><span className={`owner-status ${['Publicado', 'Ativa'].includes(property.status) ? 'published' : 'reviewing'}`}>{property.status}</span></div>
-      <p className="owner-property-location"><LineIcon name="pin" size={14} />{property.neighborhood} · Maceió/AL</p>
-      <div className="owner-property-meta"><span><LineIcon name="home" size={14} />{property.type}</span><span><LineIcon name="homeGroup" size={14} />{property.room}</span><span><LineIcon name="users" size={14} />{property.residents} moradores</span></div>
-      <div className="owner-property-bottom"><strong>{property.rent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<small>/mês</small></strong><span><LineIcon name="users" size={14} />{property.interested} interessados</span></div>
+  const openProperty = () => navigate(`/imoveis/${displayedProperty.id}`);
+  return <article className="owner-property-card" role="link" tabIndex={0} aria-label={`Ver detalhes de ${displayedProperty.title}`} onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
+    <PropertyPhoto type={displayedProperty.image} />
+    <div className="owner-property-info"><div className="owner-property-title-row"><h3>{displayedProperty.title}</h3><span className={`owner-status ${['Publicado', 'Ativa'].includes(displayedProperty.status) ? 'published' : 'reviewing'}`}>{displayedProperty.status}</span></div>
+      <p className="owner-property-location"><LineIcon name="pin" size={14} />{displayedProperty.neighborhood} · Maceió/AL</p>
+      <div className="owner-property-meta"><span><LineIcon name="home" size={14} />{displayedProperty.type}</span><span><LineIcon name="homeGroup" size={14} />{displayedProperty.room}</span><span><LineIcon name="users" size={14} />{displayedProperty.residents} moradores</span></div>
+      <div className="owner-property-bottom"><strong>{displayedProperty.rent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<small>/mês</small></strong><span><LineIcon name="users" size={14} />{displayedProperty.interested} interessados</span></div>
       <div className="owner-property-actions"><Link to={`/anunciar?editar=${property.id}`}><LineIcon name="edit" size={14} />Editar</Link><Link to={`${basePath}/interessados?imovel=${property.id}`}><LineIcon name="users" size={14} />Ver interessados</Link></div>
     </div>
   </article>;
@@ -149,7 +152,7 @@ function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) 
     <section className="owner-selected-property"><PropertyPhoto type={property.image} /><div><h2>{property.title}</h2><p><LineIcon name="pin" size={14} />{property.neighborhood} · Maceió/AL</p><div><span><LineIcon name="home" size={13} />{property.type}</span><span><LineIcon name="homeGroup" size={13} />{property.room}</span><span><LineIcon name="users" size={13} />{property.residents} moradores</span></div></div><span className="owner-status published">Ativo</span><Link to={`/imoveis/${property.id}`}>Ver anúncio <LineIcon name="arrow" size={15} /></Link></section>
     <label className="owner-property-select">{isOfferer ? 'Vaga selecionada' : 'Imóvel selecionado'}<select value={property.id} onChange={(event) => setSelectedProperty(event.target.value)}>{roleProperties.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}</select></label>
     <div className="owner-applicant-toolbar"><div className="owner-applicant-filters" role="group" aria-label="Filtrar interessados">{filters.map((item) => <button className={filter === item ? 'active' : ''} type="button" onClick={() => setFilter(item)} key={item}>{item}<small>{item === 'Todos' ? roleApplicants.filter((applicant) => applicant.property === property.id).length : roleApplicants.filter((applicant) => applicant.property === property.id && applicant.status === item).length}</small></button>)}</div><label className="owner-sort">Ordenar por<select defaultValue="recent"><option value="recent">Mais recentes</option><option value="name">Nome</option></select></label></div>
-    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant, index) => <article className="owner-applicant-card" key={`${applicant.name}-${index}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p></div><span className={`owner-applicant-status ${applicant.status === 'Em conversa' ? 'chatting' : applicant.status === 'Recusado' ? 'declined' : 'waiting'}`}>{applicant.status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to="/mensagens"><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link></div></article>) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
+    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant, index) => { const contactId = `estudante-${applicant.name.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-')}`; const chatParams = new URLSearchParams({ contato: contactId, nome: applicant.name, papel: 'Estudante', imovel: property.title }); return <article className="owner-applicant-card" key={`${applicant.name}-${index}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p></div><span className={`owner-applicant-status ${applicant.status === 'Em conversa' ? 'chatting' : applicant.status === 'Recusado' ? 'declined' : 'waiting'}`}>{applicant.status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to={`/mensagens?${chatParams.toString()}`}><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link></div></article>; }) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
   </div>;
 }
 

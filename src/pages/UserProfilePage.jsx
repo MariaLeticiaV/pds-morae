@@ -62,6 +62,7 @@ export function UserProfilePage() {
   const displayName = demoUser?.name || 'Aluno';
   const isOwnProfile = !id;
   const profile = profiles[id] ?? profiles['ana-beatriz'];
+  const contactParams = new URLSearchParams({ contato: id || 'estudante-ana-beatriz', nome: profile.name, papel: 'Estudante' });
   const [showCompatibility, setShowCompatibility] = useState(false);
   const [activeTab, setActiveTab] = useState('sobre');
 
@@ -77,7 +78,7 @@ export function UserProfilePage() {
         <div className="profile-page-content">
           <section className="profile-hero">
             <div className={`profile-large-avatar ${id === 'carolina-lima' ? 'avatar-carolina' : ''}`} aria-label={`Foto de perfil de ${profile.name}`}>{profile.initials}<i /></div>
-            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> Estudante</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to="/mensagens"><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button></div></div>
+            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> Estudante</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to={`/mensagens?${contactParams.toString()}`}><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button></div></div>
             <span className="profile-hero-blob profile-blob-green" /><span className="profile-hero-blob profile-blob-pink" />
           </section>
           <nav className="profile-tabs" aria-label="Seções do perfil"><a className={activeTab === 'sobre' ? 'active' : ''} href="#sobre" onClick={() => setActiveTab('sobre')}>Sobre</a><a className={activeTab === 'preferencias' ? 'active' : ''} href="#preferencias" onClick={() => setActiveTab('preferencias')}>Preferências de Moradia</a><a className={activeTab === 'habitos' ? 'active' : ''} href="#habitos" onClick={() => setActiveTab('habitos')}>Hábitos e Rotina</a><a className={activeTab === 'avaliacoes' ? 'active' : ''} href="#avaliacoes" onClick={() => setActiveTab('avaliacoes')}>Avaliações Anteriores</a></nav>

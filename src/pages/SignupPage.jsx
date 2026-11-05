@@ -202,7 +202,6 @@ export function SignupPage() {
         <Field label="Vagas de garagem" name="parking" type="number" min="0" value={answers.parking} onChange={updateAnswer} />
         <Field label="Valor do aluguel (R$)" name="propertyRent" type="number" min="0" required value={answers.propertyRent} onChange={updateAnswer} />
         <Field label="Condomínio mensal (R$)" name="condominium" type="number" min="0" value={answers.condominium} onChange={updateAnswer} />
-        <SelectField label="Tipo de contrato" name="contractType" options={['Residencial', 'Temporada', 'Outro']} required value={answers.contractType} onChange={updateAnswer} />
         <SelectField label="Prazo mínimo de permanência" name="minimumStay" options={['3 meses', '6 meses', '12 meses', 'Flexível']} value={answers.minimumStay} onChange={updateAnswer} />
         <CheckGroup label="Características" name="propertyAmenities" options={amenities} values={answers.propertyAmenities} onToggle={toggleOption} />
         <TextAreaField label="Descrição do imóvel" name="propertyDescription" placeholder="Conte sobre o imóvel, localização e diferenciais..." value={answers.propertyDescription} onChange={updateAnswer} maxLength="1000" />

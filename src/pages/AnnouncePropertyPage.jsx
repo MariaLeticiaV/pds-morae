@@ -1,7 +1,9 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
+import { getDemoListing, saveDemoListing } from '../utils/demoListings.js';
 import './AnnouncePropertyPage.css';
 
 const steps = [
@@ -26,6 +28,10 @@ function SectionHeading({ title, description }) {
 }
 
 export function AnnouncePropertyPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const editId = searchParams.get('editar');
+  const isEditing = Boolean(editId);
   const displayName = getDemoUser()?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const [photos, setPhotos] = useState([]);
@@ -40,6 +46,23 @@ export function AnnouncePropertyPage() {
     setPhotoPreviews(previews);
     return () => previews.forEach(({ url }) => URL.revokeObjectURL(url));
   }, [photos]);
+
+  useEffect(() => {
+    if (!editId || !formRef.current) return;
+    const listing = getDemoListing(editId);
+    if (!listing) {
+      setStatus('Não encontramos os dados deste anúncio.');
+      return;
+    }
+    Object.entries(listing).forEach(([name, value]) => {
+      if (name === 'amenities' || value == null || typeof value === 'object') return;
+      const field = formRef.current.elements.namedItem(name);
+      if (field && 'value' in field) field.value = String(value);
+    });
+    const selectedAmenities = new Set(listing.amenities ?? []);
+    formRef.current.querySelectorAll('input[name="amenities"]').forEach((checkbox) => { checkbox.checked = selectedAmenities.has(checkbox.value); });
+    setStatus('Edite as informações já cadastradas e salve as alterações.');
+  }, [editId]);
 
   function addPhotoFiles(files) {
     const selected = Array.from(files ?? []);
@@ -63,13 +86,18 @@ export function AnnouncePropertyPage() {
   function submitAnnouncement(event) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setSubmittedListing({
+    const listingData = {
       ...Object.fromEntries(formData.entries()),
       amenities: formData.getAll('amenities'),
       photos: photoPreviews,
       videoName: video?.name ?? '',
       approvalStatus: 'pending',
-    });
+    };
+    if (isEditing) {
+      const existingListing = getDemoListing(editId) ?? {};
+      saveDemoListing(editId, { ...existingListing, ...listingData, photos: undefined });
+    }
+    setSubmittedListing(listingData);
     document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -79,6 +107,7 @@ export function AnnouncePropertyPage() {
     setVideo(null);
     setSubmittedListing(null);
     setStatus('');
+    if (isEditing) navigate('/anunciar');
   }
 
   return (
@@ -94,7 +123,7 @@ export function AnnouncePropertyPage() {
         <div className="announce-content">
           {submittedListing && <section className="announce-submitted-hero" role="status">
             <div className="announce-submitted-icon"><LineIcon name="homeGroup" size={30} /></div>
-            <div><p className="announce-kicker">Tudo pronto!</p><h1>Seu imóvel foi cadastrado com sucesso</h1><p>Agora, entraremos em contato assim que a análise for concluída.</p></div>
+            <div><p className="announce-kicker">Tudo pronto!</p><h1>{isEditing ? 'Seu anúncio foi atualizado' : 'Seu imóvel foi cadastrado com sucesso'}</h1><p>Agora, entraremos em contato assim que a análise for concluída.</p></div>
             <aside><strong>Fique tranquilo!</strong><span>Você será notificado por aqui e no seu e-mail quando o status do anúncio for atualizado.</span></aside>
           </section>}
 
@@ -116,7 +145,7 @@ export function AnnouncePropertyPage() {
 
           {!submittedListing && <section className="announce-hero">
             <div className="announce-hero-icon"><LineIcon name="homeGroup" size={48} /></div>
-            <div><p className="announce-kicker">Moraê · Anúncios</p><h1>Anunciar imóvel</h1><p>Preencha as informações do seu imóvel para atrair os melhores interessados.</p></div>
+            <div><p className="announce-kicker">Moraê · Anúncios</p><h1>{isEditing ? 'Editar imóvel' : 'Anunciar imóvel'}</h1><p>{isEditing ? 'Atualize as informações do anúncio e salve suas alterações.' : 'Preencha as informações do seu imóvel para atrair os melhores interessados.'}</p></div>
             <span className="announce-orbit announce-orbit-pink" /><span className="announce-orbit announce-orbit-green" />
           </section>}
 
@@ -169,11 +198,10 @@ export function AnnouncePropertyPage() {
             </section>
 
             <section className="announce-card" id="property-publish">
-              <SectionHeading title="Valor e contrato" description="Defina o valor mensal e as condições de locação." />
+              <SectionHeading title="Valor e locação residencial" description="Defina o valor mensal e as condições da moradia." />
               <div className="announce-fields-grid">
                 <FormField label="Valor do aluguel (R$) *"><input name="rent" type="number" min="1" step="0.01" inputMode="decimal" placeholder="Ex.: 500,00" required /></FormField>
                 <FormField label="Condomínio (opcional)"><input name="condominium" type="number" min="0" step="0.01" inputMode="decimal" placeholder="Ex.: 100,00" /></FormField>
-                <FormField label="Tipo de contrato *"><select name="contractType" defaultValue="" required><option value="" disabled>Selecione</option><option>Aluguel mensal</option><option>Compartilhamento de imóvel</option><option>Temporada</option></select></FormField>
                 <FormField label="Prazo mínimo de permanência *"><select name="minimumStay" defaultValue="" required><option value="" disabled>Selecione</option><option>Sem prazo mínimo</option><option>3 meses</option><option>6 meses</option><option>12 meses</option></select></FormField>
               </div>
             </section>
@@ -182,7 +210,7 @@ export function AnnouncePropertyPage() {
               <SectionHeading title="Revisar e publicar" description="Confira as informações antes de concluir o cadastro." />
               <p>Seu imóvel será exibido para estudantes que buscam moradia na região após a análise do anúncio.</p>
               {status && <p className="announce-status" role="status">{status}</p>}
-              <button className="announce-submit" type="submit">Publicar anúncio <span aria-hidden="true">→</span></button>
+              <button className="announce-submit" type="submit">{isEditing ? 'Salvar alterações' : 'Publicar anúncio'} <span aria-hidden="true">→</span></button>
             </section>
           </form>
 
@@ -213,7 +241,6 @@ export function AnnouncePropertyPage() {
                 <div><dt>Comodidades</dt><dd>{submittedListing.amenities.length ? submittedListing.amenities.join(', ') : 'Nenhuma informada'}</dd></div>
                 <div><dt>Aluguel</dt><dd>{Number(submittedListing.rent).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês</dd></div>
                 <div><dt>Condomínio</dt><dd>{submittedListing.condominium ? `${Number(submittedListing.condominium).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/mês` : 'Não informado'}</dd></div>
-                <div><dt>Tipo de contrato</dt><dd>{submittedListing.contractType}</dd></div>
                 <div><dt>Prazo mínimo</dt><dd>{submittedListing.minimumStay}</dd></div>
                 <div className="announce-detail-wide"><dt>Descrição</dt><dd>{submittedListing.description}</dd></div>
                 {submittedListing.rules && <div className="announce-detail-wide"><dt>Regras e informações adicionais</dt><dd>{submittedListing.rules}</dd></div>}
