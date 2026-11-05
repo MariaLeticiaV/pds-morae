@@ -13,12 +13,12 @@ const accommodationTypes = ['República', 'Quarto', 'Apartamento', 'Casa', 'Kitn
 const amenities = ['Wi-Fi', 'Ar-condicionado', 'Estacionamento', 'Mobiliada', 'Área de lazer', 'Permite pets', 'Cozinha equipada', 'Lavanderia'];
 const studentProfileOptions = ['Tranquilo', 'Social', 'Aventureiro', 'Estudioso'];
 
-function Field({ label, name, type = 'text', required = false, placeholder = '', value, onChange, ...props }) {
-  return <label className="signup-field"><span>{label}{required && <b> *</b>}</span><input name={name} type={type} required={required} placeholder={placeholder} value={type === 'file' ? undefined : value ?? ''} onChange={onChange} {...props} /></label>;
+function Field({ label, name, type = 'text', required = false, placeholder = '', hint = '', value, onChange, ...props }) {
+  return <label className="signup-field"><span>{label}{required && <b> *</b>}</span><input name={name} type={type} required={required} placeholder={placeholder} value={type === 'file' ? undefined : value ?? ''} onChange={onChange} {...props} />{hint && <small className="signup-field-hint">{hint}</small>}</label>;
 }
 
-function SelectField({ label, name, options, required = false, value, onChange }) {
-  return <label className="signup-field"><span>{label}{required && <b> *</b>}</span><select name={name} required={required} value={value ?? ''} onChange={onChange}><option value="">Selecione</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select></label>;
+function SelectField({ label, name, options, required = false, value, onChange, hint = '' }) {
+  return <label className="signup-field"><span>{label}{required && <b> *</b>}</span><select name={name} required={required} value={value ?? ''} onChange={onChange}><option value="">Selecione</option>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>{hint && <small className="signup-field-hint">{hint}</small>}</label>;
 }
 
 function TextAreaField({ label, name, placeholder, value, onChange, maxLength }) {
@@ -166,10 +166,10 @@ export function SignupPage() {
       <p className="signup-step-intro">Agora, informe o que você busca. Essas preferências ajudam a encontrar moradias que combinam com seu perfil.</p>
       <div className="signup-form-grid">
         <SelectField label="Tipo de moradia" name="housingType" options={accommodationTypes} required value={answers.housingType} onChange={updateAnswer} />
-        <SelectField label="Faixa de orçamento mensal" name="budget" options={['Até R$ 500', 'R$ 500 a R$ 850', 'R$ 850 a R$ 1.200', 'Acima de R$ 1.200']} required value={answers.budget} onChange={updateAnswer} />
+        <Field label="Orçamento mensal máximo (R$)" name="budget" type="number" min="0" step="50" inputMode="numeric" required placeholder="Ex.: 850" value={answers.budget} onChange={updateAnswer} />
         <SelectField label="Distância do campus" name="distance" options={['Até 1 km', '1 a 3 km', '3 a 5 km', 'Não importa']} value={answers.distance} onChange={updateAnswer} />
         <Field label="Bairros de interesse" name="preferredNeighborhoods" placeholder="Ex.: Farol, Centro" value={answers.preferredNeighborhoods} onChange={updateAnswer} />
-        <SelectField label="Número de moradores" name="roommates" options={['Moro sozinho', '1 a 2', '3 a 4', '5 ou mais']} value={answers.roommates} onChange={updateAnswer} />
+        <SelectField label="Número total de moradores desejado" name="roommates" options={['1 pessoa (morar sozinho)', '2 pessoas', '3 a 4 pessoas', '5 ou mais pessoas']} value={answers.roommates} onChange={updateAnswer} hint="Inclua você na contagem para indicar o tamanho da moradia que procura." />
         <SelectField label="Preferência de gênero dos moradores" name="roommateGender" options={['Indiferente', 'Feminino', 'Masculino']} value={answers.roommateGender} onChange={updateAnswer} />
         <TextAreaField label="Apresentação pessoal (opcional)" name="aboutMe" placeholder="Fale sobre sua rotina, hábitos e o que procura em uma moradia..." value={answers.aboutMe} onChange={updateAnswer} />
       </div>
@@ -186,7 +186,7 @@ export function SignupPage() {
         <Field label="Vagas disponíveis" name="vacancies" type="number" min="1" required value={answers.vacancies} onChange={updateAnswer} />
         <Field label="Valor do aluguel (R$)" name="rent" type="number" min="0" required value={answers.rent} onChange={updateAnswer} />
         <Field label="Despesas mensais aproximadas (R$)" name="expenses" type="number" min="0" required value={answers.expenses} onChange={updateAnswer} />
-        <SelectField label="Estado do imóvel" name="listingState" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.listingState ?? 'Alagoas'} onChange={updateAnswer} />
+        <SelectField label="Estado do imóvel" name="listingState" options={['Alagoas']} required value="Alagoas" onChange={updateAnswer} />
         <Field label="Distância do campus" name="campusDistance" placeholder="Ex.: 1,5 km" value={answers.campusDistance} onChange={updateAnswer} />
         <Field label="Bairro" name="neighborhood" required value={answers.neighborhood} onChange={updateAnswer} />
         <CheckGroup label="Comodidades disponíveis" name="amenities" options={amenities} values={answers.amenities} onToggle={toggleOption} />
@@ -202,7 +202,7 @@ export function SignupPage() {
       <p className="signup-step-intro">Informe os detalhes do imóvel que deseja anunciar.</p>
       <div className="signup-form-grid">
         <Field label="CEP" name="propertyZip" required value={answers.propertyZip} onChange={updateAnswer} />
-        <SelectField label="Estado do imóvel" name="propertyState" options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']} required value={answers.propertyState ?? 'Alagoas'} onChange={updateAnswer} />
+        <SelectField label="Estado do imóvel" name="propertyState" options={['Alagoas']} required value="Alagoas" onChange={updateAnswer} />
         <Field label="Cidade" name="propertyCity" required value={answers.propertyCity} onChange={updateAnswer} />
         <Field label="Bairro" name="propertyNeighborhood" required value={answers.propertyNeighborhood} onChange={updateAnswer} />
         <Field label="Rua" name="propertyStreet" required value={answers.propertyStreet} onChange={updateAnswer} />

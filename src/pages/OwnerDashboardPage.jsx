@@ -57,10 +57,9 @@ const offererSections = [
 
 export function OwnerSidebar({ pathname, role }) {
   const isOfferer = role === 'ofertante';
-  const basePath = isOfferer ? '/ofertante' : '/proprietario';
   const navItems = isOfferer ? offererSections : ownerSections;
   return <aside className="dashboard-sidebar owner-sidebar">
-    <Link className="dashboard-brand" to={basePath} aria-label={`Moraê, início do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`}><Logo /></Link>
+    <Link className="dashboard-brand" to="/" aria-label="Moraê, voltar à landing page"><Logo /></Link>
     <nav className="dashboard-nav" aria-label={`Menu do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`}>
       {navItems.map((item) => <NavLink key={item.path} to={item.path} end={item.end} className={({ isActive }) => `${isActive ? 'selected' : ''}${item.path === '/anunciar' ? ' owner-announce-link' : ''}`}><LineIcon name={item.icon} />{item.label}</NavLink>)}
     </nav>

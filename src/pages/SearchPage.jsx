@@ -179,7 +179,7 @@ export function SearchPage() {
         <main className="dashboard-content">
           {showFavorites ? <section className="favorites-banner"><span className="favorites-banner-icon"><Icon name="heart" size={31} fill="currentColor" /></span><div><p className="favorites-kicker">Sua seleção pessoal</p><h1>Moradias salvas</h1><p>Encontre rapidamente os anúncios que chamaram sua atenção.</p></div><strong>{favorites.length}<small>{favorites.length === 1 ? ' imóvel salvo' : ' imóveis salvos'}</small></strong><span className="favorites-banner-orbit" /></section> : <section className="welcome-banner">
             <div className="welcome-copy"><span className="welcome-home-icon"><Icon name="home" size={36} /></span><div><h1>Encontre o lugar ideal<br className="wide-break" /> para morar!</h1><p>Filtre por cidade, bairro, tipo de imóvel e muito mais para encontrar<br className="wide-break" /> a moradia perfeita para você.</p></div></div>
-            <div className="welcome-art"><div className="brand-watermark"><Logo /></div><p>Mais que um imóvel,<br /> conexões que fazem<br /> sentido. <span>♡</span></p></div>
+            <div className="welcome-art"><Link className="brand-watermark" to="/" aria-label="Moraê, voltar à landing page"><Logo /></Link><p>Mais que um imóvel,<br /> conexões que fazem<br /> sentido. <span>♡</span></p></div>
             <span className="banner-circle circle-pink" /><span className="banner-circle circle-green" />
           </section>}
 

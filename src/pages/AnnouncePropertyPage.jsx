@@ -166,7 +166,7 @@ export function AnnouncePropertyPage() {
               <SectionHeading title="Endereço do imóvel" description="Informe onde o imóvel está localizado." />
               <div className="announce-fields-grid address-fields">
                 <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="Digite o CEP" required /></FormField>
-                <FormField label="Estado *"><select name="state" defaultValue="AL" autoComplete="address-level1" required><option value="" disabled>Selecione</option><option value="AL">Alagoas</option><option value="PE">Pernambuco</option><option value="SE">Sergipe</option><option value="BA">Bahia</option></select></FormField>
+                <FormField label="Estado *"><select name="state" defaultValue="AL" autoComplete="address-level1" required><option value="AL">Alagoas</option></select></FormField>
                 <FormField label="Rua *" className="field-wide"><input name="street" autoComplete="street-address" placeholder="Ex.: Rua Exemplo" required /></FormField>
                 <FormField label="Número *"><input name="number" inputMode="numeric" placeholder="Ex.: 11243" required /></FormField>
                 <FormField label="Complemento"><input name="complement" placeholder="Ex.: Ap. 110, Bloco A" /></FormField>
