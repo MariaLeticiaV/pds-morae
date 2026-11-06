@@ -147,12 +147,18 @@
 .contract-terms > p { margin: -6px 0 8px; color: #83a7a4; font-size: 8px; }
 .contract-terms details { border: 1px solid #e2f0ee; border-bottom: 0; color: #438d89; font-size: 8px; }
 .contract-terms details:nth-of-type(1) { border-radius: 8px 8px 0 0; }
-.contract-terms details:nth-of-type(4) { border-bottom: 1px solid #e2f0ee; border-radius: 0 0 8px 8px; }
+.contract-terms details:last-of-type { border-bottom: 1px solid #e2f0ee; border-radius: 0 0 8px 8px; }
 .contract-terms summary { padding: 8px 10px; cursor: pointer; list-style: none; }
 .contract-terms summary::-webkit-details-marker { display: none; }
 .contract-terms summary::after { float: right; width: 7px; height: 7px; border-right: 1.5px solid #62a9a5; border-bottom: 1.5px solid #62a9a5; content: ''; transform: rotate(45deg); }
 .contract-terms details[open] summary::after { transform: rotate(225deg); }
 .contract-terms details > p { margin: 0; padding: 0 10px 9px; color: #6f8d8a; line-height: 1.5; }
+.contract-draft-notice { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; padding: 10px; border: 1px solid #e7d8a7; border-radius: 9px; color: #75633b; background: #fffaf0; font-size: 8px; line-height: 1.5; }
+.contract-signatures { padding-top: 14px; color: #526e6b; font-size: 8px; }
+.contract-signatures > p { margin: 0 0 32px; }
+.contract-signatures > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; margin: 0 8px 24px; }
+.contract-signatures > div span { padding-top: 6px; border-top: 1px solid #9bb9b6; text-align: center; }
+.contract-signatures small { display: block; margin-top: 3px; color: #78918e; font-size: 7px; }
 .contract-terms > button { display: block; min-height: 29px; margin: 10px auto 0; padding: 0 15px; border: 1px solid #8fcac7; border-radius: 999px; color: #078889; background: #fff; font: 600 8px 'Montserrat Alternates', sans-serif; cursor: pointer; }
 .contract-payment-card > p { margin: 5px 0 10px; color: #78a4a1; font-size: 8px; line-height: 1.45; }
 .contract-payment-card > div:not(.contract-payment-methods) { display: flex; min-height: 54px; flex-direction: column; align-items: center; justify-content: center; gap: 5px; margin: 8px 0; border: 1px solid #cfe8e5; border-radius: 12px; color: #6faaa7; background: #f5fbfa; }
@@ -164,6 +170,20 @@
 .contract-history h2 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 10px; }
 .contract-history h2 a { display: grid; color: #078889; }
 .contract-history > div { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-top: 1px solid #e8f1ef; color: #72a5a2; font-size: 8px; }
+@media print {
+  @page { margin: 18mm; }
+  .owner-sidebar, .owner-topbar, .owner-welcome, .contract-payment-column, .contract-property-card .owner-property-photo, .contract-property-card > div > p a, .contract-terms > button { display: none !important; }
+  .owner-dashboard, .owner-main, .owner-scroll-content, .owner-content, .contract-layout, .contract-main-column { display: block !important; width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; color: #111 !important; background: #fff !important; }
+  .contract-main-column { display: grid !important; gap: 10px !important; }
+  .contract-property-card, .contract-parties, .contract-terms { break-inside: avoid; border: 1px solid #aaa !important; color: #111 !important; }
+  .contract-terms { break-inside: auto; }
+  .contract-property-card h2, .contract-parties h2, .contract-terms h2, .contract-parties article strong, .contract-terms summary { color: #111 !important; }
+  .contract-terms details { break-inside: avoid; border-color: #bbb !important; color: #111 !important; }
+  .contract-terms details:not([open]) > :not(summary) { display: block !important; }
+  .contract-terms details > p, .contract-terms > p, .contract-draft-notice, .contract-parties article p, .contract-signatures { color: #222 !important; font-size: 9pt !important; }
+  .contract-draft-notice { border-color: #999 !important; background: #fff !important; }
+  .contract-signatures > div span { border-color: #555 !important; }
+}
 @media (max-width: 900px) { .contract-layout { grid-template-columns: minmax(0, 1fr); } .contract-payment-column { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 700px) { .offerer-match-grid { grid-template-columns: 1fr; } .offerer-match-card { display: grid; grid-template-columns: 42px minmax(0,1fr); justify-items: start; text-align: left; } .offerer-match-card .owner-applicant-avatar { grid-row: span 3; } .offerer-match-card h3 { margin: 2px 0 0; } .offerer-match-card p { margin: 0; } .offerer-match-card > div { grid-column: 1 / -1; margin-top: 8px; } .offerer-match-card > a { grid-column: 1 / -1; justify-self: center; } .offerer-vacancy-toolbar { align-items: flex-start; flex-direction: column; } .offerer-vacancy-toolbar > div { gap: 2px; } .offerer-vacancy-toolbar button { padding: 6px 7px; font-size: 8px; } .contract-layout { gap: 8px; } .contract-property-card { grid-template-columns: minmax(90px, 120px) minmax(0,1fr); padding: 9px; } .contract-property-card .owner-property-photo { min-height: 94px; } .contract-property-card h2 { font-size: 10px; } .contract-property-card > div > p { flex-wrap: wrap; font-size: 8px; } .contract-property-card > div > p a { margin-left: 0; } .contract-property-card > div > div span { padding: 0 4px; font-size: 7px; } .contract-property-card > div > div strong { font-size: 7px; } .contract-parties > div { grid-template-columns: 1fr; } .contract-payment-column { grid-template-columns: 1fr; } }
 @media (max-width: 1050px) { .owner-sidebar { flex-basis: 205px; padding-right: 12px; padding-left: 12px; } .owner-scroll-content { padding-right: 22px; padding-left: 22px; } }
