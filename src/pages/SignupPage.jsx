@@ -1,6 +1,7 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import { saveDemoUser } from '../utils/demoUser.js';
+import { registerUser } from '../services/api.js';
 import './SignupPage.css';
 
 const profiles = [
@@ -49,6 +50,7 @@ export function SignupPage() {
   const [completed, setCompleted] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [stepError, setStepError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   function updateAnswer(event) {
@@ -72,10 +74,13 @@ export function SignupPage() {
     setAnswers({ state: 'Alagoas', propertyState: 'Alagoas', listingState: 'Alagoas' });
     setCompleted(false);
     setPasswordError('');
+    setStepError('');
+    setIsSubmitting(false);
   }
 
-  function submitStep(event) {
+  async function submitStep(event) {
     event.preventDefault();
+    if (isSubmitting) return;
     if (activeStep === 1 && answers.password !== answers.confirmPassword) {
       setPasswordError('As senhas não coincidem. Confira os campos e tente novamente.');
       return;
@@ -91,8 +96,23 @@ export function SignupPage() {
     setStepError('');
     if (activeStep < activeProfile.steps.length) setActiveStep((step) => step + 1);
     else {
-      saveDemoUser(answers.fullName, profileId, answers);
-      setCompleted(true);
+      setIsSubmitting(true);
+      try {
+        await registerUser({
+          ...answers,
+          role: profileId === 'proprietario' ? 'proprietario' : 'estudante',
+          name: answers.fullName,
+          enrollmentNumber: answers.enrollment,
+          period: answers.period ? Number(answers.period) : undefined,
+          expectedGraduation: answers.expectedGraduation,
+        });
+        saveDemoUser(answers.fullName, profileId, answers);
+        setCompleted(true);
+      } catch (error) {
+        setStepError(error.message || 'Não foi possível concluir o cadastro.');
+      } finally {
+        setIsSubmitting(false);
+      }
     }
     pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -297,7 +317,7 @@ export function SignupPage() {
           {stepError && <p className="signup-step-error" role="alert">{stepError}</p>}
           <div className="signup-stage-actions">
             {activeStep > 1 && <button className="signup-secondary-button" type="button" onClick={() => setActiveStep((step) => step - 1)}>← Voltar</button>}
-            <button className="signup-continue" type="submit">{activeStep === activeProfile.steps.length ? 'Finalizar cadastro' : 'Avançar'} <span aria-hidden="true">→</span></button>
+            <button className="signup-continue" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Cadastrando...' : activeStep === activeProfile.steps.length ? 'Finalizar cadastro' : 'Avançar'} <span aria-hidden="true">→</span></button>
           </div>
         </form>
       </div>

@@ -57,6 +57,7 @@
 .signup-continue, .signup-secondary-button { display: inline-flex; min-width: 150px; min-height: 43px; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; border: 0; border-radius: 999px; color: #fff; background: #008b8c; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .18s; }
 .signup-continue { margin-left: auto; }
 .signup-continue:hover { background: #007477; }
+.signup-continue:disabled { cursor: wait; opacity: .7; }
 .signup-secondary-button { border: 1px solid #008b8c; color: #007d80; background: #fff; }
 .signup-secondary-button:hover { background: #eefaf6; }
 .signup-success { max-width: 620px; text-align: center; }
