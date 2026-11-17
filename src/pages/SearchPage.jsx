@@ -3,14 +3,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
+import { getDemoListingStatuses } from '../utils/demoListings.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
 const properties = [
-  { id: 1, name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
-  { id: 2, name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
-  { id: 3, name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
-  { id: 4, name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
+  { id: 1, listingId: 'apt-ufal', name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
+  { id: 2, listingId: 'casa-farol', name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
+  { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
+  { id: 4, listingId: 'vaga-village', name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
 ];
 
 function Icon({ name, size = 20, fill = 'none' }) {
@@ -107,6 +108,7 @@ export function SearchPage() {
   const showFavorites = searchParams.get('favoritos') === '1';
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
+  const [listingStatuses] = useState(() => getDemoListingStatuses());
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
@@ -119,7 +121,7 @@ export function SearchPage() {
     }
   }, [favorites]);
 
-  const filteredProperties = useMemo(() => properties.filter((property) => {
+  const filteredProperties = useMemo(() => properties.filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
     const matchesPlace = showFavorites || !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
     const matchesType = showFavorites || type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
@@ -128,7 +130,7 @@ export function SearchPage() {
     const matchesAmenities = showFavorites || ((!wifiOnly || property.tags.includes('WI-FI')) && (!furnishedOnly || property.tags.includes('Mobiliado')));
     const matchesFavorite = !showFavorites || favorites.includes(property.id);
     return matchesPlace && matchesType && matchesBudget && matchesRooms && matchesAmenities && matchesFavorite;
-  }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites]);
+  }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses]);
 
   function toggleFavorite(id) {
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -234,4 +236,6 @@ export function SearchPage() {
     </div>
   );
 }
+
+
 
