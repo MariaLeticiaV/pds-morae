@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
+import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
 const properties = [
@@ -73,15 +74,11 @@ function PropertyCard({ property, favorite, onFavorite }) {
   );
 }
 
-function MapPanel({ onViewMap }) {
+function MapPanel({ properties, onViewMap }) {
   return (
-    <div className="map-illustration" aria-label="Mapa ilustrativo de Maceió com regiões de imóveis">
-      <div className="map-water" />
-      <div className="map-coast" />
-      <div className="map-road road-one" /><div className="map-road road-two" /><div className="map-road road-three" /><div className="map-road road-four" />
-      <span className="map-label map-label-center">Maceió</span><span className="map-label map-label-north">Benedito Bentes</span><span className="map-label map-label-south">Ponta Verde</span>
-      {[[63, 24], [71, 34], [54, 41], [76, 45], [45, 52], [66, 57], [35, 60], [56, 68], [75, 74], [48, 82], [24, 72], [82, 60]].map(([left, top], index) => <i className="map-pin" style={{ left: `${left}%`, top: `${top}%` }} key={index}><Icon name="pin" size={14} fill="currentColor" /></i>)}
-      <button className="map-view-button" onClick={onViewMap}><Icon name="map" size={16} /> Ver mapa</button>
+    <div className="map-preview" aria-label="Mapa real de Maceió com localização aproximada dos imóveis">
+      <MapView properties={properties} />
+      <button className="map-view-button" onClick={onViewMap} type="button"><Icon name="map" size={16} /> Ver mapa</button>
     </div>
   );
 }
@@ -200,13 +197,41 @@ export function SearchPage() {
               {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : showFavorites ? <div className="favorites-empty"><span><Icon name="heart" size={28} /></span><h3>Seus favoritos começam aqui</h3><p>Toque no coração de um anúncio para salvá-lo nesta lista.</p><button type="button" onClick={exploreProperties}>Explorar imóveis <Icon name="arrow" size={17} /></button></div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={exploreProperties}>Limpar busca</button></div>}
             </section>
             {!showFavorites && <aside className="results-aside">
-              <MapPanel onViewMap={() => setViewMap((value) => !value)} />
-              <div className="active-search-card"><div className="aside-icon purple"><Icon name="search" size={20} /></div><div><strong>{viewMap ? 'Mapa demonstrativo' : 'Sua busca está ativa'}</strong><p>{viewMap ? 'O mapa é ilustrativo e não representa a localização exata dos anúncios.' : 'Mostrando imóveis que combinam com seus filtros.'}</p></div><button onClick={() => setExpandedFilters(true)}>Editar filtros</button></div>
+              <MapPanel properties={filteredProperties} onViewMap={() => setViewMap(true)} />
+              <div className="active-search-card"><div className="aside-icon purple"><Icon name="search" size={20} /></div><div><strong>Sua busca está ativa</strong><p>Mostrando imóveis que combinam com seus filtros.</p></div><button onClick={() => setExpandedFilters(true)}>Editar filtros</button></div>
               <div className="safety-card"><span className="aside-icon pink"><Icon name="shield" size={21} /></span><div><strong>Fique seguro!</strong><p>Converse diretamente com anunciantes e procure perfis verificados na plataforma.</p></div></div>
             </aside>}
           </div>
         </main>
       </div>
+
+      {viewMap && (
+        <section className="map-explorer-overlay" role="dialog" aria-modal="true" aria-labelledby="map-explorer-title">
+          <div className="map-explorer-header">
+            <div>
+              <span>Explore as regiões</span>
+              <h2 id="map-explorer-title">Imóveis no mapa</h2>
+              <p>{filteredProperties.length} {filteredProperties.length === 1 ? 'imóvel encontrado' : 'imóveis encontrados'} · Maceió/AL</p>
+            </div>
+            <button type="button" className="map-explorer-close" onClick={() => setViewMap(false)} aria-label="Fechar mapa"><Icon name="close" size={21} /></button>
+          </div>
+          <div className="map-explorer-content">
+            <div className="map-explorer-list">
+              {filteredProperties.map((property) => (
+                <article className="map-property-item" key={property.id}>
+                  <div><strong>{property.name}</strong><span>{property.neighborhood} · Maceió/AL</span></div>
+                  <b>R$ {property.price}<small>/mês</small></b>
+                  <Link to={`/imoveis/${property.id}`} onClick={() => setViewMap(false)}>Ver anúncio</Link>
+                </article>
+              ))}
+              {!filteredProperties.length && <p className="map-no-results">Nenhum imóvel corresponde aos filtros atuais.</p>}
+            </div>
+            <div className="map-explorer-map"><MapView properties={filteredProperties} /></div>
+          </div>
+          <p className="map-data-notice">As posições exibidas são aproximadas e representam os bairros dos anúncios. A localização exata dependerá dos dados cadastrados.</p>
+        </section>
+      )}
     </div>
   );
 }
+
