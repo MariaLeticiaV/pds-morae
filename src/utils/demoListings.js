@@ -25,3 +25,26 @@ export function saveDemoListing(id, listing) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(listings)); }
   catch { /* A edição continua disponível nesta sessão mesmo sem armazenamento local. */ }
 }
+
+
+const STATUS_STORAGE_KEY = 'morae.demoListingStatuses';
+
+export function getDemoListingStatuses() {
+  try {
+    const value = JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}');
+    return value && typeof value === 'object' ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+export function setDemoListingStatus(id, status) {
+  if (!id || !['active', 'archived', 'deleted'].includes(status)) return;
+  const statuses = getDemoListingStatuses();
+  statuses[id] = status;
+  try {
+    localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(statuses));
+  } catch {
+    // O estado permanece disponível na sessão atual.
+  }
+}
