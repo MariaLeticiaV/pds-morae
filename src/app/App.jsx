@@ -4,6 +4,7 @@ import { HomePage } from '../pages/HomePage.jsx';
 import { PlaceholderPage } from '../pages/PlaceholderPage.jsx';
 import { SearchPage } from '../pages/SearchPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
+import { PasswordRecoveryPage } from '../pages/PasswordRecoveryPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
 import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 import { MyProfilePage } from '../pages/MyProfilePage.jsx';
@@ -16,6 +17,8 @@ export default function App() {
   const { pathname } = useLocation();
   const isSearchPage = pathname === '/buscar';
   const isLoginPage = pathname === '/login';
+  const isPasswordRecoveryPage = pathname === '/recuperar-senha';
+  const isAuthPage = isLoginPage || isPasswordRecoveryPage;
   const isSignupPage = pathname === '/cadastro';
   const isMessagesPage = pathname === '/mensagens';
   const isAnnouncePage = pathname === '/anunciar';
@@ -23,10 +26,10 @@ export default function App() {
   const isOffererPage = pathname.startsWith('/ofertante');
   const isPropertyDetailPage = pathname.startsWith('/imoveis/');
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
-  const isStandalonePage = isSearchPage || isLoginPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage;
+  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage;
 
   return (
-    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isLoginPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
+    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
       {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
@@ -46,6 +49,7 @@ export default function App() {
           <Route path="/buscar" element={<SearchPage />} />
           <Route path="/imoveis/:id" element={<PropertyDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
           <Route path="/anunciar" element={<AnnouncePropertyPage />} />

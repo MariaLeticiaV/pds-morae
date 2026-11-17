@@ -44,6 +44,7 @@ export function LoginPage() {
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}><EyeIcon visible={showPassword} /></button>
               </span>
             </label>
+            <div className="login-form-options"><Link to="/recuperar-senha">Esqueceu sua senha?</Link></div>
             <button className="login-submit" type="submit">Entrar</button>
           </form>
           <div className="login-divider"><span />ou<span /></div>

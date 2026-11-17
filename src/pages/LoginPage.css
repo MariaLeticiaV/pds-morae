@@ -14,6 +14,9 @@
 .password-input-wrap input { width: 100%; min-width: 0; height: 47px; border: 0; outline: 0; color: #23463b; background: transparent; font-family: 'Montserrat Alternates', sans-serif; font-size: 13px; }
 .password-input-wrap:focus-within { outline: 2px solid #008b8c; outline-offset: 1px; }
 .password-input-wrap button { display: grid; width: 28px; height: 32px; flex: 0 0 auto; place-items: center; padding: 0; border: 0; color: #087f80; background: transparent; cursor: pointer; }
+.login-form-options { display: flex; justify-content: flex-end; margin-top: -7px; }
+.login-form-options a, .recovery-back a { color: #078889; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; font-weight: 700; text-decoration: none; }
+.login-form-options a:hover, .recovery-back a:hover { text-decoration: underline; }
 .login-submit { min-height: 51px; margin-top: 5px; border: 0; border-radius: 12px; color: #fff; background: #008b8c; box-shadow: 0 4px 5px rgba(27, 45, 42, .22); font-family: 'Montserrat Alternates', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: background .18s, transform .18s; }
 .login-submit:hover { transform: translateY(-1px); background: #007477; }
 .login-divider { display: flex; align-items: center; gap: 22px; margin: 20px 0 16px; color: #777f7c; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; }
@@ -27,6 +30,9 @@
 .login-register { margin: 20px 0 0; color: #898f8c; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; text-align: center; }
 .login-register a { margin-left: 4px; color: #078889; font-weight: 700; text-decoration: none; }
 .login-register a:hover { text-decoration: underline; }
+.recovery-card { max-width: 560px; }
+.recovery-notice { margin: 15px 0 0; padding: 10px 12px; border-radius: 8px; color: #765d1b; background: #fff7df; font-family: 'Montserrat Alternates', sans-serif; font-size: 11px; line-height: 1.5; }
+.recovery-back { margin: 20px 0 0; text-align: center; }
 .auth-decoration { position: absolute; z-index: -1; display: block; pointer-events: none; }
 .auth-mint { top: -130px; left: -100px; width: 260px; height: 310px; border-radius: 0 0 52% 0; background: #bce8d9; }
 .auth-teal { top: -100px; right: -40px; width: 180px; height: 510px; border-radius: 0 0 45% 65%; background: #147d79; transform: rotate(-4deg); }
