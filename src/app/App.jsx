@@ -12,6 +12,7 @@ import { MessagesPage } from '../pages/MessagesPage.jsx';
 import { AnnouncePropertyPage } from '../pages/AnnouncePropertyPage.jsx';
 import { OwnerDashboardPage } from '../pages/OwnerDashboardPage.jsx';
 import { PropertyDetailPage } from '../pages/PropertyDetailPage.jsx';
+import { AdminPanelPage } from '../pages/AdminPanelPage.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -26,11 +27,12 @@ export default function App() {
   const isOffererPage = pathname.startsWith('/ofertante');
   const isPropertyDetailPage = pathname.startsWith('/imoveis/');
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
-  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage;
+  const isAdminPage = pathname.startsWith('/admin');
+  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isAdminPage;
 
   return (
-    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && <header className="site-header">
+    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}${isAdminPage ? ' admin-app' : ''}`}>
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -49,6 +51,7 @@ export default function App() {
           <Route path="/buscar" element={<SearchPage />} />
           <Route path="/imoveis/:id" element={<PropertyDetailPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/admin/*" element={<AdminPanelPage />} />
           <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />

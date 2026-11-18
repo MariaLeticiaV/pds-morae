@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { getAdministratorSession, loginAdministrator } from '../services/adminAuth.js';
 import './LoginPage.css';
 
 function EyeIcon({ visible }) {
@@ -13,10 +14,37 @@ function EyeIcon({ visible }) {
 export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [feedbackType, setFeedbackType] = useState('');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const session = getAdministratorSession();
 
-  function handleSubmit(event) {
+  if (session) return <Navigate to="/admin" replace />;
+
+  async function handleSubmit(event) {
     event.preventDefault();
-    setFeedback('A autenticação será conectada à API do projeto.');
+    setFeedback('');
+    setFeedbackType('');
+    setSubmitting(true);
+
+    try {
+      await loginAdministrator({ login: username.trim(), password });
+      const returnTo = location.state?.from;
+      navigate(
+        typeof returnTo === 'string' && returnTo.startsWith('/admin/')
+          ? returnTo
+          : '/admin',
+        { replace: true },
+      );
+    } catch (error) {
+      setFeedback(error.message || 'Não foi possível autenticar. Confira suas credenciais.');
+      setFeedbackType('error');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -35,24 +63,24 @@ export function LoginPage() {
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
               <span>E-mail ou usuário</span>
-              <input type="text" name="username" placeholder="Digite seu e-mail ou usuário" autoComplete="username" required />
+              <input type="text" name="username" placeholder="Digite seu e-mail ou usuário" autoComplete="username" onChange={(event) => setUsername(event.target.value)} required value={username} />
             </label>
             <label className="login-field">
               <span>Senha</span>
               <span className="password-input-wrap">
-                <input type={showPassword ? 'text' : 'password'} name="password" placeholder="Digite sua senha" autoComplete="current-password" required />
+                <input type={showPassword ? 'text' : 'password'} name="password" placeholder="Digite sua senha" autoComplete="current-password" onChange={(event) => setPassword(event.target.value)} required value={password} />
                 <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} aria-pressed={showPassword}><EyeIcon visible={showPassword} /></button>
               </span>
             </label>
             <div className="login-form-options"><Link to="/recuperar-senha">Esqueceu sua senha?</Link></div>
-            <button className="login-submit" type="submit">Entrar</button>
+            <button className="login-submit" disabled={submitting} type="submit">{submitting ? 'Verificando...' : 'Entrar'}</button>
           </form>
           <div className="login-divider"><span />ou<span /></div>
           <div className="social-login">
-            <button type="button" onClick={() => setFeedback('O acesso com Google será habilitado quando a autenticação estiver integrada.')}><span className="google-mark" aria-hidden="true">G</span>Entrar com o Google</button>
-            <button type="button" onClick={() => setFeedback('O acesso com SIGAA será habilitado quando a autenticação estiver integrada.')}><span className="sigaa-mark" aria-hidden="true">S</span>Entrar com o SIGAA</button>
+            <button type="button" onClick={() => { setFeedback('O acesso com Google será habilitado quando a autenticação estiver integrada.'); setFeedbackType('info'); }}><span className="google-mark" aria-hidden="true">G</span>Entrar com o Google</button>
+            <button type="button" onClick={() => { setFeedback('O acesso com SIGAA será habilitado quando a autenticação estiver integrada.'); setFeedbackType('info'); }}><span className="sigaa-mark" aria-hidden="true">S</span>Entrar com o SIGAA</button>
           </div>
-          {feedback && <p className="login-feedback" role="status">{feedback}</p>}
+          {feedback && <p className={`login-feedback${feedbackType === 'error' ? ' error' : ''}`} role={feedbackType === 'error' ? 'alert' : 'status'}>{feedback}</p>}
           <p className="login-register">Não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
         </section>
       </div>
