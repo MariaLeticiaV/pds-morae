@@ -48,6 +48,8 @@
 .admin-primary-button { border-color: #008f90; color: #fff; background: #009294; }
 .admin-primary-button:hover { border-color: #007c7d; background: #007f81; }
 .admin-outline-button:hover { border-color: #6cb6b7; color: #008b8c; background: #f6fbfb; }
+.admin-prototype-banner { display: flex; gap: 4px; margin: 0 0 12px; padding: 10px 13px; border: 1px solid #f0dfb8; border-radius: 8px; color: #765d2d; background: #fff9eb; font: 11px/1.5 'Inter', sans-serif; }
+.admin-prototype-banner strong { flex: 0 0 auto; }
 .admin-notice { display: flex; justify-content: space-between; gap: 15px; margin: -2px 0 12px; padding: 10px 13px; border: 1px solid #bfe7d9; border-radius: 8px; color: #316d67; background: #edf9f4; font: 11px/1.5 'Inter', sans-serif; }
 .admin-notice button { align-self: flex-start; border: 0; color: inherit; background: none; font-size: 17px; cursor: pointer; }
 .admin-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }

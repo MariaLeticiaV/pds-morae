@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { getAdministratorSession, loginAdministrator } from '../services/adminAuth.js';
+import { loginUser } from '../services/api.js';
 import './LoginPage.css';
 
 function EyeIcon({ visible }) {
@@ -31,7 +32,14 @@ export function LoginPage() {
     setSubmitting(true);
 
     try {
-      await loginAdministrator({ login: username.trim(), password });
+      const identifier = username.trim();
+      if (identifier.includes('@')) {
+        await loginUser({ email: identifier, password });
+        navigate('/', { replace: true });
+        return;
+      }
+
+      await loginAdministrator({ login: identifier, password });
       const returnTo = location.state?.from;
       navigate(
         typeof returnTo === 'string' && returnTo.startsWith('/admin/')
@@ -62,8 +70,8 @@ export function LoginPage() {
           </header>
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
-              <span>E-mail ou usuário</span>
-              <input type="text" name="username" placeholder="Digite seu e-mail ou usuário" autoComplete="username" onChange={(event) => setUsername(event.target.value)} required value={username} />
+              <span>E-mail ou login de administrador</span>
+              <input type="text" name="username" placeholder="Digite seu e-mail ou login de administrador" autoComplete="username" onChange={(event) => setUsername(event.target.value)} required value={username} />
             </label>
             <label className="login-field">
               <span>Senha</span>

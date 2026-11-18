@@ -186,7 +186,7 @@ export function AdminPanelPage() {
           <span>⚙</span>Configurações
         </NavLink>
         <div className="admin-sidebar-bottom">
-          <div className="admin-trust-card"><strong><span>✓</span> Equipe de confiança</strong><p>Revisões ficam registradas para dar transparência.</p></div>
+          <div className="admin-trust-card"><strong><span>✓</span> Protótipo de equipe</strong><p>As revisões demonstradas não são persistidas pela API.</p></div>
           <div className="admin-sidebar-user"><Avatar>{initials}</Avatar><span><strong>{reviewerName}</strong><small>Administradora</small></span></div>
         </div>
       </aside>
@@ -207,6 +207,10 @@ export function AdminPanelPage() {
             {pageKey === 'usuarios' && !userId && <button className="admin-primary-button" onClick={() => showNotice('O backend ainda não oferece uma operação para cadastrar usuários pelo painel.')} type="button">＋ Adicionar usuário</button>}
             {pageKey === 'anuncios' && <button className="admin-outline-button" onClick={() => showNotice('Filtros aplicados aos anúncios exibidos nesta página.')} type="button">☷ Filtros</button>}
             {pageKey === 'usuarios' && userId && <Link className="admin-outline-button" to="/admin/usuarios">‹ Voltar à lista</Link>}
+          </div>
+
+          <div className="admin-prototype-banner" role="note">
+            <strong>Protótipo:</strong> dados demonstrativos; a API não oferece dados administrativos nem emite token. Ações não são salvas e o acesso é protegido apenas no navegador.
           </div>
 
           {notice && <div className="admin-notice" role="status">{notice}<button onClick={() => setNotice('')} type="button" aria-label="Fechar aviso">×</button></div>}
@@ -514,7 +518,7 @@ function SettingsPage({ settings, setSettings, onSave }) {
 
   return (
     <div className="admin-settings-layout">
-      <aside className="admin-panel admin-settings-nav"><h3>SEÇÕES</h3>{['Instituições', 'Recomendações', 'Equipe e acesso', 'Privacidade', 'Notificações'].map((section, index) => <button className={index === 1 ? 'active' : ''} key={section} onClick={() => document.getElementById(`settings-${index === 1 ? 'recommendations' : 'team'}`)?.scrollIntoView({ behavior: 'smooth' })} type="button"><span>{['○', '◷', '⊕', '⬡', '☷'][index]}</span>{section}</button>)}<p>As alterações realizadas aqui ficam registradas na seção <strong>Registros.</strong></p></aside>
+      <aside className="admin-panel admin-settings-nav"><h3>SEÇÕES</h3>{['Instituições', 'Recomendações', 'Equipe e acesso', 'Privacidade', 'Notificações'].map((section, index) => <button className={index === 1 ? 'active' : ''} key={section} onClick={() => document.getElementById(`settings-${index === 1 ? 'recommendations' : 'team'}`)?.scrollIntoView({ behavior: 'smooth' })} type="button"><span>{['○', '◷', '⊕', '⬡', '☷'][index]}</span>{section}</button>)}<p>Este protótipo não salva alterações na API.</p></aside>
       <div className="admin-settings-main">
         <section className="admin-panel"><div className="admin-panel-heading"><div><h2>Instituições e domínios</h2><p>Domínios usados para confirmar o vínculo universitário.</p></div><button className="admin-outline-button" onClick={() => onSave()} type="button">＋ Adicionar</button></div><div className="admin-institution-row"><span>⌂</span><div><strong>Universidade Federal de Alagoas (UFAL)</strong><small>Domínio institucional: @ufal.br</small></div><Badge tone="green">● Ativa</Badge><button className="admin-row-link" onClick={() => onSave()} type="button">Editar</button></div><p className="admin-illustration-note">Instituições demonstrativas. A API ainda não permite gerenciar domínios.</p></section>
         <section className="admin-panel" id="settings-recommendations"><div className="admin-panel-heading"><div><h2>Recomendações de convivência</h2><p>Defina como as recomendações aparecem nos perfis.</p></div><Badge>Em edição</Badge></div>

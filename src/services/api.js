@@ -1,5 +1,42 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+export async function loginUser({ email, password }) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`);
+    }
+
+    throw error;
+  }
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = Array.isArray(body?.message)
+      ? body.message.join(' ')
+      : body?.message;
+    throw new Error(message || 'Não foi possível autenticar o usuário.');
+  }
+
+  if (
+    !body ||
+    typeof body.userId !== 'string' ||
+    typeof body.name !== 'string' ||
+    typeof body.email !== 'string' ||
+    typeof body.status !== 'string'
+  ) {
+    throw new Error('A resposta de autenticação do usuário é inválida.');
+  }
+
+  return body;
+}
+
 export async function registerUser(payload) {
   const response = await fetch(`${API_URL}/user`, {
     method: 'POST',
