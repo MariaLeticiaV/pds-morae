@@ -26,7 +26,7 @@ O Moraê prioriza uma interface organizada, acessível e intuitiva, buscando red
 ## 🛠️ Tecnologias utilizadas
 
 - **Frontend:** React 19, JavaScript (JSX), React Router 7 e Vite 6
-- **Backend:** 
+- **Backend:** mantido em um repositório separado.
 
 ## 🚀 Como executar o projeto
 
