@@ -1,6 +1,16 @@
+import { getUserSession } from '../services/userAuth.js';
+
 const STORAGE_KEY = 'morae.demoUser';
 
 export function getDemoUser() {
+  const session = getUserSession();
+  if (session) {
+    return {
+      ...session,
+      role: 'estudante',
+      profile: {},
+    };
+  }
   try {
     const user = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     return user && typeof user.name === 'string' && user.name.trim() ? user : null;
@@ -23,13 +33,5 @@ export function saveDemoUser(name, role, profile = {}) {
     localStorage.setItem(`morae.profile.${role || 'estudante'}`, JSON.stringify(savedProfile));
   } catch {
     // The demo can continue even if browser storage is unavailable.
-  }
-}
-
-export function logoutDemoUser() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (error) {
-    console.error('Não foi possível encerrar a sessão neste navegador.', error);
   }
 }

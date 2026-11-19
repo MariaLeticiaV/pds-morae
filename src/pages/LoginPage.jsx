@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { getAdministratorSession, loginAdministrator } from '../services/adminAuth.js';
 import { loginUser } from '../services/api.js';
+import { getUserSession } from '../services/userAuth.js';
 import './LoginPage.css';
 
 function EyeIcon({ visible }) {
@@ -22,8 +23,10 @@ export function LoginPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const session = getAdministratorSession();
+  const userSession = getUserSession();
 
   if (session) return <Navigate to="/admin" replace />;
+  if (userSession) return <Navigate to="/" replace />;
 
   async function handleSubmit(event) {
     event.preventDefault();

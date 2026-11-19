@@ -1,3 +1,5 @@
+import { saveUserSession } from './userAuth.js';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export async function loginUser({ email, password }) {
@@ -18,6 +20,10 @@ export async function loginUser({ email, password }) {
 
   const body = await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('E-mail ou senha inválidos.');
+    }
+
     const message = Array.isArray(body?.message)
       ? body.message.join(' ')
       : body?.message;
@@ -29,12 +35,15 @@ export async function loginUser({ email, password }) {
     typeof body.userId !== 'string' ||
     typeof body.name !== 'string' ||
     typeof body.email !== 'string' ||
-    typeof body.status !== 'string'
+    typeof body.status !== 'string' ||
+    typeof body.accessToken !== 'string' ||
+    body.accessToken.length === 0 ||
+    body.tokenType !== 'Bearer'
   ) {
     throw new Error('A resposta de autenticação do usuário é inválida.');
   }
 
-  return body;
+  return saveUserSession(body);
 }
 
 export async function registerUser(payload) {
