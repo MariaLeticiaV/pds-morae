@@ -1,13 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { requestPasswordReset } from '../services/api.js';
 import './LoginPage.css';
 
 export function PasswordRecoveryPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [email, setEmail] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    setSubmitted(true);
+    setFeedback('');
+    setSubmitted(false);
+    setSubmitting(true);
+
+    try {
+      await requestPasswordReset(email.trim());
+      setSubmitted(true);
+    } catch (error) {
+      setFeedback(error.message || 'Não foi possível solicitar a recuperação de senha.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -26,11 +41,12 @@ export function PasswordRecoveryPage() {
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
               <span>E-mail</span>
-              <input type="email" name="email" placeholder="Digite seu e-mail" autoComplete="email" required />
+              <input type="email" name="email" placeholder="Digite seu e-mail" autoComplete="email" onChange={(event) => setEmail(event.target.value)} required value={email} />
             </label>
-            <button className="login-submit" type="submit">Enviar instruções</button>
+            <button className="login-submit" disabled={submitting} type="submit">{submitting ? 'Enviando...' : 'Enviar instruções'}</button>
           </form>
-          {submitted && <p className="recovery-notice" role="status">A recuperação ainda não está conectada ao serviço de autenticação. Nenhum e-mail foi enviado.</p>}
+          {submitted && <p className="recovery-notice" role="status">Se houver uma conta associada a este e-mail, enviaremos um link para redefinir sua senha.</p>}
+          {feedback && <p className="recovery-notice recovery-error" role="alert">{feedback}</p>}
           <p className="recovery-back"><Link to="/login">Voltar para o login</Link></p>
         </section>
       </div>

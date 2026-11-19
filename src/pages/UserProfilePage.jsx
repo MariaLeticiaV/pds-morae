@@ -1,4 +1,5 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
+import { AccountMenu } from '../components/AccountMenu.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
@@ -73,7 +74,7 @@ export function UserProfilePage() {
       <main className="user-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><span aria-hidden="true">⌕</span><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><Link to="/perfil" className="profile-greeting-link"><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {displayName}</span><span className="profile-top-chevron" /></Link></div>
+          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><AccountMenu className="profile-greeting-link"><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {displayName}</span><span className="profile-top-chevron" /></AccountMenu></div>
         </header>
         <div className="profile-page-content">
           <section className="profile-hero">

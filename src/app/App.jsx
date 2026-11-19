@@ -5,6 +5,7 @@ import { PlaceholderPage } from '../pages/PlaceholderPage.jsx';
 import { SearchPage } from '../pages/SearchPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { PasswordRecoveryPage } from '../pages/PasswordRecoveryPage.jsx';
+import { PasswordResetPage } from '../pages/PasswordResetPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
 import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 import { MyProfilePage } from '../pages/MyProfilePage.jsx';
@@ -19,7 +20,8 @@ export default function App() {
   const isSearchPage = pathname === '/buscar';
   const isLoginPage = pathname === '/login';
   const isPasswordRecoveryPage = pathname === '/recuperar-senha';
-  const isAuthPage = isLoginPage || isPasswordRecoveryPage;
+  const isPasswordResetPage = pathname === '/redefinir-senha';
+  const isAuthPage = isLoginPage || isPasswordRecoveryPage || isPasswordResetPage;
   const isSignupPage = pathname === '/cadastro';
   const isMessagesPage = pathname === '/mensagens';
   const isAnnouncePage = pathname === '/anunciar';
@@ -53,6 +55,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/admin/*" element={<AdminPanelPage />} />
           <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
+          <Route path="/redefinir-senha" element={<PasswordResetPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
           <Route path="/anunciar" element={<AnnouncePropertyPage />} />

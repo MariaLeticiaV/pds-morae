@@ -25,3 +25,11 @@ export function saveDemoUser(name, role, profile = {}) {
     // The demo can continue even if browser storage is unavailable.
   }
 }
+
+export function logoutDemoUser() {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch (error) {
+    console.error('Não foi possível encerrar a sessão neste navegador.', error);
+  }
+}

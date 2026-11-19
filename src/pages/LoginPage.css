@@ -34,6 +34,7 @@
 .login-register a:hover { text-decoration: underline; }
 .recovery-card { max-width: 560px; }
 .recovery-notice { margin: 15px 0 0; padding: 10px 12px; border-radius: 8px; color: #765d1b; background: #fff7df; font-family: 'Montserrat Alternates', sans-serif; font-size: 11px; line-height: 1.5; }
+.recovery-error { color: #9f335b; background: #fff0f5; }
 .recovery-back { margin: 20px 0 0; text-align: center; }
 .auth-decoration { position: absolute; z-index: -1; display: block; pointer-events: none; }
 .auth-mint { top: -130px; left: -100px; width: 260px; height: 310px; border-radius: 0 0 52% 0; background: #bce8d9; }

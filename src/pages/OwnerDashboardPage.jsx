@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { AccountMenu } from '../components/AccountMenu.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
@@ -58,10 +59,20 @@ const offererSections = [
 export function OwnerSidebar({ pathname, role }) {
   const isOfferer = role === 'ofertante';
   const navItems = isOfferer ? offererSections : ownerSections;
+  const location = useLocation();
+  const currentPathname = pathname ?? location.pathname;
+  const searchParams = new URLSearchParams(location.search);
   return <aside className="dashboard-sidebar owner-sidebar">
     <Link className="dashboard-brand" to="/" aria-label="Moraê, voltar à landing page"><Logo /></Link>
     <nav className="dashboard-nav" aria-label={`Menu do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`}>
-      {navItems.map((item) => <NavLink key={item.path} to={item.path} end={item.end} className={({ isActive }) => `${isActive ? 'selected' : ''}${item.path === '/anunciar' ? ' owner-announce-link' : ''}`}><LineIcon name={item.icon} />{item.label}</NavLink>)}
+      {navItems.map((item) => <NavLink key={item.path} to={item.path} end={item.end} className={({ isActive }) => {
+        const selected = item.path === '/buscar?favoritos=1'
+          ? currentPathname === '/buscar' && searchParams.get('favoritos') === '1'
+          : item.path === '/buscar'
+            ? currentPathname === '/buscar' && searchParams.get('favoritos') !== '1'
+            : isActive;
+        return `${selected ? 'selected' : ''}${item.path === '/anunciar' ? ' owner-announce-link' : ''}`;
+      }}><LineIcon name={item.icon} />{item.label}</NavLink>)}
     </nav>
     <span className="sidebar-version">Moraê · Maceió, AL</span>
   </aside>;
@@ -74,7 +85,7 @@ export function OwnerTopbar({ query, setQuery, role }) {
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   return <header className="dashboard-topbar owner-topbar">
     <label className="owner-search"><LineIcon name="search" size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={isOfferer ? 'Buscar por pessoa, vaga ou contrato...' : 'Buscar por imóvel, interessado ou contrato...'} aria-label={`Buscar no painel do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`} /></label>
-    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><Link className="profile-menu" to="/perfil"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" /></Link></div>
+    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" /></AccountMenu></div>
     {notice && <div className="owner-notice"><strong>Olá, {displayName}!</strong><span>Você tem interessados aguardando resposta.</span></div>}
   </header>;
 }

@@ -1,0 +1,49 @@
+.account-menu {
+  position: relative;
+  z-index: 5;
+  display: inline-flex;
+}
+.account-menu-trigger {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.account-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  display: grid;
+  min-width: 164px;
+  padding: 6px;
+  border: 1px solid #e4eeeb;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(28, 63, 59, 0.16);
+}
+.account-menu-dropdown a,
+.account-menu-dropdown button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 7px;
+  color: #285747;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.account-menu-dropdown a:hover,
+.account-menu-dropdown button:hover,
+.account-menu-dropdown a:focus-visible,
+.account-menu-dropdown button:focus-visible {
+  color: #007d80;
+  background: #e1f2ed;
+  outline: 0;
+}

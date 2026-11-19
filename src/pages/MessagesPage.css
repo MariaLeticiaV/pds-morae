@@ -6,6 +6,7 @@
 .messages-global-search input { width:100%; min-width:0; border:0; outline:0; color:#305f60; background:transparent; font:12px 'Montserrat Alternates',sans-serif; }
 .messages-global-search input::placeholder { color:#72b8b9; }
 .messages-top-actions { display:flex; flex:0 0 auto; align-items:center; gap:11px; color:#007d80; font-size:12px; font-weight:600; }
+.messages-top-actions .account-menu-trigger { display:flex; align-items:center; gap:8px; padding:0; border:0; color:inherit; background:transparent; }
 .messages-top-actions button { display:grid; place-items:center; padding:4px; border:0; color:#008b8c; background:transparent; cursor:pointer; }
 .messages-divider { width:1px; height:27px; background:#d9e0df; }
 .messages-user-avatar { display:grid; width:39px; height:39px; place-items:center; border:3px solid #f1f3f5; border-radius:50%; color:#fff; background:#8d9a9f; font:17px Inter,sans-serif; }

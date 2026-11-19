@@ -51,3 +51,40 @@ export async function registerUser(payload) {
 
   return body;
 }
+
+export async function requestPasswordReset(email) {
+  await sendPasswordResetRequest('request', { email }, 'Não foi possível solicitar a recuperação de senha.');
+}
+
+export async function resetPassword({ token, password, passwordConfirmation }) {
+  await sendPasswordResetRequest(
+    'confirm',
+    { token, password, passwordConfirmation },
+    'Não foi possível alterar a senha.',
+  );
+}
+
+async function sendPasswordResetRequest(action, payload, fallbackMessage) {
+  let response;
+  try {
+    response = await fetch(`${API_URL}/auth/password-reset/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`);
+    }
+
+    throw error;
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const message = Array.isArray(body?.message)
+      ? body.message.join(' ')
+      : body?.message;
+    throw new Error(message || fallbackMessage);
+  }
+}
