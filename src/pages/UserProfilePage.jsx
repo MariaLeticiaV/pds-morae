@@ -3,6 +3,7 @@ import { AccountMenu } from '../components/AccountMenu.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
+import { calculateCompatibility, getAccessToken } from '../services/api.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import './UserProfilePage.css';
 
@@ -21,37 +22,69 @@ const profiles = {
   },
 };
 
-const currentUser = { name: 'Você', initials: 'AL', course: 'Ciência da Computação', period: '5º período' };
-const sharedPoints = ['Ambas buscam apartamento compartilhado', 'Ambas preferem morar até 5 km do campus', 'Ambas não fumam', 'Ambas valorizam um ambiente tranquilo', 'Ambas gostam de manter o ambiente organizado'];
-
 function ProfileIcon({ name }) { return <span className="profile-icon-badge" aria-hidden="true"><LineIcon name={name} size={19} /></span>; }
 
-function CompatibilityModal({ profile, onClose }) {
+function CompatibilityModal({ profile, targetUserId, onClose }) {
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     function closeOnEscape(event) { if (event.key === 'Escape') onClose(); }
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [onClose]);
 
-  const differences = profile.name === 'Ana Beatriz'
-    ? ['Você busca aluguel de até R$ 600, enquanto Ana busca até R$ 800.', 'Você prefere poucas visitas; Ana recebe visitas às vezes.']
-    : ['Carolina prefere um apartamento compartilhado; você também considera repúblicas.', 'A faixa de orçamento de vocês é diferente.'];
-  const score = profile.name === 'Ana Beatriz' ? 78 : 86;
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCompatibility() {
+      setLoading(true);
+      setError('');
+      setResult(null);
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId || '')) {
+        setError('Este perfil de demonstração não está associado a uma conta da API.');
+        setLoading(false);
+        return;
+      }
+      if (!getAccessToken()) {
+        setError('Faça login para comparar seu perfil com o de outro estudante.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const data = await calculateCompatibility(targetUserId);
+        if (!cancelled) setResult(data);
+      } catch (requestError) {
+        if (!cancelled) setError(requestError.message || 'Não foi possível calcular a compatibilidade.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadCompatibility();
+    return () => { cancelled = true; };
+  }, [targetUserId]);
+
+  const score = result?.score ?? 0;
+  const commonPoints = result?.commonPoints ?? [];
+  const differences = result?.differences ?? [];
+  const iconByField = { sleepTime: 'moon', studyAtHome: 'graduation', organization: 'users', visitors: 'users', smoking: 'smokeFree', pets: 'homeGroup', cleaning: 'home', environment: 'moon', lifestyle: 'users' };
 
   return (
     <div className="compatibility-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="compatibility-modal" role="dialog" aria-modal="true" aria-labelledby="compatibility-title">
         <button className="compatibility-close" type="button" onClick={onClose} aria-label="Fechar janela">×</button>
         <h2 id="compatibility-title">Compatibilidade</h2>
-        <div className="compatibility-people">
-          <div className="compatibility-person"><span className="compatibility-avatar avatar-ana">{profile.initials}</span><strong>{profile.name}</strong><small>{profile.period}</small><small>{profile.course}</small></div>
-          <div className="compatibility-score" style={{ '--compatibility-score': `${score}%` }}><span className="compatibility-fit-icon" aria-hidden="true"><LineIcon name="homeGroup" size={15} /></span><div><strong>{score}%</strong><small>Compatibilidade</small></div></div>
-          <div className="compatibility-person"><span className="compatibility-avatar avatar-you">{currentUser.initials}</span><strong>{currentUser.name}</strong><small>{currentUser.period}</small><small>{currentUser.course}</small></div>
-        </div>
-        <p className="compatibility-summary">Vocês possuem várias preferências em comum e podem ter uma boa convivência!</p>
-        <section className="compatibility-list common-list"><h3><span>✓</span>Pontos em comum <small>{sharedPoints.length} itens</small></h3><ul>{sharedPoints.map((point, index) => <li key={point}><ProfileIcon name={['home', 'pin', 'smokeFree', 'moon', 'users'][index]} />{point}</li>)}</ul></section>
-        <section className="compatibility-list difference-list"><h3><span>!</span>Possíveis incompatibilidades <small>{differences.length} itens</small></h3><ul>{differences.map((point, index) => <li key={point}><ProfileIcon name={index === 0 ? 'money' : 'users'} />{point}</li>)}</ul></section>
-        <p className="compatibility-note">Essas informações são baseadas nas preferências cadastradas por cada usuário e podem ajudar na sua decisão. Converse para alinhar expectativas. 💛</p>
+        {loading ? <p className="compatibility-summary" role="status">Calculando compatibilidade…</p> : error ? <p className="compatibility-summary" role="alert">{error}</p> : result && <>
+          <div className="compatibility-people">
+            <div className="compatibility-person"><span className="compatibility-avatar avatar-ana">{result.target.name?.slice(0, 2).toLocaleUpperCase('pt-BR') || profile.initials}</span><strong>{result.target.name}</strong><small>Perfil de estudante</small></div>
+            <div className="compatibility-score" style={{ '--compatibility-score': `${score}%` }}><span className="compatibility-fit-icon" aria-hidden="true"><LineIcon name="homeGroup" size={15} /></span><div><strong>{score}%</strong><small>Compatibilidade</small></div></div>
+            <div className="compatibility-person"><span className="compatibility-avatar avatar-you">{result.viewer.name?.slice(0, 2).toLocaleUpperCase('pt-BR')}</span><strong>{result.viewer.name}</strong><small>Seu perfil</small></div>
+          </div>
+          <p className="compatibility-summary">{result.summary}</p>
+          <section className="compatibility-list common-list"><h3><span>✓</span>Pontos em comum <small>{commonPoints.length} itens</small></h3>{commonPoints.length ? <ul>{commonPoints.map((point, index) => <li key={`${point.field}-${index}`}><ProfileIcon name={iconByField[point.field] || 'users'} />{point.message}</li>)}</ul> : <p>Ainda não há respostas semelhantes entre os perfis.</p>}</section>
+          <section className="compatibility-list difference-list"><h3><span>!</span>Diferenças para conversar <small>{differences.length} itens</small></h3>{differences.length ? <ul>{differences.map((point, index) => <li key={`${point.field}-${index}`}><ProfileIcon name={iconByField[point.field] || 'users'} />{point.message}</li>)}</ul> : <p>Nenhuma diferença foi encontrada nas respostas cadastradas.</p>}</section>
+          <p className="compatibility-note">O índice compara as respostas de convivência informadas pelos dois estudantes. Ele ajuda a iniciar uma conversa, mas não garante que a convivência será compatível.</p>
+        </>}
       </section>
     </div>
   );
@@ -92,7 +125,7 @@ export function UserProfilePage() {
           <section className="profile-panel profile-reviews" id="avaliacoes"><h2><ProfileIcon name="star" />Avaliações Anteriores</h2>{profile.reviews.length ? <div className="review-grid">{profile.reviews.map((review) => <article className="review-card" key={review.title}><div><strong>{review.title}</strong><time>{review.date}</time></div><span className="review-stars" aria-label={`${review.stars} estrelas`}>{'★'.repeat(review.stars)}{'☆'.repeat(5 - review.stars)}</span><p>{review.text}</p></article>)}</div> : <div className="no-reviews"><LineIcon name="emptyReview" size={29} /><strong>Ainda não há avaliações para este perfil.</strong><p>Se você já dividiu um espaço ou foi locador(a) desta pessoa, deixe sua opinião e ajude outros estudantes!</p></div>}</section>
         </div>
       </main>
-      {showCompatibility && <CompatibilityModal profile={profile} onClose={() => setShowCompatibility(false)} />}
+      {showCompatibility && <CompatibilityModal profile={profile} targetUserId={id} onClose={() => setShowCompatibility(false)} />}
     </div>
   );
 }

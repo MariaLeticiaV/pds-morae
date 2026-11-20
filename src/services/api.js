@@ -1,34 +1,77 @@
 import { getUserSession, saveUserSession } from './userAuth.js';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:3000'
+).replace(/\/$/, '');
 
-export async function loginUser({ email, password }) {
+const ACCESS_TOKEN_KEY = 'morae.accessToken';
+
+async function request(path, { body, token, ...options } = {}) {
   let response;
+
   try {
-    response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`);
+      throw new Error(
+        `Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`,
+      );
     }
 
     throw error;
   }
 
-  const body = await response.json().catch(() => null);
+  const result = await response.json().catch(() => null);
+
   if (!response.ok) {
     if (response.status === 401) {
       throw new Error('E-mail ou senha inválidos.');
     }
 
-    const message = Array.isArray(body?.message)
-      ? body.message.join(' ')
-      : body?.message;
-    throw new Error(message || 'Não foi possível autenticar o usuário.');
+    const message = Array.isArray(result?.message)
+      ? result.message.join(' ')
+      : result?.message;
+
+    throw new Error(message || 'Não foi possível concluir a solicitação.');
   }
+
+  return result;
+}
+
+export function registerUser(payload) {
+  return request('/user', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function registerStudent(payload) {
+  return request('/students', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export function registerPropertyOwner(payload) {
+  return request('/property-owners', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
+export async function loginUser({ email, password }) {
+  const body = await request('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  });
 
   if (
     !body ||
@@ -43,26 +86,37 @@ export async function loginUser({ email, password }) {
     throw new Error('A resposta de autenticação do usuário é inválida.');
   }
 
-  return saveUserSession(body);
-}
-
-export async function registerUser(payload) {
-  const response = await fetch(`${API_URL}/user`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(body?.message || 'Não foi possível concluir o cadastro.');
-  }
+  localStorage.setItem(ACCESS_TOKEN_KEY, body.accessToken);
+  saveUserSession(body);
 
   return body;
 }
 
+export function getAccessToken() {
+  return localStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export function clearAccessToken() {
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+export function calculateCompatibility(
+  targetUserId,
+  token = getAccessToken(),
+) {
+  if (!token) {
+    throw new Error('Faça login para consultar a compatibilidade.');
+  }
+
+  return request(
+    `/matching/compatibility/${encodeURIComponent(targetUserId)}`,
+    { token },
+  );
+}
+
 export async function publishProperty({ fields, photos }) {
   const session = getUserSession();
+
   if (!session) {
     throw new Error('Entre na sua conta para publicar um imóvel.');
   }
@@ -73,13 +127,16 @@ export async function publishProperty({ fields, photos }) {
     Quarto: 'ROOM',
     República: 'REPUBLIC',
   };
+
   const minimumStays = {
     'Sem prazo mínimo': 'NO_MINIMUM',
     '3 meses': 'THREE_MONTHS',
     '6 meses': 'SIX_MONTHS',
     '12 meses': 'TWELVE_MONTHS',
   };
+
   const form = new FormData();
+
   const values = {
     postalCode: String(fields.cep || '').replace(/\D/g, ''),
     state: fields.state,
@@ -107,27 +164,36 @@ export async function publishProperty({ fields, photos }) {
       form.append(key, value);
     }
   }
+
   photos.forEach((photo) => form.append('photos', photo));
 
   let response;
+
   try {
     response = await fetch(`${API_URL}/properties`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
       body: form,
     });
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`);
+      throw new Error(
+        `Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`,
+      );
     }
+
     throw error;
   }
 
   const body = await response.json().catch(() => null);
+
   if (!response.ok) {
     const message = Array.isArray(body?.message)
       ? body.message.join(' ')
       : body?.message;
+
     throw new Error(message || 'Não foi possível publicar o imóvel.');
   }
 
@@ -143,10 +209,18 @@ export async function publishProperty({ fields, photos }) {
 }
 
 export async function requestPasswordReset(email) {
-  await sendPasswordResetRequest('request', { email }, 'Não foi possível solicitar a recuperação de senha.');
+  await sendPasswordResetRequest(
+    'request',
+    { email },
+    'Não foi possível solicitar a recuperação de senha.',
+  );
 }
 
-export async function resetPassword({ token, password, passwordConfirmation }) {
+export async function resetPassword({
+  token,
+  password,
+  passwordConfirmation,
+}) {
   await sendPasswordResetRequest(
     'confirm',
     { token, password, passwordConfirmation },
@@ -156,6 +230,7 @@ export async function resetPassword({ token, password, passwordConfirmation }) {
 
 async function sendPasswordResetRequest(action, payload, fallbackMessage) {
   let response;
+
   try {
     response = await fetch(`${API_URL}/auth/password-reset/${action}`, {
       method: 'POST',
@@ -164,7 +239,9 @@ async function sendPasswordResetRequest(action, payload, fallbackMessage) {
     });
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error(`Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`);
+      throw new Error(
+        `Não foi possível conectar à API em ${API_URL}. Inicie o backend e tente novamente.`,
+      );
     }
 
     throw error;
@@ -175,6 +252,7 @@ async function sendPasswordResetRequest(action, payload, fallbackMessage) {
     const message = Array.isArray(body?.message)
       ? body.message.join(' ')
       : body?.message;
+
     throw new Error(message || fallbackMessage);
   }
 }
