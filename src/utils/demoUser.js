@@ -1,6 +1,16 @@
+import { getUserSession } from '../services/userAuth.js';
+
 const STORAGE_KEY = 'morae.demoUser';
 
 export function getDemoUser() {
+  const session = getUserSession();
+  if (session) {
+    return {
+      ...session,
+      role: 'estudante',
+      profile: {},
+    };
+  }
   try {
     const user = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
     return user && typeof user.name === 'string' && user.name.trim() ? user : null;

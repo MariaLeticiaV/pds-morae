@@ -1,4 +1,5 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
+import { AccountMenu } from '../components/AccountMenu.jsx';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
@@ -170,7 +171,7 @@ export function SearchPage() {
           <div className="topbar-actions">
             <button className="icon-button notification-button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><Icon name="bell" size={22} /><i /></button>
             <span className="topbar-divider" />
-            <Link className="profile-menu" to="/perfil"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></Link>
+            <AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></AccountMenu>
           </div>
           {notification && <div className="notification-popover"><button onClick={() => setNotification('')} aria-label="Fechar"><Icon name="close" size={15} /></button>{notification}</div>}
         </header>
