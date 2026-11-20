@@ -30,7 +30,10 @@ export async function loginAdministrator({ login, password }) {
     typeof body.administratorId !== 'string' ||
     typeof body.userId !== 'string' ||
     typeof body.login !== 'string' ||
-    !Array.isArray(body.permissions)
+    !Array.isArray(body.permissions) ||
+    typeof body.accessToken !== 'string' ||
+    body.accessToken.length === 0 ||
+    body.tokenType !== 'Bearer'
   ) {
     throw new Error('A resposta de autenticação administrativa é inválida.');
   }
@@ -47,7 +50,10 @@ export function getAdministratorSession() {
       typeof session.administratorId === 'string' &&
       typeof session.userId === 'string' &&
       typeof session.login === 'string' &&
-      Array.isArray(session.permissions)
+      Array.isArray(session.permissions) &&
+      typeof session.accessToken === 'string' &&
+      session.accessToken.length > 0 &&
+      session.tokenType === 'Bearer'
     ) {
       return session;
     }

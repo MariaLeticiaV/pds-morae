@@ -38,7 +38,13 @@ export function LoginPage() {
       const identifier = username.trim();
       if (identifier.includes('@')) {
         await loginUser({ email: identifier, password });
-        navigate('/', { replace: true });
+        const returnTo = location.state?.from;
+        navigate(
+          typeof returnTo === 'string' && !returnTo.startsWith('/admin/')
+            ? returnTo
+            : '/',
+          { replace: true },
+        );
         return;
       }
 

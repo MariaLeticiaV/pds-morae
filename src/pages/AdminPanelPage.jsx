@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { getAdministratorSession, logoutAdministrator } from '../services/adminAuth.js';
+import { getAdminListing, listAdminListings } from '../services/adminListings.js';
+import { changeAdminUserStatus, getAdminUser, listAdminUsers } from '../services/adminUsers.js';
 import { Logo } from '../components/Logo.jsx';
 import './AdminPanelPage.css';
 
@@ -14,19 +16,13 @@ const navigation = [
   { path: '/admin/configuracoes', label: 'Configurações', icon: '⚙' },
 ];
 
-const initialUsers = [
+const demoVerificationUsers = [
   { id: 'vnk-1038', name: 'Bianca Martins', email: 'bianca.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '12 nov 2026', initials: 'BM' },
   { id: 'vnk-1029', name: 'Lucas Nascimento', email: 'lucas.n@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '11 nov 2026', initials: 'LN' },
   { id: 'vnk-1036', name: 'João Pedro Reis', email: 'joao.p@aluno.ifal.edu.br', profile: 'Aluno-organizador', institution: 'IFAL', status: 'Em análise', date: '10 nov 2026', initials: 'JR' },
   { id: 'usr-0541', name: 'Mariana Costa', email: 'mariana.costa@email.com', profile: 'Ofertante de imóvel', institution: '—', status: 'Não se aplica', date: '09 nov 2026', initials: 'MC' },
   { id: 'vnk-1032', name: 'Ana Martins', email: 'ana.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '08 nov 2026', initials: 'AM' },
   { id: 'vnk-1024', name: 'Caio Ribeiro', email: 'caio.r@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '07 nov 2026', initials: 'CR' },
-];
-
-const initialAds = [
-  { id: 'IMO-0318', kind: 'IMÓVEL', title: 'Apartamento compartilhado · Farol', owner: 'Roberto Almeida', detail: '3 quartos · 2 banheiros', summary: 'Anunciante: Roberto A. · próximo à UFAL', warning: 'Caução: 3 meses · repasse futuro: não informado', state: 'Em revisão' },
-  { id: 'VAG-0882', kind: 'REPASSE', title: 'Vaga em república · Tabuleiro', owner: 'Pedro Rocha', detail: 'Quarto individual · vaga imediata', summary: 'Anunciante: Pedro R. · saída no meio do semestre', warning: 'Condição de autorização do locador não informada', state: 'Complemento' },
-  { id: 'IMO-0314', kind: 'IMÓVEL', title: 'Quarto próximo à UFAL · Cidade Universitária', owner: 'Mariana Costa', detail: 'Quarto individual · mobiliado', summary: 'Anunciante: Mariana C. · modalidade residencial', warning: 'Caução: 2 meses · repasse pré-autorizado: sim', state: 'Dados completos' },
 ];
 
 const initialRecommendations = [
@@ -48,7 +44,7 @@ const initialRecords = [
 const pageInfo = {
   '': ['Visão geral', 'Acompanhe as revisões e mantenha a comunidade Moraê segura.'],
   usuarios: ['Usuários e vínculos', 'Confira o vínculo acadêmico e acompanhe as contas cadastradas.'],
-  anuncios: ['Anúncios em revisão', 'Confira informações essenciais antes de liberar imóveis e vagas.'],
+  anuncios: ['Anúncios cadastrados', 'Consulte os imóveis e vagas publicados na plataforma.'],
   recomendacoes: ['Recomendações', 'Acompanhe recomendações de convivência e os selos exibidos nos perfis.'],
   verificacoes: ['Verificações de vínculo', 'Revise solicitações de vínculo acadêmico enviadas por estudantes.'],
   registros: ['Registros de atividade', 'Consulte ações da equipe e eventos do sistema em um histórico único.'],
@@ -81,46 +77,145 @@ export function AdminPanelPage() {
   const session = getAdministratorSession();
   const location = useLocation();
   const path = location.pathname.replace(/^\/admin\/?/, '');
-  const [users, setUsers] = useState(initialUsers);
-  const [ads, setAds] = useState(initialAds);
+  const [users, setUsers] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [usersRefresh, setUsersRefresh] = useState(0);
+  const [userDetail, setUserDetail] = useState(null);
+  const [userDetailLoading, setUserDetailLoading] = useState(false);
+  const [userDetailError, setUserDetailError] = useState('');
+  const [userStatusSaving, setUserStatusSaving] = useState(false);
+  const [userPage, setUserPage] = useState(1);
+  const [ads, setAds] = useState([]);
+  const [adsTotal, setAdsTotal] = useState(0);
+  const [adsLoading, setAdsLoading] = useState(false);
+  const [adsError, setAdsError] = useState('');
+  const [adsRefresh, setAdsRefresh] = useState(0);
+  const [adPage, setAdPage] = useState(1);
+  const [adDetail, setAdDetail] = useState(null);
+  const [adDetailLoading, setAdDetailLoading] = useState(false);
+  const [adDetailError, setAdDetailError] = useState('');
   const [recommendations, setRecommendations] = useState(initialRecommendations);
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedAd, setSelectedAd] = useState(initialAds[0].id);
+  const [selectedAd, setSelectedAd] = useState('');
   const [selectedRecommendation, setSelectedRecommendation] = useState(initialRecommendations[0].id);
   const [userStatus, setUserStatus] = useState('Todos');
-  const [userInstitution, setUserInstitution] = useState('Todas instituições');
-  const [userProfile, setUserProfile] = useState('Todos os perfis');
-  const [adKind, setAdKind] = useState('Tipo de oferta');
+  const [adStatus, setAdStatus] = useState('');
   const [recommendationStatus, setRecommendationStatus] = useState('Status');
   const [settings, setSettings] = useState({ badge: true, review: true, consent: true });
 
   const [pageKey, userId] = path.split('/');
-  const selectedUser = users.find((user) => user.id === userId) || users[0];
-  const title = pageKey === 'usuarios' && userId ? 'Analisar vínculo' : (pageInfo[pageKey] || pageInfo[''])[0];
+  const title = pageKey === 'usuarios' && userId ? 'Detalhes do usuário' : (pageInfo[pageKey] || pageInfo[''])[0];
   const subtitle = pageInfo[pageKey]?.[1] || pageInfo[''][1];
   const searchValue = search.trim().toLocaleLowerCase('pt-BR');
-  const filteredUsers = useMemo(
-    () => users.filter((user) => {
-      const matchesSearch = `${user.name} ${user.email} ${user.institution}`.toLocaleLowerCase('pt-BR').includes(searchValue);
-      const matchesInstitution = userInstitution === 'Todas instituições' || user.institution === userInstitution;
-      const matchesProfile = userProfile === 'Todos os perfis' || user.profile === userProfile;
-      return matchesSearch && matchesInstitution && matchesProfile && (userStatus === 'Todos' || user.status === userStatus);
-    }),
-    [searchValue, userInstitution, userProfile, userStatus, users],
-  );
-  const filteredAds = ads.filter((ad) => (
-    `${ad.id} ${ad.title} ${ad.owner}`.toLocaleLowerCase('pt-BR').includes(searchValue) &&
-    (adKind === 'Tipo de oferta' || ad.kind === adKind.toLocaleUpperCase('pt-BR'))
-  ));
+  const activeAd = adDetail;
   const filteredRecommendations = recommendations.filter((item) => (
     `${item.id} ${item.person} ${item.author}`.toLocaleLowerCase('pt-BR').includes(searchValue) &&
     (recommendationStatus === 'Status' || item.status === recommendationStatus)
   ));
-  const activeAd = ads.find((ad) => ad.id === selectedAd) || ads[0];
   const activeRecommendation = recommendations.find((item) => item.id === selectedRecommendation) || recommendations[0];
   const reviewerName = session?.login.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toLocaleUpperCase('pt-BR')) || '';
   const initials = reviewerName.split(' ').map((part) => part[0]).slice(0, 2).join('');
+
+  useEffect(() => {
+    if (!session || pageKey !== 'usuarios' || userId) return undefined;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setUsersLoading(true);
+      setUsersError('');
+      listAdminUsers({
+        search,
+        status: userStatus,
+        page: userPage,
+        limit: 25,
+        signal: controller.signal,
+      }).then((result) => {
+        setUsers(result.items);
+        setTotalUsers(result.total);
+      }).catch((error) => {
+        if (error.name !== 'AbortError') setUsersError(error.message);
+      }).finally(() => {
+        if (!controller.signal.aborted) setUsersLoading(false);
+      });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pageKey, userId, search, userStatus, userPage, usersRefresh]);
+
+  useEffect(() => {
+    if (!session || pageKey !== 'usuarios' || !userId) return undefined;
+
+    const controller = new AbortController();
+    setUserDetail(null);
+    setUserDetailLoading(true);
+    setUserDetailError('');
+    getAdminUser(userId, { signal: controller.signal }).then(setUserDetail).catch((error) => {
+      if (error.name !== 'AbortError') setUserDetailError(error.message);
+    }).finally(() => {
+      if (!controller.signal.aborted) setUserDetailLoading(false);
+    });
+
+    return () => controller.abort();
+  }, [pageKey, userId]);
+
+  useEffect(() => {
+    if (!session || pageKey !== 'anuncios') return undefined;
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setAdsLoading(true);
+      setAdsError('');
+      listAdminListings({
+        search,
+        status: adStatus,
+        page: adPage,
+        limit: 25,
+        signal: controller.signal,
+      }).then((result) => {
+        setAds(result.items);
+        setAdsTotal(result.total);
+        setSelectedAd((current) => (
+          result.items.some((listing) => listing.listingId === current)
+            ? current
+            : result.items[0]?.listingId || ''
+        ));
+      }).catch((error) => {
+        if (error.name !== 'AbortError') setAdsError(error.message);
+      }).finally(() => {
+        if (!controller.signal.aborted) setAdsLoading(false);
+      });
+    }, 250);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [pageKey, search, adStatus, adPage, adsRefresh]);
+
+  useEffect(() => {
+    if (!session || pageKey !== 'anuncios' || !selectedAd) {
+      setAdDetail(null);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setAdDetail(null);
+    setAdDetailLoading(true);
+    setAdDetailError('');
+    getAdminListing(selectedAd, { signal: controller.signal }).then(setAdDetail).catch((error) => {
+      if (error.name !== 'AbortError') setAdDetailError(error.message);
+    }).finally(() => {
+      if (!controller.signal.aborted) setAdDetailLoading(false);
+    });
+
+    return () => controller.abort();
+  }, [pageKey, selectedAd]);
 
   if (!session) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
@@ -131,14 +226,24 @@ export function AdminPanelPage() {
     window.setTimeout(() => setNotice(''), 4500);
   }
 
-  function updateUserStatus(status) {
-    setUsers((current) => current.map((user) => user.id === selectedUser.id ? { ...user, status } : user));
-    showNotice(`Solicitação de ${selectedUser.name}: ${status.toLocaleLowerCase('pt-BR')}. A ação foi registrada nesta sessão do navegador.`);
-  }
+  async function updateUserStatus(status) {
+    if (!userDetail) return;
+    if (status === 'DEACTIVATED' && !window.confirm('Desativar esta conta permanentemente?')) return;
 
-  function updateAdState(state) {
-    setAds((current) => current.map((ad) => ad.id === activeAd.id ? { ...ad, state } : ad));
-    showNotice(`Anúncio ${activeAd.id}: ${state.toLocaleLowerCase('pt-BR')}. A alteração está nesta sessão do navegador.`);
+    setUserStatusSaving(true);
+    try {
+      const updatedUser = await changeAdminUserStatus(userDetail.id, status);
+      setUserDetail(updatedUser);
+      setUsers((current) => current.map((user) => (
+        user.id === updatedUser.id ? updatedUser : user
+      )));
+      setUsersRefresh((current) => current + 1);
+      showNotice(`A conta de ${updatedUser.name} foi atualizada.`);
+    } catch (error) {
+      showNotice(error.message || 'Não foi possível atualizar a conta.');
+    } finally {
+      setUserStatusSaving(false);
+    }
   }
 
   function updateRecommendationStatus(status) {
@@ -173,7 +278,7 @@ export function AdminPanelPage() {
             <NavLink
               end={item.path === '/admin'}
               key={item.path}
-              onClick={() => setSearch('')}
+              onClick={() => { setSearch(''); setUserPage(1); }}
               to={item.path}
               className={({ isActive }) => `admin-nav-link${isActive || (item.path === '/admin/usuarios' && path.startsWith('usuarios/')) ? ' active' : ''}`}
             >
@@ -186,7 +291,7 @@ export function AdminPanelPage() {
           <span>⚙</span>Configurações
         </NavLink>
         <div className="admin-sidebar-bottom">
-          <div className="admin-trust-card"><strong><span>✓</span> Protótipo de equipe</strong><p>As revisões demonstradas não são persistidas pela API.</p></div>
+          <div className="admin-trust-card"><strong><span>✓</span>{pageKey === 'usuarios' ? ' Contas protegidas' : ' Protótipo de equipe'}</strong><p>{pageKey === 'usuarios' ? 'Alterações de contas exigem permissão administrativa.' : 'As revisões demonstradas não são persistidas pela API.'}</p></div>
           <div className="admin-sidebar-user"><Avatar>{initials}</Avatar><span><strong>{reviewerName}</strong><small>Administradora</small></span></div>
         </div>
       </aside>
@@ -194,7 +299,7 @@ export function AdminPanelPage() {
       <div className="admin-main">
         <header className="admin-topbar">
           <div className="admin-crumb"><Link to="/admin">Moraê</Link><span>›</span><strong>{title}</strong></div>
-          <label className="admin-global-search"><span>⌕</span><input aria-label="Buscar no painel" onChange={(event) => setSearch(event.target.value)} placeholder="Buscar no painel" value={search} /></label>
+          <label className="admin-global-search"><span>⌕</span><input aria-label="Buscar no painel" onChange={(event) => { setSearch(event.target.value); setUserPage(1); setAdPage(1); }} placeholder="Buscar no painel" value={search} /></label>
           <button className="admin-notification" onClick={() => showNotice('Você está em dia com as notificações do painel.')} title="Notificações" type="button">♧</button>
           <div className="admin-top-user"><Avatar>{initials}</Avatar><span><strong>{reviewerName}</strong><small>Administradora</small></span></div>
           <button className="admin-logout" onClick={() => { logoutAdministrator(); window.location.assign('/login'); }} type="button">Sair</button>
@@ -204,44 +309,59 @@ export function AdminPanelPage() {
           <div className="admin-page-heading">
             <div><h1>{title}</h1><p>{subtitle}</p></div>
             {pageKey === '' && <button className="admin-primary-button" onClick={() => showNotice('O backend ainda não oferece uma operação para criar comunicados.')} type="button">＋ Novo comunicado</button>}
-            {pageKey === 'usuarios' && !userId && <button className="admin-primary-button" onClick={() => showNotice('O backend ainda não oferece uma operação para cadastrar usuários pelo painel.')} type="button">＋ Adicionar usuário</button>}
-            {pageKey === 'anuncios' && <button className="admin-outline-button" onClick={() => showNotice('Filtros aplicados aos anúncios exibidos nesta página.')} type="button">☷ Filtros</button>}
+            {pageKey === 'anuncios' && <button className="admin-outline-button" onClick={() => setAdsRefresh((current) => current + 1)} type="button">Atualizar lista</button>}
             {pageKey === 'usuarios' && userId && <Link className="admin-outline-button" to="/admin/usuarios">‹ Voltar à lista</Link>}
           </div>
 
-          <div className="admin-prototype-banner" role="note">
-            <strong>Protótipo:</strong> dados demonstrativos; a API não oferece dados administrativos nem emite token. Ações não são salvas e o acesso é protegido apenas no navegador.
-          </div>
+          {pageKey === 'usuarios'
+            ? <div className="admin-prototype-banner" role="note"><strong>Gerenciamento de contas:</strong> os dados e alterações desta seção são consultados e salvos no banco de dados.</div>
+            : pageKey === 'anuncios'
+              ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> listagem e consulta obtidas diretamente do banco de dados.</div>
+            : <div className="admin-prototype-banner" role="note"><strong>Protótipo:</strong> as demais áreas administrativas ainda exibem dados demonstrativos.</div>}
 
           {notice && <div className="admin-notice" role="status">{notice}<button onClick={() => setNotice('')} type="button" aria-label="Fechar aviso">×</button></div>}
 
           {pageKey === '' && <Overview showNotice={showNotice} />}
           {pageKey === 'usuarios' && !userId && (
             <UsersPage
-              users={filteredUsers}
+              users={users}
+              total={totalUsers}
+              loading={usersLoading}
+              error={usersError}
               status={userStatus}
-              onStatus={setUserStatus}
-              institution={userInstitution}
-              onInstitution={setUserInstitution}
-              profile={userProfile}
-              onProfile={setUserProfile}
+              onStatus={(value) => { setUserStatus(value); setUserPage(1); }}
               search={search}
-              onSearch={setSearch}
+              onSearch={(value) => { setSearch(value); setUserPage(1); }}
+              page={userPage}
+              onPage={setUserPage}
             />
           )}
           {pageKey === 'usuarios' && userId && (
-            <UserReviewPage user={selectedUser} onDecision={updateUserStatus} onNotice={showNotice} />
+            <UserReviewPage
+              user={userDetail}
+              loading={userDetailLoading}
+              error={userDetailError}
+              saving={userStatusSaving}
+              onStatus={updateUserStatus}
+            />
           )}
           {pageKey === 'anuncios' && (
             <AdsPage
-              ads={filteredAds}
+              ads={ads}
+              total={adsTotal}
+              loading={adsLoading}
+              error={adsError}
+              onRetry={() => setAdsRefresh((current) => current + 1)}
+              page={adPage}
+              onPage={setAdPage}
+              status={adStatus}
+              onStatus={(value) => { setAdStatus(value); setAdPage(1); }}
               activeAd={activeAd}
+              detailLoading={adDetailLoading}
+              detailError={adDetailError}
               onSelect={setSelectedAd}
-              onAction={updateAdState}
               search={search}
-              onSearch={setSearch}
-              kind={adKind}
-              onKind={setAdKind}
+              onSearch={(value) => { setSearch(value); setAdPage(1); }}
             />
           )}
           {pageKey === 'recomendacoes' && (
@@ -256,7 +376,7 @@ export function AdminPanelPage() {
               onStatus={setRecommendationStatus}
             />
           )}
-          {pageKey === 'verificacoes' && <VerificationsPage users={users} search={search} onSearch={setSearch} />}
+          {pageKey === 'verificacoes' && <VerificationsPage users={demoVerificationUsers} search={search} onSearch={setSearch} />}
           {pageKey === 'registros' && <RecordsPage onExport={exportRecords} search={search} onSearch={setSearch} />}
           {pageKey === 'configuracoes' && <SettingsPage settings={settings} setSettings={setSettings} onSave={() => showNotice('Preferências salvas nesta sessão do navegador.')} />}
           {!['', 'usuarios', 'anuncios', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
@@ -320,64 +440,81 @@ function AttentionItem({ color, title, count }) {
   return <div className="admin-attention-item"><i className={color} /><span>{title}</span><strong>{count}</strong></div>;
 }
 
-function UsersPage({ users, status, onStatus, institution, onInstitution, profile, onProfile, search, onSearch }) {
+function UsersPage({ users, total, loading, error, status, onStatus, search, onSearch, page, onPage }) {
+  const pageCount = Math.max(1, Math.ceil(total / 25));
   return (
     <>
       <Stats items={[
-        { label: 'STATUS DO VÍNCULO', value: '18', note: 'aguardando análise' },
-        { label: 'VERIFICADOS', value: '936', note: 'estudantes' },
-        { label: 'INSTITUIÇÕES', value: '12', note: 'com domínio cadastrado' },
-        { label: 'ATENÇÃO', value: '7', note: 'aguardando há mais de 48 h', badge: 'Priorize os pedidos mais antigos.' },
+        { label: 'USUÁRIOS CADASTRADOS', value: total.toLocaleString('pt-BR'), note: 'total no banco de dados' },
       ]} />
       <section className="admin-panel admin-table-panel">
         <div className="admin-filterbar">
           <label className="admin-search-input"><span>⌕</span><span className="sr-only">Buscar pessoa</span><input onChange={(event) => onSearch(event.target.value)} placeholder="Buscar por nome ou e-mail" value={search} /></label>
-          <select aria-label="Filtrar instituição" onChange={(event) => onInstitution(event.target.value)} value={institution}><option>Todas instituições</option><option>UFAL</option><option>IFAL</option></select>
-          <select aria-label="Filtrar perfil" onChange={(event) => onProfile(event.target.value)} value={profile}><option>Todos os perfis</option><option>Aluna buscadora</option><option>Aluno-anfitrião</option></select>
-          <select aria-label="Filtrar vínculo" onChange={(event) => onStatus(event.target.value)} value={status}><option>Todos</option><option>Em análise</option><option>Verificado</option><option>Não se aplica</option></select>
+          <select aria-label="Filtrar situação da conta" onChange={(event) => onStatus(event.target.value)} value={status}><option>Todos</option><option value="ACTIVE">Ativa</option><option value="SUSPENDED">Suspensa</option><option value="DEACTIVATED">Desativada</option></select>
           <button className="admin-outline-button" onClick={() => window.print()} type="button">▣ Exportar lista</button>
         </div>
-        <div className="admin-table-scroll"><table><thead><tr><th>PESSOA</th><th>PERFIL</th><th>INSTITUIÇÃO</th><th>VÍNCULO</th><th>CADASTRO</th><th /></tr></thead>
-          <tbody>{users.map((user) => <tr key={user.id}><td><div className="admin-person-cell"><Avatar tone="pink">{user.initials}</Avatar><span><strong>{user.name}</strong><small>{user.email}</small></span></div></td><td>{user.profile}</td><td>{user.institution}</td><td><Badge tone={user.status === 'Verificado' ? 'green' : user.status === 'Não se aplica' ? 'neutral' : 'purple'}>{user.status}</Badge></td><td>{user.date}</td><td><Link className="admin-row-link" to={`/admin/usuarios/${user.id}`}>{user.status === 'Em análise' ? 'Analisar →' : 'Ver perfil'}</Link></td></tr>)}</tbody>
-        </table></div>
-        {users.length === 0 && <p className="admin-empty">Nenhum usuário corresponde à busca.</p>}
-        <div className="admin-table-footer"><span>Exibindo {users.length} de 1.284 contas</span><div>Linhas por página <select aria-label="Linhas por página"><option>10</option><option>25</option></select><button className="selected" type="button">1</button><button type="button">2</button></div></div>
-        <p className="admin-illustration-note">Lista ilustrativa: a API administrativa de usuários ainda não está disponível.</p>
+        {error && <p className="admin-empty" role="alert">{error}</p>}
+        {loading && <p className="admin-empty" role="status">Consultando usuários cadastrados...</p>}
+        {!loading && !error && <div className="admin-table-scroll"><table><thead><tr><th>PESSOA</th><th>PERFIL</th><th>CURSO</th><th>SITUAÇÃO DA CONTA</th><th>CADASTRO</th><th /></tr></thead>
+          <tbody>{users.map((user) => {
+            const profile = user.student && user.propertyOwner
+              ? 'Estudante · Ofertante'
+              : user.student ? 'Estudante' : user.propertyOwner ? 'Ofertante de imóvel' : 'Usuário';
+            const accountStatus = accountStatusLabel(user.status);
+            return <tr key={user.id}><td><div className="admin-person-cell"><Avatar tone="pink">{user.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toLocaleUpperCase('pt-BR')}</Avatar><span><strong>{user.name}</strong><small>{user.email}</small></span></div></td><td>{profile}</td><td>{user.student?.course || '—'}</td><td><Badge tone={user.status === 'ACTIVE' ? 'green' : user.status === 'DEACTIVATED' ? 'neutral' : 'purple'}>{accountStatus}</Badge></td><td>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</td><td><Link className="admin-row-link" to={`/admin/usuarios/${user.id}`}>Gerenciar →</Link></td></tr>;
+          })}</tbody>
+        </table></div>}
+        {!loading && !error && users.length === 0 && <p className="admin-empty">Nenhum usuário corresponde à consulta.</p>}
+        <div className="admin-table-footer"><span>Exibindo {users.length} de {total.toLocaleString('pt-BR')} usuários</span><div><button className="admin-outline-button" disabled={page <= 1 || loading} onClick={() => onPage(page - 1)} type="button">Anterior</button><span>Página {page} de {pageCount}</span><button className="admin-outline-button" disabled={page >= pageCount || loading} onClick={() => onPage(page + 1)} type="button">Próxima</button></div></div>
       </section>
     </>
   );
 }
 
-function UserReviewPage({ user, onDecision, onNotice }) {
+function accountStatusLabel(status) {
+  return {
+    ACTIVE: 'Ativa',
+    SUSPENDED: 'Suspensa',
+    DEACTIVATED: 'Desativada',
+  }[status] || status;
+}
+
+function verificationStatusLabel(status) {
+  return {
+    PENDING: 'Em análise',
+    VERIFIED: 'Verificado',
+    REJECTED: 'Reprovado',
+  }[status] || 'Não se aplica';
+}
+
+function UserReviewPage({ user, loading, error, saving, onStatus }) {
+  if (loading) return <p className="admin-empty" role="status">Carregando dados do usuário...</p>;
+  if (error) return <p className="admin-empty" role="alert">{error}</p>;
+  if (!user) return <p className="admin-empty" role="alert">Usuário não encontrado.</p>;
+
+  const canBeManaged = user.status !== 'DEACTIVATED';
   return (
     <div className="admin-review-layout">
       <div className="admin-review-main">
         <section className="admin-panel admin-request-card">
-          <div className="admin-request-person"><Avatar tone="pink">{user.initials}</Avatar><div><small>SOLICITAÇÃO VNK-1038</small><h2>{user.name}</h2><p>{user.profile} · cadastrada em {user.date}</p></div><Badge>{user.status}</Badge></div>
-          <div className="admin-request-meta"><span>Instituição <strong>{user.institution}</strong></span><span>Curso <strong>Pedagogia</strong></span><span>Ingresso <strong>2026</strong></span></div>
+          <div className="admin-request-person"><Avatar tone="pink">{user.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toLocaleUpperCase('pt-BR')}</Avatar><div><small>ID {user.id}</small><h2>{user.name}</h2><p>{user.email}</p></div><Badge tone={user.status === 'ACTIVE' ? 'green' : user.status === 'DEACTIVATED' ? 'neutral' : 'purple'}>{accountStatusLabel(user.status)}</Badge></div>
+          <div className="admin-request-meta"><span>Telefone <strong>{user.phone || 'Não informado'}</strong></span><span>E-mail confirmado <strong>{user.emailVerified ? 'Sim' : 'Não'}</strong></span><span>Cadastro <strong>{new Date(user.createdAt).toLocaleDateString('pt-BR')}</strong></span></div>
         </section>
         <section className="admin-panel">
-          <h2>Evidências de vínculo</h2><p className="admin-panel-subtitle">Dados fornecidos pela pessoa e confirmação pelo e-mail institucional.</p>
-          <Evidence title="E-mail institucional confirmado" detail={`${user.email} · confirmação concluída em 12 nov, 16:24`} status="Confirmado" />
-          <Evidence title="Domínio institucional reconhecido" detail={`${user.institution.toLowerCase()}.br corresponde à instituição selecionada.`} status="Conferido" />
-        </section>
-        <section className="admin-panel">
-          <h2>Histórico de análise</h2>
-          <div className="admin-timeline"><strong>Confirmação enviada para o e-mail informado</strong><small>12 nov 2026 · 16:21 · Sistema Moraê</small><strong>Pessoa confirmou o endereço institucional</strong><small>12 nov 2026 · 16:24 · Aguardando conferência administrativa</small></div>
-          <div className="admin-comment">Nenhum comentário interno registrado neste pedido.</div>
+          <h2>Perfis vinculados</h2>
+          {user.student && <Evidence title={`Estudante · ${user.student.course}`} detail={`Período ${user.student.period}`} status={verificationStatusLabel(user.student.verificationStatus)} />}
+          {user.propertyOwner && <Evidence title="Ofertante de imóvel" detail="Perfil de proprietário cadastrado" status={verificationStatusLabel(user.propertyOwner.verificationStatus)} />}
+          {!user.student && !user.propertyOwner && <p className="admin-panel-subtitle">Nenhum perfil complementar cadastrado.</p>}
         </section>
       </div>
       <aside className="admin-panel admin-decision-panel">
-        <h2>Resumo da validação</h2><p className="admin-panel-subtitle">Revise as etapas antes de concluir.</p>
-        <Evidence compact title="E-mail pertence ao domínio da UFAL" detail="Confirmação reconhecida" />
-        <Evidence compact title="Dados da instituição conferidos" detail={`Instituição selecionada: ${user.institution}`} />
-        <Evidence compact pending title="Revisão por uma pessoa" detail="Etapa atual" />
-        <hr /><h3>DECISÃO</h3>
-        <textarea aria-label="Observação interna" placeholder="Observação interna (opcional)" />
-        <button className="admin-outline-button full" onClick={() => onNotice('Solicitação de comprovação adicional registrada localmente.')} type="button">Solicitar outra comprovação</button>
-        <button className="admin-primary-button full" onClick={() => onDecision('Verificado')} type="button">Aprovar vínculo</button>
-        <button className="admin-outline-button full" onClick={() => onDecision('Recusado')} type="button">Recusar solicitação</button>
-        <div className="admin-info-box"><strong>ⓘ Transparência da revisão</strong><p>A decisão e seu responsável ficam registrados. O selo só aparece após a conclusão da verificação.</p></div>
+        <h2>Gerenciar conta</h2><p className="admin-panel-subtitle">As alterações são persistidas e afetam o acesso do usuário.</p>
+        {user.status === 'ACTIVE' && <button className="admin-outline-button full" disabled={saving} onClick={() => onStatus('SUSPENDED')} type="button">Suspender conta</button>}
+        {user.status === 'SUSPENDED' && <button className="admin-primary-button full" disabled={saving} onClick={() => onStatus('ACTIVE')} type="button">Reativar conta</button>}
+        {canBeManaged && <button className="admin-outline-button full" disabled={saving} onClick={() => onStatus('DEACTIVATED')} type="button">Desativar conta permanentemente</button>}
+        {!canBeManaged && <div className="admin-info-box"><strong>Conta desativada</strong><p>A desativação é definitiva e não pode ser revertida por este painel.</p></div>}
+        {saving && <p className="admin-panel-subtitle" role="status">Salvando alteração...</p>}
+        <div className="admin-info-box"><strong>ⓘ Gerenciamento administrativo</strong><p>O acesso é protegido por token e permissão MANAGE_USERS.</p></div>
       </aside>
     </div>
   );
@@ -387,37 +524,144 @@ function Evidence({ title, detail, status, compact = false, pending = false }) {
   return <div className={`admin-evidence${compact ? ' compact' : ''}`}><span className={pending ? 'pending' : ''}>{pending ? '!' : '✓'}</span><div><strong>{title}</strong><small>{detail}</small></div>{status && <Badge tone="green">{status}</Badge>}</div>;
 }
 
-function AdsPage({ ads, activeAd, onSelect, onAction, search, onSearch, kind, onKind }) {
+function AdsPage({
+  ads,
+  total,
+  loading,
+  error,
+  onRetry,
+  page,
+  onPage,
+  status,
+  onStatus,
+  activeAd,
+  detailLoading,
+  detailError,
+  onSelect,
+  search,
+  onSearch,
+}) {
+  const pageSize = 25;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
   return (
-    <>
-      <Stats items={[
-        { label: 'AGUARDANDO MODERAÇÃO', value: '12', note: 'anúncios' },
-        { label: 'IMÓVEIS', value: '8' },
-        { label: 'VAGAS PARA REPASSE', value: '4' },
-        { label: 'INFORMAÇÃO COMPLEMENTAR', value: '3', note: 'anúncios precisam de revisão' },
-      ]} />
-      <div className="admin-review-layout ads-layout">
-        <section className="admin-panel admin-list-panel">
-          <div className="admin-panel-heading"><div><h2>Fila de anúncios</h2><p>Imóveis e vagas em análise pela equipe.</p></div></div>
-          <div className="admin-filterbar compact-filters"><label className="admin-search-input"><span>⌕</span><input onChange={(event) => onSearch(event.target.value)} placeholder="Buscar anúncio ou anunciante" value={search} /></label><select aria-label="Filtrar oferta" onChange={(event) => onKind(event.target.value)} value={kind}><option>Tipo de oferta</option><option>Imóvel</option><option>Repasse</option></select><select aria-label="Ordenar anúncios"><option>Mais antigos primeiro</option><option>Mais recentes</option></select></div>
-          {ads.map((ad) => <button className={`admin-ad-row${activeAd.id === ad.id ? ' active' : ''}`} key={ad.id} onClick={() => onSelect(ad.id)} type="button"><span className="admin-ad-illustration">⌂</span><span className="admin-ad-copy"><small>{ad.id} · {ad.kind}</small><strong>{ad.title}</strong><span>{ad.summary}</span><span>{ad.warning}</span><b>Revisar anúncio →</b></span><Badge tone={ad.state === 'Dados completos' ? 'green' : 'purple'}>{ad.state}</Badge></button>)}
-          <div className="admin-table-footer"><span>Exibindo {ads.length} de 12 anúncios pendentes</span><button className="admin-row-link" type="button">Ver fila completa →</button></div>
-          <p className="admin-illustration-note">Anúncios demonstrativos. A API atual não oferece rotas de moderação administrativa.</p>
-        </section>
-        <aside className="admin-panel admin-selected-panel">
-          <span className="admin-panel-kicker">ANÚNCIO SELECIONADO</span><div className="admin-panel-heading"><h2>{activeAd.id}</h2><Badge>{activeAd.state}</Badge></div>
-          <div className="admin-property-art"><span>⌂</span><div><small>MACEIÓ · FAROL</small><strong>{activeAd.title}</strong><small>{activeAd.detail}</small></div></div>
-          <h3>{activeAd.owner}</h3><p className="admin-panel-subtitle">Proprietário · perfil verificado</p><hr />
-          <h3>INFORMAÇÕES PARA CONFERIR</h3>
-          <Evidence compact title="Caução declarada" detail="Confirmar valor e forma de depósito." />
-          <Evidence compact pending title={activeAd.warning} detail="Solicitar condição prevista no contrato." />
-          <Evidence compact title="Ocupação e modalidade declaradas" detail="Dados do anúncio completos." />
-          <div className="admin-info-box purple-box">ⓘ Sinalização para revisão humana. Confira documentos antes de concluir.</div>
-          <div className="admin-action-row"><button className="admin-outline-button" onClick={() => onAction('Ajuste solicitado')} type="button">Solicitar ajuste</button><button className="admin-primary-button" onClick={() => onAction('Revisão concluída')} type="button">Concluir revisão</button></div>
-        </aside>
-      </div>
-    </>
+    <div className="admin-review-layout ads-layout">
+      <section className="admin-panel admin-list-panel">
+        <div className="admin-panel-heading"><div><h2>Anúncios cadastrados</h2><p>Imóveis e vagas consultados no sistema.</p></div></div>
+        <div className="admin-filterbar compact-filters">
+          <label className="admin-search-input"><span>⌕</span><input onChange={(event) => onSearch(event.target.value)} placeholder="Buscar anúncio, anunciante ou cidade" value={search} /></label>
+          <select aria-label="Filtrar situação do anúncio" onChange={(event) => onStatus(event.target.value)} value={status}>
+            <option value="">Todos os status</option>
+            <option value="PENDING">Pendente</option>
+            <option value="IN_REVIEW">Em análise</option>
+            <option value="APPROVED">Aprovado</option>
+            <option value="REJECTED">Rejeitado</option>
+          </select>
+        </div>
+        {loading && <p className="admin-empty" role="status">Carregando anúncios...</p>}
+        {!loading && error && <div className="admin-api-error" role="alert"><span>{error}</span><button className="admin-outline-button" onClick={onRetry} type="button">Tentar novamente</button></div>}
+        {!loading && !error && ads.length === 0 && <p className="admin-empty">Nenhum anúncio encontrado com esses filtros.</p>}
+        {!loading && !error && ads.map((ad) => {
+          const firstImage = ad.media?.[0];
+          return (
+            <button
+              aria-pressed={activeAd?.listingId === ad.listingId}
+              className={`admin-ad-row${activeAd?.listingId === ad.listingId ? ' active' : ''}`}
+              key={ad.listingId}
+              onClick={() => onSelect(ad.listingId)}
+              type="button"
+            >
+              {firstImage
+                ? <img alt="" className="admin-ad-illustration admin-ad-image" src={resolveAdminMediaUrl(firstImage.url)} />
+                : <span className="admin-ad-illustration">⌂</span>}
+              <span className="admin-ad-copy">
+                <small>{ad.listingId} · {housingTypeLabel(ad.property.housingType)}</small>
+                <strong>{ad.title}</strong>
+                <span>{ad.property.residence.city} · {ad.property.residence.neighborhood}</span>
+                <span>{ad.property.owner.name} · {formatCurrency(ad.rent)}/mês</span>
+              </span>
+              <Badge tone={listingStatusTone(ad.status)}>{listingStatusLabel(ad.status)}</Badge>
+            </button>
+          );
+        })}
+        {!loading && !error && total > 0 && (
+          <div className="admin-table-footer">
+            <span>Exibindo {((page - 1) * pageSize) + 1}–{Math.min(page * pageSize, total)} de {total} anúncios</span>
+            <div>
+              <button aria-label="Página anterior" disabled={page <= 1} onClick={() => onPage(page - 1)} type="button">‹</button>
+              <span>Página {page} de {pageCount}</span>
+              <button aria-label="Próxima página" disabled={page >= pageCount} onClick={() => onPage(page + 1)} type="button">›</button>
+            </div>
+          </div>
+        )}
+      </section>
+      <aside className="admin-panel admin-selected-panel">
+        <span className="admin-panel-kicker">DETALHES DO ANÚNCIO</span>
+        {detailLoading && <p className="admin-empty" role="status">Carregando detalhes...</p>}
+        {!detailLoading && detailError && <div className="admin-api-error" role="alert">{detailError}</div>}
+        {!detailLoading && !detailError && !activeAd && <p className="admin-empty">Selecione um anúncio para consultar os detalhes.</p>}
+        {!detailLoading && !detailError && activeAd && (
+          <>
+            <div className="admin-panel-heading"><h2>{activeAd.title}</h2><Badge tone={listingStatusTone(activeAd.status)}>{listingStatusLabel(activeAd.status)}</Badge></div>
+            <p className="admin-panel-subtitle">ID: {activeAd.listingId}</p>
+            {activeAd.media?.length > 0 && (
+              <div className="admin-listing-gallery">
+                {activeAd.media.map((image) => (
+                  <img alt={`Foto do anúncio ${activeAd.title}`} key={image.id} src={resolveAdminMediaUrl(image.url)} />
+                ))}
+              </div>
+            )}
+            <div className="admin-listing-detail">
+              <h3>IMÓVEL E LOCALIZAÇÃO</h3>
+              <p>{housingTypeLabel(activeAd.property.housingType)} · {activeAd.property.bedrooms} quartos · {activeAd.property.bathrooms} banheiros · {activeAd.property.parkingSpaces} vagas</p>
+              <p>{activeAd.property.residence.street}, {activeAd.property.residence.number}{activeAd.property.residence.complement ? `, ${activeAd.property.residence.complement}` : ''}</p>
+              <p>{activeAd.property.residence.neighborhood}, {activeAd.property.residence.city} - {activeAd.property.residence.state} · CEP {activeAd.property.residence.postalCode}</p>
+              <h3>VALORES E CONDIÇÕES</h3>
+              <p>Aluguel: {formatCurrency(activeAd.rent)}{activeAd.condominium !== null ? ` · Condomínio: ${formatCurrency(activeAd.condominium)}` : ''}</p>
+              <p>{contractTypeLabel(activeAd.contractType)} · permanência mínima: {minimumStayLabel(activeAd.minimumStay)}</p>
+              {activeAd.property.amenities?.length > 0 && <p>Comodidades: {activeAd.property.amenities.join(', ')}</p>}
+              <h3>DESCRIÇÃO</h3>
+              <p>{activeAd.description}</p>
+              {activeAd.rules && <><h3>REGRAS</h3><p>{activeAd.rules}</p></>}
+              <h3>ANUNCIANTE</h3>
+              <p>{activeAd.property.owner.name} · {activeAd.property.owner.email}{activeAd.property.owner.phone ? ` · ${activeAd.property.owner.phone}` : ''}</p>
+              <p>Cadastrado em {new Date(activeAd.createdAt).toLocaleString('pt-BR')}</p>
+            </div>
+          </>
+        )}
+      </aside>
+    </div>
   );
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function resolveAdminMediaUrl(url) {
+  return new URL(url, API_BASE_URL).href;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+function housingTypeLabel(value) {
+  return ({ APARTMENT: 'Apartamento', HOUSE: 'Casa', ROOM: 'Quarto', REPUBLIC: 'República' })[value] || value;
+}
+
+function contractTypeLabel(value) {
+  return ({ MONTHLY_RENTAL: 'Aluguel mensal', PROPERTY_SHARING: 'Compartilhamento', SEASONAL: 'Temporada' })[value] || value;
+}
+
+function minimumStayLabel(value) {
+  return ({ NO_MINIMUM: 'Sem permanência mínima', THREE_MONTHS: '3 meses', SIX_MONTHS: '6 meses', TWELVE_MONTHS: '12 meses' })[value] || value;
+}
+
+function listingStatusLabel(value) {
+  return ({ PENDING: 'Pendente', IN_REVIEW: 'Em análise', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' })[value] || value;
+}
+
+function listingStatusTone(value) {
+  return ({ APPROVED: 'green', REJECTED: 'pink', PENDING: 'purple', IN_REVIEW: 'teal' })[value] || 'neutral';
 }
 
 function RecommendationsPage({ items, active, onSelect, onAction, search, onSearch, status, onStatus }) {

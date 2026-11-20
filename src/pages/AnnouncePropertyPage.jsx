@@ -2,6 +2,8 @@ import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
+import { publishProperty } from '../services/api.js';
+import { getUserSession } from '../services/userAuth.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing, saveDemoListing } from '../utils/demoListings.js';
 import './AnnouncePropertyPage.css';
@@ -35,8 +37,8 @@ export function AnnouncePropertyPage() {
   const displayName = getDemoUser()?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const [photos, setPhotos] = useState([]);
-  const [video, setVideo] = useState(null);
   const [status, setStatus] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [submittedListing, setSubmittedListing] = useState(null);
   const [photoPreviews, setPhotoPreviews] = useState([]);
@@ -85,7 +87,7 @@ export function AnnouncePropertyPage() {
     setPhotos((current) => current.filter((_, photoIndex) => photoIndex !== index));
   }
 
-  function submitAnnouncement(event) {
+  async function submitAnnouncement(event) {
     event.preventDefault();
     if (photos.length === 0) {
       setPhotoError('Adicione pelo menos uma foto do imóvel para continuar.');
@@ -98,21 +100,44 @@ export function AnnouncePropertyPage() {
       ...Object.fromEntries(formData.entries()),
       amenities: formData.getAll('amenities'),
       photos: photoPreviews,
-      videoName: video?.name ?? '',
       approvalStatus: 'pending',
     };
     if (isEditing) {
       const existingListing = getDemoListing(editId) ?? {};
       saveDemoListing(editId, { ...existingListing, ...listingData, photos: undefined });
+      setSubmittedListing(listingData);
+      document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
     }
-    setSubmittedListing(listingData);
-    document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (!getUserSession()) {
+      navigate('/login', { state: { from: '/anunciar' } });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus('');
+    try {
+      const created = await publishProperty({
+        fields: listingData,
+        photos,
+      });
+      setSubmittedListing({
+        ...listingData,
+        propertyId: created.propertyId,
+        listingId: created.listingId,
+      });
+      document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      setStatus(error.message || 'Não foi possível publicar o imóvel. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function startAnotherAnnouncement() {
     formRef.current?.reset();
     setPhotos([]);
-    setVideo(null);
     setSubmittedListing(null);
     setStatus('');
     if (isEditing) navigate('/anunciar');
@@ -193,7 +218,7 @@ export function AnnouncePropertyPage() {
             </section>
 
             <section className="announce-card" id="property-photos">
-              <SectionHeading title="Fotos e vídeo do imóvel" description="Imagens claras ajudam os interessados a conhecer melhor o espaço." />
+              <SectionHeading title="Fotos do imóvel" description="Imagens claras ajudam os interessados a conhecer melhor o espaço." />
               <label className="announce-upload" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addPhotoFiles(event.dataTransfer.files); }}>
                 <LineIcon name="homeGroup" size={34} />
                 <strong>Adicione fotos do seu imóvel</strong>
@@ -203,7 +228,6 @@ export function AnnouncePropertyPage() {
               </label>
               {photoError && <p className="announce-photo-error" role="alert">{photoError}</p>}
               {photoPreviews.length > 0 && <div className="announce-photo-grid">{photoPreviews.map(({ file, url }, index) => <figure key={`${file.name}-${index}`}><img src={url} alt={`Prévia ${index + 1}: ${file.name}`} /><figcaption>{file.name}<button type="button" onClick={() => removePhoto(index)} aria-label={`Remover ${file.name}`}>×</button></figcaption></figure>)}</div>}
-              <FormField label="Vídeo (opcional)" className="announce-video-field"><input type="file" accept="video/*" onChange={(event) => { setVideo(event.target.files?.[0] ?? null); setStatus(''); }} />{video && <small>{video.name}</small>}</FormField>
             </section>
 
             <section className="announce-card" id="property-publish">
@@ -219,7 +243,7 @@ export function AnnouncePropertyPage() {
               <SectionHeading title="Revisar e publicar" description="Confira as informações antes de concluir o cadastro." />
               <p>Seu imóvel será exibido para estudantes que buscam moradia na região após a análise do anúncio.</p>
               {status && <p className="announce-status" role="status">{status}</p>}
-              <button className="announce-submit" type="submit">{isEditing ? 'Salvar alterações' : 'Publicar anúncio'} <span aria-hidden="true">→</span></button>
+              <button className="announce-submit" type="submit" disabled={submitting}>{submitting ? 'Enviando anúncio...' : isEditing ? 'Salvar alterações' : 'Publicar anúncio'} <span aria-hidden="true">→</span></button>
             </section>
           </form>
 
@@ -253,7 +277,6 @@ export function AnnouncePropertyPage() {
                 <div><dt>Prazo mínimo</dt><dd>{submittedListing.minimumStay}</dd></div>
                 <div className="announce-detail-wide"><dt>Descrição</dt><dd>{submittedListing.description}</dd></div>
                 {submittedListing.rules && <div className="announce-detail-wide"><dt>Regras e informações adicionais</dt><dd>{submittedListing.rules}</dd></div>}
-                {submittedListing.videoName && <div><dt>Vídeo enviado</dt><dd>{submittedListing.videoName}</dd></div>}
               </dl>
             </section>
 
