@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { loginUser } from '../services/api.js';
+import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
 import './LoginPage.css';
 
 function EyeIcon({ visible }) {
@@ -11,12 +13,39 @@ function EyeIcon({ visible }) {
 }
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
-  const [feedback, setFeedback] = useState('');
+  const [feedback, setFeedback] = useState(() => searchParams.get('cadastro') === 'sucesso'
+    ? 'Cadastro recebido. Confirme seu e-mail pelo link enviado antes de entrar.'
+    : '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    setFeedback('A autenticação será conectada à API do projeto.');
+    if (isSubmitting) return;
+    const formData = new FormData(event.currentTarget);
+    setIsSubmitting(true);
+    setFeedback('');
+    try {
+      const result = await loginUser({
+        email: String(formData.get('email') || '').trim(),
+        password: String(formData.get('password') || ''),
+      });
+      const currentUser = getDemoUser();
+      const role = currentUser?.role || 'estudante';
+      saveDemoUser(result.name, role, currentUser?.profile || {}, { userId: result.userId });
+      const destination = role === 'proprietario'
+        ? '/proprietario'
+        : role === 'ofertante'
+          ? '/ofertante'
+          : '/buscar';
+      navigate(destination, { replace: true });
+    } catch (error) {
+      setFeedback(error.message || 'Não foi possível entrar. Confira e-mail e senha.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -34,8 +63,8 @@ export function LoginPage() {
           </header>
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="login-field">
-              <span>E-mail ou usuário</span>
-              <input type="text" name="username" placeholder="Digite seu e-mail ou usuário" autoComplete="username" required />
+              <span>E-mail</span>
+              <input type="email" name="email" placeholder="Digite seu e-mail" autoComplete="username" required />
             </label>
             <label className="login-field">
               <span>Senha</span>
@@ -45,14 +74,14 @@ export function LoginPage() {
               </span>
             </label>
             <div className="login-form-options"><Link to="/recuperar-senha">Esqueceu sua senha?</Link></div>
-            <button className="login-submit" type="submit">Entrar</button>
+            <button className="login-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Entrando...' : 'Entrar'}</button>
           </form>
           <div className="login-divider"><span />ou<span /></div>
           <div className="social-login">
             <button type="button" onClick={() => setFeedback('O acesso com Google será habilitado quando a autenticação estiver integrada.')}><span className="google-mark" aria-hidden="true">G</span>Entrar com o Google</button>
             <button type="button" onClick={() => setFeedback('O acesso com SIGAA será habilitado quando a autenticação estiver integrada.')}><span className="sigaa-mark" aria-hidden="true">S</span>Entrar com o SIGAA</button>
           </div>
-          {feedback && <p className="login-feedback" role="status">{feedback}</p>}
+          {feedback && <p className="login-feedback" role="alert">{feedback}</p>}
           <p className="login-register">Não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
         </section>
       </div>

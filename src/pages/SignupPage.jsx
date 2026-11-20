@@ -1,5 +1,6 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
+import { registerPropertyOwner, registerStudent } from '../services/api.js';
 import { saveDemoUser } from '../utils/demoUser.js';
 import './SignupPage.css';
 
@@ -55,6 +56,27 @@ const studentProfileOptions = [
   'Aventureiro',
   'Estudioso',
 ];
+
+const compatibilityOptionValues = {
+  sleepTime: { 'Antes das 21h': 'BEFORE_21', '21h–23h': 'FROM_21_TO_23', '23h–01h': 'FROM_23_TO_01', 'Depois da 01h': 'AFTER_01' },
+  studyAtHome: { Sim: 'YES', 'Às vezes': 'SOMETIMES', Não: 'NO' },
+  organization: { 'Muito organizado': 'VERY_ORGANIZED', 'Mais ou menos': 'SOMEWHAT', 'Estou melhorando': 'IMPROVING' },
+  visitors: { Raramente: 'RARELY', 'Às vezes': 'SOMETIMES', Frequentemente: 'FREQUENTLY' },
+  smoking: { Sim: 'YES', 'Às vezes': 'SOMETIMES', Não: 'NO' },
+  pets: { Sim: 'YES', Não: 'NO' },
+  cleaning: { Diária: 'DAILY', Semanal: 'WEEKLY', Flexível: 'FLEXIBLE' },
+  environment: { Silenciosos: 'QUIET', Movimentados: 'BUSY', Indiferente: 'INDIFFERENT' },
+  lifestyle: { Tranquilo: 'CALM', Social: 'SOCIAL', Aventureiro: 'ADVENTUROUS', Estudioso: 'STUDIOUS' },
+};
+
+function makeCompatibilityAnswers(answers) {
+  return Object.fromEntries(Object.entries(compatibilityOptionValues).map(([field, values]) => [
+    field,
+    Array.isArray(answers[field])
+      ? answers[field].map((answer) => values[answer])
+      : values[answers[field]],
+  ]));
+}
 
 function Field({
   label,
@@ -370,19 +392,40 @@ export function SignupPage() {
       setIsSubmitting(true);
 
       try {
-        // Modo de demonstração: mantém o cadastro local enquanto a API
-        // do backend ainda não está integrada/disponível.
-        saveDemoUser(answers.fullName, profileId, answers);
+        const apiResult = profileId === 'proprietario'
+          ? await registerPropertyOwner({
+            name: answers.fullName,
+            email: answers.email,
+            cpf: answers.cpf,
+            password: answers.password,
+            phone: answers.phone || undefined,
+          })
+          : await registerStudent({
+            name: answers.fullName,
+            email: answers.email,
+            cpf: answers.cpf,
+            password: answers.password,
+            enrollmentNumber: answers.enrollment,
+            course: answers.course,
+            period: Number(answers.period),
+            expectedGraduation: answers.expectedGraduation,
+            compatibilityAnswers: makeCompatibilityAnswers(answers),
+            advertisesProperty: profileId === 'ofertante',
+          });
+
+        saveDemoUser(answers.fullName, profileId, answers, {
+          userId: apiResult?.userId,
+          studentId: apiResult?.studentId,
+          propertyOwnerId: apiResult?.propertyOwnerId,
+        });
         setCompleted(true);
       } catch (error) {
         console.error(
-          'Erro ao salvar cadastro demonstrativo:',
+          'Erro ao cadastrar na API:',
           error,
         );
 
-        setStepError(
-          'Não foi possível concluir o cadastro. Verifique o armazenamento do navegador e tente novamente.',
-        );
+        setStepError(error.message || 'Não foi possível concluir o cadastro. Confira os dados e tente novamente.');
       } finally {
         setIsSubmitting(false);
       }
@@ -517,7 +560,20 @@ export function SignupPage() {
           <Field
             label="Período"
             name="period"
+            type="number"
+            min="1"
+            max="20"
+            required
             value={answers.period}
+            onChange={updateAnswer}
+          />
+
+          <Field
+            label="Previsão de conclusão do curso"
+            name="expectedGraduation"
+            type="date"
+            required
+            value={answers.expectedGraduation}
             onChange={updateAnswer}
           />
 
@@ -1327,14 +1383,7 @@ export function SignupPage() {
   }
 
   if (completed) {
-    const destination =
-      profileId === 'proprietario'
-        ? '/proprietario'
-        : profileId === 'ofertante'
-          ? '/ofertante'
-          : '/buscar';
-
-    return <Navigate to={destination} replace />;
+    return <Navigate to="/login?cadastro=sucesso" replace />;
   }
 
   return (
