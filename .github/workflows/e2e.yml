@@ -1,0 +1,95 @@
+# Testes de interação (Playwright) contra o backend real.
+#
+# Sobe Postgres e Mailpit como serviços, clona o morae-backend e deixa o
+# playwright.config.js iniciar a API (com banco recriado a partir do seed) e o
+# build de produção do frontend.
+#
+# Se o repositório do backend for privado, crie o secret BACKEND_REPO_TOKEN
+# neste repositório com um token de acesso (somente leitura) a ele.
+name: Testes de interação
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      backend_ref:
+        description: Branch, tag ou commit do morae-backend a testar
+        default: main
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: morae
+          POSTGRES_PASSWORD: morae
+          POSTGRES_DB: morae
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U morae -d morae"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mailpit:
+        image: axllent/mailpit:v1.33
+        ports: ['1025:1025', '8025:8025']
+
+    env:
+      CI: true
+      # Clonado dentro do pds-morae (a pasta já está no .gitignore).
+      BACKEND_DIR: morae-backend
+      E2E_DATABASE_URL: postgresql://morae:morae@localhost:5432/morae_ui_test?schema=public
+      # O `prisma generate` do backend lê esta variável.
+      DATABASE_URL: postgresql://morae:morae@localhost:5432/morae?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clona o backend
+        uses: actions/checkout@v4
+        with:
+          repository: davimuritiba/morae-backend
+          ref: ${{ inputs.backend_ref || 'main' }}
+          path: morae-backend
+          token: ${{ secrets.BACKEND_REPO_TOKEN || github.token }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            morae-backend/package-lock.json
+
+      - name: Instala dependências do frontend
+        run: npm ci
+
+      - name: Instala dependências do backend
+        working-directory: morae-backend
+        run: |
+          npm ci
+          npx prisma generate
+
+      - name: Instala o Chromium do Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Roda os testes de interação
+        run: npm run test:e2e
+
+      - name: Guarda o relatório
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

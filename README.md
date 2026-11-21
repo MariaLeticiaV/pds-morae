@@ -62,3 +62,17 @@ O Moraê prioriza uma interface organizada, acessível e intuitiva, buscando red
    npm run dev
    ```
 
+
+## 🧪 Testes de interação
+
+Os testes em `e2e/` usam o [Playwright](https://playwright.dev) e rodam contra o backend real. Eles sobem uma API e um frontend próprios (portas 3100 e 5180), com o banco `morae_ui_test` recriado a partir do seed a cada execução. Seus dados e servidores de desenvolvimento não são afetados.
+
+Pré-requisitos: o repositório `morae-backend` ao lado deste (ou o caminho em `BACKEND_DIR`), com `npm install` feito, e o Postgres e o Mailpit dele rodando (`npm run db:up` no backend).
+
+```bash
+npx playwright install chromium   # só na primeira vez
+npm run test:e2e                  # roda todos os testes
+npm run test:e2e:ui               # modo interativo, para depurar
+```
+
+No GitHub, o workflow `.github/workflows/e2e.yml` roda os mesmos testes a cada push na `main` e em cada pull request.

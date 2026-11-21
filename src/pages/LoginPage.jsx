@@ -61,8 +61,11 @@ export function LoginPage() {
   const [feedbackType, setFeedbackType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const administratorSession = getAdministratorSession();
-  const userSession = getUserSession();
+  // Lidas só ao abrir a página, para redirecionar quem já estava logado.
+  // Depois de um login nesta página a sessão passa a existir, mas o destino
+  // é decidido pelo handleSubmit; reler aqui levaria sempre para "/".
+  const [administratorSession] = useState(getAdministratorSession);
+  const [userSession] = useState(getUserSession);
 
   if (administratorSession) {
     return <Navigate to="/admin" replace />;
