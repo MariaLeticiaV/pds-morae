@@ -14,6 +14,7 @@ import { AnnouncePropertyPage } from '../pages/AnnouncePropertyPage.jsx';
 import { OwnerDashboardPage } from '../pages/OwnerDashboardPage.jsx';
 import { PropertyDetailPage } from '../pages/PropertyDetailPage.jsx';
 import { AdminPanelPage } from '../pages/AdminPanelPage.jsx';
+import { RentPaymentPage } from '../pages/RentPaymentPage.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -30,11 +31,12 @@ export default function App() {
   const isPropertyDetailPage = pathname.startsWith('/imoveis/');
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
   const isAdminPage = pathname.startsWith('/admin');
-  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isAdminPage;
+  const isRentPaymentPage = pathname === '/pagamento-aluguel';
+  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isAdminPage || isRentPaymentPage;
 
   return (
     <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}${isAdminPage ? ' admin-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && <header className="site-header">
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && !isRentPaymentPage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -58,6 +60,7 @@ export default function App() {
           <Route path="/redefinir-senha" element={<PasswordResetPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
+          <Route path="/pagamento-aluguel" element={<RentPaymentPage />} />
           <Route path="/anunciar" element={<AnnouncePropertyPage />} />
           <Route path="/proprietario/*" element={<OwnerDashboardPage />} />
           <Route path="/ofertante/*" element={<OwnerDashboardPage role="ofertante" />} />

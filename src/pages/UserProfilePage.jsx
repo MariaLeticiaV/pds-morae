@@ -3,9 +3,11 @@ import { AccountMenu } from '../components/AccountMenu.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
-import { calculateCompatibility, getAccessToken } from '../services/api.js';
+import { calculateCompatibility, getAccessToken, getUserById } from '../services/api.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import './UserProfilePage.css';
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const profiles = {
   'ana-beatriz': {
@@ -21,6 +23,38 @@ const profiles = {
     reviews: [],
   },
 };
+
+function profileFromUser(user) {
+  const initials = user.name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toLocaleUpperCase('pt-BR');
+
+  return {
+    name: user.name,
+    initials,
+    photoUrl: user.photoUrl,
+    role: 'Usuário',
+    tags: [],
+    about: 'Este usuário ainda não adicionou uma apresentação ao perfil.',
+    course: 'Não informado',
+    period: 'Não informado',
+    housing: 'Não informado',
+    distance: 'Não informado',
+    amenities: 'Não informado',
+    budget: 'Não informado',
+    organization: 'Não informado',
+    organizationDescription: 'Preferência não informada.',
+    environment: 'Não informado',
+    environmentDescription: 'Preferência não informada.',
+    smoking: 'Não informado',
+    smokingDescription: 'Preferência não informada.',
+    reviews: [],
+  };
+}
 
 function ProfileIcon({ name }) { return <span className="profile-icon-badge" aria-hidden="true"><LineIcon name={name} size={19} /></span>; }
 
@@ -41,7 +75,7 @@ function CompatibilityModal({ profile, targetUserId, onClose }) {
       setLoading(true);
       setError('');
       setResult(null);
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(targetUserId || '')) {
+      if (!UUID_PATTERN.test(targetUserId || '')) {
         setError('Este perfil de demonstração não está associado a uma conta da API.');
         setLoading(false);
         return;
@@ -95,10 +129,61 @@ export function UserProfilePage() {
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
   const isOwnProfile = !id;
-  const profile = profiles[id] ?? profiles['ana-beatriz'];
-  const contactParams = new URLSearchParams({ contato: id || 'estudante-ana-beatriz', nome: profile.name, papel: 'Estudante' });
+  const [profileRequest, setProfileRequest] = useState({
+    id: null,
+    user: null,
+    loading: UUID_PATTERN.test(id || ''),
+    error: '',
+  });
   const [showCompatibility, setShowCompatibility] = useState(false);
   const [activeTab, setActiveTab] = useState('sobre');
+  const profile = profiles[id] ?? (
+    profileRequest.id === id && profileRequest.user
+      ? profileFromUser(profileRequest.user)
+      : null
+  );
+  const profileLoading = !profiles[id] && (
+    (UUID_PATTERN.test(id || '') && profileRequest.id !== id)
+    || profileRequest.loading
+  );
+  const profileError = profileRequest.id === id && profileRequest.error
+    ? profileRequest.error
+    : !profileLoading && !profile && 'Este perfil não está disponível.';
+  const contactParams = profile
+    ? new URLSearchParams({ contato: id, nome: profile.name, papel: profile.role || 'Estudante' })
+    : null;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!id || profiles[id]) {
+      setProfileRequest({ id, user: null, loading: false, error: '' });
+      return () => { cancelled = true; };
+    }
+
+    if (!UUID_PATTERN.test(id)) {
+      setProfileRequest({ id, user: null, loading: false, error: 'Este perfil não está disponível.' });
+      return () => { cancelled = true; };
+    }
+
+    setProfileRequest({ id, user: null, loading: true, error: '' });
+    getUserById(id)
+      .then((user) => {
+        if (!cancelled) setProfileRequest({ id, user, loading: false, error: '' });
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setProfileRequest({
+            id,
+            user: null,
+            loading: false,
+            error: error.message || 'Não foi possível carregar este perfil.',
+          });
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [id]);
 
   return (
     <div className="user-profile-dashboard">
@@ -110,9 +195,10 @@ export function UserProfilePage() {
           <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><AccountMenu className="profile-greeting-link"><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {displayName}</span><span className="profile-top-chevron" /></AccountMenu></div>
         </header>
         <div className="profile-page-content">
+          {!profile ? <section className="profile-load-state" role={profileLoading ? 'status' : 'alert'}>{profileLoading ? 'Carregando perfil…' : profileError}</section> : <>
           <section className="profile-hero">
-            <div className={`profile-large-avatar ${id === 'carolina-lima' ? 'avatar-carolina' : ''}`} aria-label={`Foto de perfil de ${profile.name}`}>{profile.initials}<i /></div>
-            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> Estudante</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to={`/mensagens?${contactParams.toString()}`}><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button></div></div>
+            <div className={`profile-large-avatar ${id === 'carolina-lima' ? 'avatar-carolina' : ''}`} aria-label={`Foto de perfil de ${profile.name}`}>{profile.photoUrl ? <img src={profile.photoUrl} alt="" /> : profile.initials}<i /></div>
+            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> {profile.role || 'Estudante'}</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to={`/mensagens?${contactParams.toString()}`}><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button></div></div>
             <span className="profile-hero-blob profile-blob-green" /><span className="profile-hero-blob profile-blob-pink" />
           </section>
           <nav className="profile-tabs" aria-label="Seções do perfil"><a className={activeTab === 'sobre' ? 'active' : ''} href="#sobre" onClick={() => setActiveTab('sobre')}>Sobre</a><a className={activeTab === 'preferencias' ? 'active' : ''} href="#preferencias" onClick={() => setActiveTab('preferencias')}>Preferências de Moradia</a><a className={activeTab === 'habitos' ? 'active' : ''} href="#habitos" onClick={() => setActiveTab('habitos')}>Hábitos e Rotina</a><a className={activeTab === 'avaliacoes' ? 'active' : ''} href="#avaliacoes" onClick={() => setActiveTab('avaliacoes')}>Avaliações Anteriores</a></nav>
@@ -121,11 +207,12 @@ export function UserProfilePage() {
             <section className="profile-panel profile-academics"><h2><ProfileIcon name="graduation" />Informações acadêmicas</h2><div className="academic-detail"><ProfileIcon name="graduation" /><div><small>Curso</small><strong>{profile.course}</strong></div></div><div className="academic-detail"><ProfileIcon name="calendar" /><div><small>Período</small><strong>{profile.period}</strong></div></div></section>
           </div>
           <section className="profile-panel profile-preferences" id="preferencias"><h2><ProfileIcon name="home" />Preferências de Moradia</h2><div className="profile-preference-grid"><div><ProfileIcon name="homeGroup" /><span><small>Tipo de moradia</small><strong>{profile.housing}</strong></span></div><div><ProfileIcon name="pin" /><span><small>Localização</small><strong>{profile.distance}</strong></span></div><div><ProfileIcon name="home" /><span><small>Comodidades</small><strong>{profile.amenities}</strong></span></div><div><ProfileIcon name="money" /><span><small>Valor máximo</small><strong>{profile.budget}</strong></span></div></div></section>
-          <section className="profile-panel profile-habits" id="habitos"><h2><ProfileIcon name="users" />Hábitos e Rotina</h2><div className="profile-habit-grid"><div><ProfileIcon name="users" /><span><strong>{profile.organization}</strong><small>Gosta de manter o ambiente limpo e organizado</small></span></div><div><ProfileIcon name="moon" /><span><strong>{profile.environment}</strong><small>Prefere um local calmo e com boa convivência</small></span></div><div><ProfileIcon name="smokeFree" /><span><strong>{profile.smoking}</strong><small>Prefere ambientes livres de fumo</small></span></div></div></section>
+          <section className="profile-panel profile-habits" id="habitos"><h2><ProfileIcon name="users" />Hábitos e Rotina</h2><div className="profile-habit-grid"><div><ProfileIcon name="users" /><span><strong>{profile.organization}</strong><small>{profile.organizationDescription || 'Gosta de manter o ambiente limpo e organizado'}</small></span></div><div><ProfileIcon name="moon" /><span><strong>{profile.environment}</strong><small>{profile.environmentDescription || 'Prefere um local calmo e com boa convivência'}</small></span></div><div><ProfileIcon name="smokeFree" /><span><strong>{profile.smoking}</strong><small>{profile.smokingDescription || 'Prefere ambientes livres de fumo'}</small></span></div></div></section>
           <section className="profile-panel profile-reviews" id="avaliacoes"><h2><ProfileIcon name="star" />Avaliações Anteriores</h2>{profile.reviews.length ? <div className="review-grid">{profile.reviews.map((review) => <article className="review-card" key={review.title}><div><strong>{review.title}</strong><time>{review.date}</time></div><span className="review-stars" aria-label={`${review.stars} estrelas`}>{'★'.repeat(review.stars)}{'☆'.repeat(5 - review.stars)}</span><p>{review.text}</p></article>)}</div> : <div className="no-reviews"><LineIcon name="emptyReview" size={29} /><strong>Ainda não há avaliações para este perfil.</strong><p>Se você já dividiu um espaço ou foi locador(a) desta pessoa, deixe sua opinião e ajude outros estudantes!</p></div>}</section>
+          </>}
         </div>
       </main>
-      {showCompatibility && <CompatibilityModal profile={profile} targetUserId={id} onClose={() => setShowCompatibility(false)} />}
+      {showCompatibility && profile && <CompatibilityModal profile={profile} targetUserId={id} onClose={() => setShowCompatibility(false)} />}
     </div>
   );
 }

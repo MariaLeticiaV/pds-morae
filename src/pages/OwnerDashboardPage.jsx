@@ -5,6 +5,8 @@ import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing, getDemoListingStatuses, setDemoListingStatus } from '../utils/demoListings.js';
+import { getPaymentTransactionStatus, getPaymentTransactions } from '../services/api.js';
+import { filterPaymentTransactions, summarizePaymentTransactions } from '../services/paymentHistory.js';
 import './OwnerDashboardPage.css';
 
 const properties = [
@@ -267,13 +269,193 @@ function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) 
   </div>;
 }
 
-function OwnerRecords({ page, query }) {
-  const records = page === 'contratos'
-    ? [{ name: 'Apartamento próximo à UFAL', detail: 'Contrato residencial · Ana Beatriz', status: 'Ativo', value: 'R$ 600,00/mês' }, { name: 'Casa compartilhada no Farol', detail: 'Contrato residencial · Lucas Ferreira', status: 'Ativo', value: 'R$ 700,00/mês' }]
-    : [{ name: 'Apartamento próximo à UFAL', detail: 'Vencimento em 10/11/2026', status: 'Pendente', value: 'R$ 600,00' }, { name: 'Casa compartilhada no Farol', detail: 'Pagamento recebido em 02/11/2026', status: 'Pago', value: 'R$ 700,00' }];
-  const visible = records.filter((record) => `${record.name} ${record.detail} ${record.status}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
-  const title = page === 'contratos' ? 'Contratos' : 'Pagamentos';
-  return <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name={page === 'contratos' ? 'paperclip' : 'money'} size={28} /></span><div><h1>{title}</h1><p>{page === 'contratos' ? 'Acompanhe os contratos ativos dos seus imóveis.' : 'Consulte os recebimentos e pagamentos dos seus imóveis.'}</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section><section className="owner-record-list">{visible.map((record) => <article className="owner-record-card" key={record.name}><span className="owner-record-icon"><LineIcon name={page === 'contratos' ? 'paperclip' : 'money'} /></span><div><h2>{record.name}</h2><p>{record.detail}</p></div><strong>{record.value}</strong><span className={`owner-status ${record.status === 'Pago' || record.status === 'Ativo' ? 'published' : 'reviewing'}`}>{record.status}</span></article>)}</section></div>;
+const paymentStatusLabels = {
+  paid: 'Pago',
+  pending: 'Pendente',
+  rejected: 'Recusado',
+  overdue: 'Em atraso',
+  cancelled: 'Cancelado',
+  refunded: 'Estornado',
+};
+
+function PaymentHistoryPage({ role, query }) {
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [status, setStatus] = useState('all');
+  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [receiptData, setReceiptData] = useState(null);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError('');
+
+    getPaymentTransactions({ from: startDate, to: endDate, status })
+      .then((result) => {
+        if (!cancelled) setTransactions(result);
+      })
+      .catch((requestError) => {
+        if (!cancelled) {
+          setTransactions([]);
+          setError(requestError.message || 'Não foi possível consultar os pagamentos.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [startDate, endDate, status]);
+
+  useEffect(() => {
+    if (!selectedReceipt) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setSelectedReceipt(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedReceipt]);
+
+  const visibleTransactions = filterPaymentTransactions(transactions, {
+    startDate,
+    endDate,
+    status,
+    query,
+  });
+  const totals = summarizePaymentTransactions(visibleTransactions);
+  const formatCurrency = (amountInCents) => (amountInCents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatDate = (value) => new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR');
+  const formatDateTime = (value) => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Maceio' });
+
+  async function openReceipt(transaction) {
+    setSelectedReceipt(transaction);
+    setReceiptData(null);
+    setReceiptError('');
+    setReceiptLoading(true);
+    try {
+      const details = await getPaymentTransactionStatus(transaction.id);
+      if (details.status !== 'PAID') {
+        throw new Error('O comprovante fica disponível após a confirmação do pagamento.');
+      }
+      setReceiptData({ ...transaction, ...details });
+    } catch (requestError) {
+      setReceiptError(requestError.message || 'Não foi possível consultar o comprovante.');
+    } finally {
+      setReceiptLoading(false);
+    }
+  }
+
+  function closeReceipt() {
+    setSelectedReceipt(null);
+    setReceiptData(null);
+    setReceiptError('');
+  }
+
+  function clearFilters() {
+    setStartDate('');
+    setEndDate('');
+    setStatus('all');
+  }
+
+  return <div className="owner-content payment-history">
+    <section className="owner-welcome compact">
+      <span className="owner-welcome-icon"><LineIcon name="money" size={28} /></span>
+      <div>
+        <h1>Histórico financeiro</h1>
+        <p>Consulte pagamentos e recebimentos vinculados à sua conta.</p>
+      </div>
+      <i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" />
+    </section>
+    <section className="payment-summary" aria-label="Resumo do histórico filtrado">
+      <article><span>Total recebido</span><strong>{formatCurrency(totals.received)}</strong></article>
+      <article><span>Total pago</span><strong>{formatCurrency(totals.paid)}</strong></article>
+      <article><span>Em aberto</span><strong>{formatCurrency(totals.open)}</strong></article>
+      <article><span>Taxas da plataforma</span><strong>{formatCurrency(totals.platformFees)}</strong></article>
+    </section>
+    <div className="payment-rent-cta">
+      <div><strong>Precisa pagar o aluguel?</strong><span>Confira seu contrato e continue para o checkout seguro.</span></div>
+      <Link className="owner-primary-button" to="/pagamento-aluguel">Pagar aluguel</Link>
+    </div>
+    <section className="payment-history-panel">
+      <div className="payment-history-heading">
+        <div><h2>Transações</h2><span>{visibleTransactions.length} {visibleTransactions.length === 1 ? 'lançamento' : 'lançamentos'}</span></div>
+        <button type="button" onClick={clearFilters}>Limpar filtros</button>
+      </div>
+      <div className="payment-filters">
+        <label>De<input type="date" value={startDate} max={endDate || undefined} onChange={(event) => setStartDate(event.target.value)} /></label>
+        <label>Até<input type="date" value={endDate} min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} /></label>
+        <label>Situação<select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value="all">Todas</option>
+          <option value="paid">Pago</option>
+          <option value="pending">Pendente</option>
+          <option value="rejected">Recusado</option>
+          <option value="overdue">Em atraso</option>
+          <option value="cancelled">Cancelado</option>
+          <option value="refunded">Estornado</option>
+        </select></label>
+      </div>
+      {loading ? <div className="payment-empty-state" role="status">Consultando seu histórico financeiro…</div>
+        : error ? <div className="payment-empty-state" role="alert">{error}</div>
+          : visibleTransactions.length ? <div className="payment-table-wrap">
+        <table className="payment-table" aria-label="Transações do histórico financeiro">
+          <thead><tr><th>Transação</th><th>Outra parte</th><th>Data</th><th>Forma</th><th>Aluguel</th><th>Taxa da plataforma</th><th>Total cobrado</th><th>Situação</th><th>Comprovante</th></tr></thead>
+          <tbody>{visibleTransactions.map((transaction) => <tr key={transaction.id}>
+            <td data-label="Transação">{transaction.title}</td>
+            <td data-label="Outra parte">{transaction.counterparty}</td>
+            <td data-label="Data">{formatDate(transaction.date)}</td>
+            <td data-label="Forma">{transaction.method}</td>
+            <td data-label="Aluguel">{transaction.rentAmountInCents === null ? '—' : formatCurrency(transaction.rentAmountInCents)}</td>
+            <td data-label="Taxa da plataforma">{transaction.platformFeeInCents === null ? '—' : formatCurrency(transaction.platformFeeInCents)}</td>
+            <td data-label="Total cobrado" className="payment-amount">{formatCurrency(transaction.amountInCents)}</td>
+            <td data-label="Situação"><span className={`payment-status ${transaction.status}`}>{paymentStatusLabels[transaction.status]}</span></td>
+            <td data-label="Comprovante">{transaction.status === 'paid' ? <button className="payment-receipt-link" type="button" disabled={receiptLoading} onClick={() => openReceipt(transaction)}>{receiptLoading && selectedReceipt?.id === transaction.id ? 'Carregando…' : 'Ver comprovante'}</button> : '—'}</td>
+          </tr>)}</tbody>
+        </table>
+      </div> : <div className="payment-empty-state">
+        <LineIcon name="emptyReview" size={30} />
+        <strong>Nenhuma transação encontrada</strong>
+        <span>Esta conta ainda não possui transações para os filtros selecionados.</span>
+      </div>}
+    </section>
+    {selectedReceipt && <div className="payment-receipt-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeReceipt(); }}>
+      <section className="payment-receipt" role="dialog" aria-modal="true" aria-labelledby="payment-receipt-title">
+        <div className="payment-receipt-toolbar">
+          <span>moraê.</span>
+          <button type="button" onClick={closeReceipt} aria-label="Fechar comprovante">Fechar</button>
+        </div>
+        {receiptLoading ? <div className="payment-receipt-message" role="status">Consultando confirmação do pagamento…</div>
+          : receiptError ? <div className="payment-receipt-message" role="alert">{receiptError}</div>
+            : receiptData && <>
+              <header className="payment-receipt-header">
+                <span>COMPROVANTE DE PAGAMENTO</span>
+                <h2 id="payment-receipt-title">{receiptData.title}</h2>
+                <strong>Pagamento aprovado</strong>
+              </header>
+              <dl className="payment-receipt-details">
+                <div><dt>Outra parte</dt><dd>{receiptData.counterparty}</dd></div>
+                <div><dt>Forma de pagamento</dt><dd>{receiptData.method}</dd></div>
+                <div><dt>{receiptData.paidAt ? 'Data do pagamento' : 'Data da transação'}</dt><dd>{receiptData.paidAt ? formatDateTime(receiptData.paidAt) : formatDate(receiptData.date)}</dd></div>
+                <div><dt>Identificação Moraê</dt><dd>{receiptData.id}</dd></div>
+              </dl>
+              <div className="payment-receipt-breakdown">
+                {receiptData.rentAmountInCents !== null && <div><span>Aluguel</span><strong>{formatCurrency(receiptData.rentAmountInCents)}</strong></div>}
+                {receiptData.platformFeeInCents !== null && <div><span>Taxa da plataforma</span><strong>{formatCurrency(receiptData.platformFeeInCents)}</strong></div>}
+                <div className="payment-receipt-total"><span>Total cobrado</span><strong>{formatCurrency(receiptData.amountInCents)}</strong></div>
+              </div>
+              <p className="payment-receipt-note">Registro de pagamento confirmado pela Moraê. Use “Imprimir / salvar PDF” para guardar uma cópia. Este documento não substitui comprovantes ou documentos fiscais emitidos pelo Mercado Pago.</p>
+              <div className="payment-receipt-actions">
+                <button type="button" onClick={closeReceipt}>Voltar ao histórico</button>
+                <button type="button" onClick={() => window.print()}>Imprimir / salvar PDF</button>
+              </div>
+            </>}
+      </section>
+    </div>}
+  </div>;
 }
 
 const residentialLeaseClauses = [
@@ -454,7 +636,7 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
   else if (section === 'contratos') content = <ContractPage role={role} />;
-  else if (section === 'pagamentos') content = <OwnerRecords page={section} query={query} />;
+  else if (section === 'pagamentos') content = <PaymentHistoryPage query={query} />;
   else if ((isOfferer && section === 'vagas') || (!isOfferer && section === 'imoveis')) {
     content = <ListingsManager query={query} listings={roleListings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} />;
   } else if (isOfferer) content = <OffererHome query={query} displayName={displayName} statuses={statuses} />;
