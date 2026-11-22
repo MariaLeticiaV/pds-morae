@@ -537,6 +537,20 @@ export async function publishProperty({ fields, photos }) {
   return body;
 }
 
+export async function confirmEmailVerification(token) {
+  await request('/email-verification/confirm', {
+    method: 'POST',
+    body: { token },
+  });
+}
+
+export async function resendEmailVerification(email) {
+  await request('/email-verification/resend', {
+    method: 'POST',
+    body: { email },
+  });
+}
+
 export async function requestPasswordReset(email) {
   await sendPasswordResetRequest(
     'request',
