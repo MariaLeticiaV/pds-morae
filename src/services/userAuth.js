@@ -7,6 +7,7 @@ export function saveUserSession(session) {
     typeof session.name === 'string' &&
     typeof session.email === 'string' &&
     typeof session.status === 'string' &&
+    ['STUDENT_SEEKER', 'STUDENT_OFFERER', 'PROPERTY_OWNER', 'ADMINISTRATOR', 'OTHER'].includes(session.accountType) &&
     typeof session.accessToken === 'string' &&
     session.accessToken.length > 0 &&
     session.tokenType === 'Bearer';
@@ -20,6 +21,7 @@ export function saveUserSession(session) {
     name: session.name,
     email: session.email,
     status: session.status,
+    accountType: session.accountType,
     accessToken: session.accessToken,
     tokenType: session.tokenType,
   };
@@ -45,6 +47,7 @@ export function getUserSession() {
     typeof session.name === 'string' &&
     typeof session.email === 'string' &&
     typeof session.status === 'string' &&
+    ['STUDENT_SEEKER', 'STUDENT_OFFERER', 'PROPERTY_OWNER', 'ADMINISTRATOR', 'OTHER'].includes(session.accountType) &&
     typeof session.accessToken === 'string' &&
     session.accessToken.length > 0 &&
     session.tokenType === 'Bearer';

@@ -2,12 +2,19 @@ import { getUserSession } from '../services/userAuth.js';
 
 const STORAGE_KEY = 'morae.demoUser';
 
+const accountTypeRoles = {
+  STUDENT_SEEKER: 'estudante',
+  STUDENT_OFFERER: 'ofertante',
+  PROPERTY_OWNER: 'proprietario',
+  ADMINISTRATOR: 'administrador',
+};
+
 export function getDemoUser() {
   const session = getUserSession();
   if (session) {
     return {
       ...session,
-      role: 'estudante',
+      role: accountTypeRoles[session.accountType] || 'estudante',
       profile: {},
     };
   }

@@ -59,13 +59,6 @@ async function request(
   return result;
 }
 
-export function registerUser(payload) {
-  return request('/user', {
-    method: 'POST',
-    body: payload,
-  });
-}
-
 export function registerStudent(payload) {
   return request('/students', {
     method: 'POST',
@@ -92,6 +85,7 @@ export async function loginUser({ email, password }) {
     typeof body.name !== 'string' ||
     typeof body.email !== 'string' ||
     typeof body.status !== 'string' ||
+    !['STUDENT_SEEKER', 'STUDENT_OFFERER', 'PROPERTY_OWNER', 'ADMINISTRATOR', 'OTHER'].includes(body.accountType) ||
     typeof body.accessToken !== 'string' ||
     body.accessToken.length === 0 ||
     body.tokenType !== 'Bearer'
@@ -123,6 +117,7 @@ export async function completeGoogleLogin(code) {
     typeof session.name !== 'string' ||
     typeof session.email !== 'string' ||
     typeof session.status !== 'string' ||
+    !['STUDENT_SEEKER', 'STUDENT_OFFERER', 'PROPERTY_OWNER', 'ADMINISTRATOR', 'OTHER'].includes(session.accountType) ||
     typeof session.accessToken !== 'string' ||
     session.accessToken.length === 0 ||
     session.tokenType !== 'Bearer'
