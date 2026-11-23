@@ -933,6 +933,207 @@ export async function publishProperty({ fields, photos }) {
   return body;
 }
 
+// ---------------------------------------------------------------------------
+// Conta do usuário logado
+
+function mapMyAccount(body) {
+  if (
+    !body ||
+    typeof body.userId !== 'string' ||
+    typeof body.name !== 'string' ||
+    typeof body.email !== 'string' ||
+    !(body.phone === null || typeof body.phone === 'string') ||
+    typeof body.emailVerified !== 'boolean'
+  ) {
+    throw new Error('A resposta dos dados da conta é inválida.');
+  }
+  return {
+    userId: body.userId,
+    name: body.name,
+    email: body.email,
+    phone: body.phone,
+    photoUrl: typeof body.photoUrl === 'string' ? body.photoUrl : null,
+    emailVerified: body.emailVerified,
+    status: body.status,
+  };
+}
+
+export async function getMyAccount() {
+  return mapMyAccount(await authenticatedRequest('/users/me'));
+}
+
+// Envie só os campos alterados: name, email, cpf e/ou phone (null apaga o telefone).
+export async function updateMyAccount(changes) {
+  return mapMyAccount(
+    await authenticatedRequest('/users/me', { method: 'PATCH', body: changes }),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Favoritos
+
+export async function listFavoriteListingIds() {
+  const body = await authenticatedRequest('/favorites');
+  if (!body || !Array.isArray(body.items)) {
+    throw new Error('A resposta dos favoritos é inválida.');
+  }
+  return body.items.map((item) => {
+    if (!item || typeof item.listingId !== 'string') {
+      throw new Error('A resposta contém um favorito inválido.');
+    }
+    return item.listingId;
+  });
+}
+
+export async function addFavoriteListing(listingId) {
+  await authenticatedRequest(`/favorites/${encodeURIComponent(listingId)}`, { method: 'PUT' });
+}
+
+export async function removeFavoriteListing(listingId) {
+  await authenticatedRequest(`/favorites/${encodeURIComponent(listingId)}`, { method: 'DELETE' });
+}
+
+// ---------------------------------------------------------------------------
+// Chat (REST). O tempo real fica em chatSocket.js.
+
+export function getApiUrl() {
+  return API_URL;
+}
+
+function isIsoDate(value) {
+  return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+}
+
+function mapChatMessage(message) {
+  if (
+    !message ||
+    typeof message.id !== 'string' ||
+    typeof message.chatId !== 'string' ||
+    typeof message.senderId !== 'string' ||
+    !(message.content === null || typeof message.content === 'string') ||
+    !(message.listingId === null || typeof message.listingId === 'string') ||
+    !isIsoDate(message.createdAt)
+  ) {
+    throw new Error('A resposta contém uma mensagem inválida.');
+  }
+  return {
+    id: message.id,
+    chatId: message.chatId,
+    senderId: message.senderId,
+    content: message.content,
+    listingId: message.listingId,
+    createdAt: message.createdAt,
+  };
+}
+
+function mapChat(chat) {
+  if (
+    !chat ||
+    typeof chat.id !== 'string' ||
+    !['DIRECT', 'GROUP'].includes(chat.type) ||
+    !(chat.name === null || typeof chat.name === 'string') ||
+    !Array.isArray(chat.participants) ||
+    !Number.isInteger(chat.unreadCount) ||
+    !isIsoDate(chat.lastActivityAt)
+  ) {
+    throw new Error('A resposta contém uma conversa inválida.');
+  }
+  return {
+    id: chat.id,
+    type: chat.type,
+    name: chat.name,
+    participants: chat.participants.map((participant) => {
+      if (
+        !participant ||
+        typeof participant.userId !== 'string' ||
+        typeof participant.name !== 'string' ||
+        !(participant.lastReadAt === null || isIsoDate(participant.lastReadAt))
+      ) {
+        throw new Error('A resposta contém um participante de conversa inválido.');
+      }
+      return {
+        userId: participant.userId,
+        name: participant.name,
+        photoUrl: typeof participant.photoUrl === 'string' ? participant.photoUrl : null,
+        lastReadAt: participant.lastReadAt,
+      };
+    }),
+    lastMessage: chat.lastMessage ? mapChatMessage(chat.lastMessage) : null,
+    unreadCount: chat.unreadCount,
+    lastActivityAt: chat.lastActivityAt,
+  };
+}
+
+function mapPage(body, mapItem, errorMessage) {
+  if (
+    !body ||
+    !Array.isArray(body.data) ||
+    !(body.nextCursor === null || typeof body.nextCursor === 'string')
+  ) {
+    throw new Error(errorMessage);
+  }
+  return { items: body.data.map(mapItem), nextCursor: body.nextCursor };
+}
+
+function pageQuery({ cursor, limit } = {}) {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  if (limit) params.set('limit', String(limit));
+  const query = params.toString();
+  return query ? `?${query}` : '';
+}
+
+export async function listChats(page) {
+  return mapPage(
+    await authenticatedRequest(`/chats${pageQuery(page)}`),
+    mapChat,
+    'A resposta da lista de conversas é inválida.',
+  );
+}
+
+export async function getChat(chatId) {
+  return mapChat(await authenticatedRequest(`/chats/${encodeURIComponent(chatId)}`));
+}
+
+// Abre (ou reaproveita) a conversa direta com um usuário ou com o anunciante
+// de um anúncio. Informe só um dos dois.
+export async function startDirectChat({ targetUserId, listingId }) {
+  return mapChat(
+    await authenticatedRequest('/chats/direct', {
+      method: 'POST',
+      body: listingId ? { listingId } : { targetUserId },
+    }),
+  );
+}
+
+export async function listChatMessages(chatId, page) {
+  return mapPage(
+    await authenticatedRequest(
+      `/chats/${encodeURIComponent(chatId)}/messages${pageQuery(page)}`,
+    ),
+    mapChatMessage,
+    'A resposta do histórico de mensagens é inválida.',
+  );
+}
+
+export async function sendChatMessage(chatId, { content, listingId } = {}) {
+  return mapChatMessage(
+    await authenticatedRequest(`/chats/${encodeURIComponent(chatId)}/messages`, {
+      method: 'POST',
+      body: {
+        content: content || null,
+        ...(listingId ? { listingId } : {}),
+      },
+    }),
+  );
+}
+
+export async function markChatAsRead(chatId) {
+  await authenticatedRequest(`/chats/${encodeURIComponent(chatId)}/read`, {
+    method: 'POST',
+  });
+}
+
 export async function requestPasswordReset(email) {
   await sendPasswordResetRequest(
     'request',

@@ -4,6 +4,8 @@ import { OwnerSidebar } from './OwnerDashboardPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
 import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
+import { getAccessToken, getMyAccount, updateMyAccount } from '../services/api.js';
+import { getUserSession, saveUserSession } from '../services/userAuth.js';
 import './MyProfilePage.css';
 
 const initialProfile = {
@@ -70,6 +72,28 @@ export function MyProfilePage() {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState(() => window.location.hash.slice(1) || 'informacoes');
   const photoInput = useRef(null);
+  // Nome, e-mail e telefone vêm da API quando há sessão; os demais campos
+  // ainda não existem no backend e continuam salvos só neste navegador.
+  const isAuthenticated = Boolean(getAccessToken() && getUserSession());
+  const [account, setAccount] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let cancelled = false;
+    getMyAccount()
+      .then((data) => {
+        if (cancelled) return;
+        setAccount(data);
+        const merge = (current) => ({ ...current, name: data.name, email: data.email, phone: data.phone ?? '', ...(data.photoUrl ? { photo: data.photoUrl } : {}) });
+        setProfile(merge);
+        setDraft(merge);
+      })
+      .catch((error) => {
+        if (!cancelled) setMessage(error.message || 'Não foi possível carregar os dados da sua conta.');
+      });
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
   const initials = useMemo(() => profile.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join('').toUpperCase(), [profile.name]);
   const roleLabel = demoUser?.role === 'proprietario' ? 'Proprietário' : demoUser?.role === 'ofertante' ? 'Aluno ofertador' : 'Estudante';
 
@@ -96,14 +120,42 @@ export function MyProfilePage() {
     requestAnimationFrame(() => document.getElementById('informacoes')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
   function cancelEdit() { setDraft(profile); setEditing(false); setMessage(''); }
-  function saveProfile(event) {
+  async function saveProfile(event) {
     event.preventDefault();
-    setProfile(draft);
-    localStorage.setItem(profileStorageKey, JSON.stringify(draft));
-    if (demoUser) saveDemoUser(draft.name, demoUser.role, { ...demoUser.profile, ...draft });
+    let saved = draft;
+    let emailChanged = false;
+    if (isAuthenticated && account) {
+      const changes = {};
+      if (draft.name.trim() !== account.name) changes.name = draft.name.trim();
+      if (draft.email.trim() !== account.email) changes.email = draft.email.trim();
+      if ((draft.phone || '').trim() !== (account.phone || '')) changes.phone = (draft.phone || '').trim() || null;
+      if (draft.cpf.trim() && draft.cpf !== profile.cpf) changes.cpf = draft.cpf.trim();
+      if (Object.keys(changes).length) {
+        setSaving(true);
+        try {
+          const updated = await updateMyAccount(changes);
+          emailChanged = updated.email !== account.email;
+          setAccount(updated);
+          saved = { ...draft, name: updated.name, email: updated.email, phone: updated.phone ?? '' };
+          const session = getUserSession();
+          if (session) saveUserSession({ ...session, name: updated.name, email: updated.email });
+        } catch (error) {
+          setMessage(error.message || 'Não foi possível salvar os dados da conta.');
+          return;
+        } finally {
+          setSaving(false);
+        }
+      }
+    }
+    setProfile(saved);
+    setDraft(saved);
+    localStorage.setItem(profileStorageKey, JSON.stringify(saved));
+    if (demoUser) saveDemoUser(saved.name, demoUser.role, { ...demoUser.profile, ...saved });
     setEditing(false);
-    setMessage('Perfil atualizado com sucesso.');
-    window.setTimeout(() => setMessage(''), 3500);
+    setMessage(emailChanged
+      ? 'Perfil atualizado. Enviamos um link de confirmação para o novo e-mail; confirme-o antes do próximo login.'
+      : 'Perfil atualizado com sucesso.');
+    window.setTimeout(() => setMessage(''), emailChanged ? 8000 : 3500);
   }
   function choosePhoto(event) {
     const file = event.target.files?.[0];
@@ -131,7 +183,7 @@ export function MyProfilePage() {
           <div className="profile-top-actions"><button type="button" aria-label="Notificações"><Icon name="bell" size={21} /></button><AccountMenu className="profile-greeting-link"><span className="profile-small-avatar">{(demoUser?.name || profile.name).charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {demoUser?.name || profile.name}</span><span className="profile-top-chevron" /></AccountMenu></div>
         </header>
         <form className={`my-profile-content${editing ? ' is-editing' : ''}`} onSubmit={saveProfile}>
-          <div className="my-profile-heading"><div><p className="my-profile-kicker">Minha conta</p><h1>Meu Perfil</h1></div>{editing ? <div className="my-profile-actions"><button type="button" className="my-cancel" onClick={cancelEdit}>Cancelar</button><button type="submit" className="my-save">Salvar alterações</button></div> : <button type="button" className="my-edit-button" onClick={beginEdit}><Icon name="edit" size={17} />Editar perfil</button>}</div>
+          <div className="my-profile-heading"><div><p className="my-profile-kicker">Minha conta</p><h1>Meu Perfil</h1></div>{editing ? <div className="my-profile-actions"><button type="button" className="my-cancel" onClick={cancelEdit}>Cancelar</button><button type="submit" className="my-save" disabled={saving}>{saving ? 'Salvando…' : 'Salvar alterações'}</button></div> : <button type="button" className="my-edit-button" onClick={beginEdit}><Icon name="edit" size={17} />Editar perfil</button>}</div>
           {message && <p className="my-profile-toast" role="status">{message}</p>}
           <section className="my-profile-hero">
             <div className="my-avatar-area">
@@ -166,7 +218,7 @@ export function MyProfilePage() {
               <Field label="Campus" icon="pin" value={shown.campus} editing={editing} onChange={(value) => update('campus', value)} />
               <Field label="Status da moradia" icon="home" value={shown.status} editing={editing} onChange={(value) => update('status', value)} options={['Em procura', 'Já encontrei moradia', 'Ainda decidindo']} />
             </div></section>
-            <section className="my-profile-card my-security-card" id="configuracoes"><h2><Icon name="shield" size={27} />Segurança da Conta</h2><div className="my-verified-row"><span>✓</span><div><strong>E-mail verificado</strong><small>{profile.email}</small></div></div><div className="my-verified-row"><span>✓</span><div><strong>Telefone verificado</strong><small>{profile.phone}</small></div></div><button type="button" className="my-password-button" onClick={() => setMessage('A alteração de senha ficará disponível quando a autenticação estiver conectada.')}>🔒 <span><strong>Deseja alterar sua senha?</strong><small>Mantenha sua conta sempre segura.</small></span></button></section>
+            <section className="my-profile-card my-security-card" id="configuracoes"><h2><Icon name="shield" size={27} />Segurança da Conta</h2><div className="my-verified-row"><span>{account && !account.emailVerified ? '!' : '✓'}</span><div><strong>{account && !account.emailVerified ? 'E-mail aguardando confirmação' : 'E-mail verificado'}</strong><small>{profile.email}</small></div></div><div className="my-verified-row"><span>✓</span><div><strong>Telefone verificado</strong><small>{profile.phone}</small></div></div><button type="button" className="my-password-button" onClick={() => setMessage('A alteração de senha ficará disponível quando a autenticação estiver conectada.')}>🔒 <span><strong>Deseja alterar sua senha?</strong><small>Mantenha sua conta sempre segura.</small></span></button></section>
           </div>
           <section className="my-profile-card my-preferences-card" id="preferencias"><h2>Preferências de Moradia</h2><div className="my-preferences-grid">
             <Field label="Tipo de Moradia" icon="homeGroup" value={shown.housing} editing={editing} onChange={(value) => update('housing', value)} options={['República ou apartamento compartilhado', 'Apartamento compartilhado', 'República', 'Kitnet', 'Quarto individual', 'Casa', 'Apartamento', 'Quarto']} />

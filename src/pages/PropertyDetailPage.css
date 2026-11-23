@@ -198,3 +198,5 @@
 .detail-contact-intro > button,.detail-contact-intro > a { width:100%; align-self:stretch; box-sizing:border-box; text-align:center; }
 .detail-chat-form button { display:grid; place-items:center; padding:0; line-height:0; }
 .detail-chat-form button svg { display:block; margin:0; }
+.detail-chat-open { display:block; margin-top:10px; color:#078b88; font-size:11px; font-weight:600; text-align:center; }
+.detail-chat-form button:disabled { opacity:.5; cursor:default; }

@@ -5,7 +5,14 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListingStatuses } from '../utils/demoListings.js';
-import { searchApprovedListings } from '../services/api.js';
+import {
+  addFavoriteListing,
+  getAccessToken,
+  listFavoriteListingIds,
+  removeFavoriteListing,
+  searchApprovedListings,
+} from '../services/api.js';
+import { getUserSession } from '../services/userAuth.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
@@ -15,6 +22,11 @@ const properties = [
   { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
   { id: 4, listingId: 'vaga-village', name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
 ];
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Anúncios reais (id UUID) têm os favoritos salvos na API; os de demonstração
+// (id numérico) continuam só no navegador.
+const isPersistedListing = (id) => typeof id === 'string' && UUID_PATTERN.test(id);
 
 function Icon({ name, size = 20, fill = 'none' }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill, stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true };
@@ -113,6 +125,8 @@ export function SearchPage() {
   const [listingStatuses] = useState(() => getDemoListingStatuses());
   const [publishedListings, setPublishedListings] = useState([]);
   const [listingError, setListingError] = useState('');
+  const [favoriteError, setFavoriteError] = useState('');
+  const isAuthenticated = Boolean(getAccessToken() && getUserSession());
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
@@ -159,8 +173,22 @@ export function SearchPage() {
   }, []);
 
   useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    let cancelled = false;
+    listFavoriteListingIds()
+      .then((ids) => {
+        if (!cancelled) setFavorites((current) => [...current.filter((id) => !isPersistedListing(id)), ...ids]);
+      })
+      .catch((error) => {
+        if (!cancelled) setFavoriteError(error.message || 'Não foi possível carregar seus favoritos.');
+      });
+    return () => { cancelled = true; };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
     try {
-      localStorage.setItem('morae.favorites', JSON.stringify(favorites));
+      // Só os favoritos de demonstração ficam no navegador.
+      localStorage.setItem('morae.favorites', JSON.stringify(favorites.filter((id) => !isPersistedListing(id))));
     } catch (error) {
       console.error('Não foi possível salvar os imóveis favoritos.', error);
     }
@@ -177,8 +205,27 @@ export function SearchPage() {
     return matchesPlace && matchesType && matchesBudget && matchesRooms && matchesAmenities && matchesFavorite;
   }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses, publishedListings]);
 
-  function toggleFavorite(id) {
-    setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+  async function toggleFavorite(id) {
+    const wasFavorite = favorites.includes(id);
+    const toggle = (current) => (wasFavorite ? current.filter((item) => item !== id) : [...current.filter((item) => item !== id), id]);
+    if (!isPersistedListing(id)) {
+      setFavorites(toggle);
+      return;
+    }
+    if (!isAuthenticated) {
+      setFavoriteError('Entre na sua conta para salvar anúncios nos favoritos.');
+      return;
+    }
+    setFavoriteError('');
+    setFavorites(toggle);
+    try {
+      if (wasFavorite) await removeFavoriteListing(id);
+      else await addFavoriteListing(id);
+    } catch (error) {
+      // Desfaz a mudança otimista.
+      setFavorites((current) => (wasFavorite ? [...current.filter((item) => item !== id), id] : current.filter((item) => item !== id)));
+      setFavoriteError(error.message || 'Não foi possível atualizar seus favoritos.');
+    }
   }
 
   function setShowFavorites(show) {
@@ -240,6 +287,7 @@ export function SearchPage() {
           <div className={`results-layout${showFavorites ? ' favorites-results-layout' : ''}`}>
             <section className={`listing-section${showFavorites ? ' favorites-listing-section' : ''}`}>
               <div className="section-heading"><h2><Icon name={showFavorites ? 'heart' : 'home'} size={26} fill={showFavorites ? 'currentColor' : 'none'} />{showFavorites ? 'Sua lista de favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={showFavorites ? exploreProperties : () => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>{showFavorites ? 'Explorar imóveis' : 'Ver todos'} <Icon name="arrow" size={19} /></button></div>
+              {favoriteError && <p className="listing-load-error" role="alert">{favoriteError}</p>}
               {listingError && <p className="listing-load-error" role="alert">Não foi possível carregar anúncios publicados. As opções demonstrativas continuam disponíveis. {listingError}</p>}
               {!listingError && !publishedListings.length && <p className="listing-load-notice" role="status">As opções exibidas incluem anúncios demonstrativos; anúncios publicados aparecerão aqui após aprovação.</p>}
               {showFavorites && <p className="favorites-help">Os anúncios que você favoritar ficam guardados aqui para consultar depois.</p>}
