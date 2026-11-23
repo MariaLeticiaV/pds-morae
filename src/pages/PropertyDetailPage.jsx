@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { ReportDialog } from '../components/ReportDialog.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
@@ -9,6 +9,8 @@ import { getDemoListing } from '../utils/demoListings.js';
 import {
   getAccessToken,
   getApprovedListing,
+  sendChatMessage,
+  startDirectChat,
   getMyInterestStatus,
   submitInterest,
   withdrawInterest,
@@ -43,6 +45,7 @@ function SectionHeading({ children }) {
 export function PropertyDetailPage() {
   const { id } = useParams();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const user = getDemoUser();
   const isOwner = user?.role === 'proprietario' || user?.role === 'ofertante' || pathname.startsWith('/proprietario') || pathname.startsWith('/ofertante');
   const role = user?.role === 'ofertante' || pathname.startsWith('/ofertante') ? 'ofertante' : 'proprietario';
@@ -57,7 +60,8 @@ export function PropertyDetailPage() {
   const [activeTab, setActiveTab] = useState('Descrição');
   const [photo, setPhoto] = useState(0);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState([]);
+  const [chatSending, setChatSending] = useState(false);
+  const [chatError, setChatError] = useState('');
   const displayName = user?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const isListingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
@@ -159,13 +163,34 @@ export function PropertyDetailPage() {
   if (listingLoading) return <section className="property-detail-empty" role="status"><h1>Carregando anúncio…</h1></section>;
   if (!property) return <section className="property-detail-empty"><h1>Anúncio não encontrado</h1><Link to="/buscar">Voltar para buscar imóveis</Link>{notification && <p role="alert">{notification}</p>}</section>;
 
-  const messageParams = new URLSearchParams({ contato: property.hostId, nome: property.host, papel: property.hostRole, imovel: property.title });
+  const messageParams = new URLSearchParams({ contato: property.hostId, nome: property.host, papel: property.hostRole, imovel: property.title, ...(property.persisted ? { anuncio: property.listingId } : {}) });
   const backPath = role === 'ofertante' ? '/ofertante/vagas' : isOwner ? '/proprietario/imoveis' : '/buscar';
-  const sendMessage = (event) => {
+  // Envia a primeira mensagem ao anunciante com o anúncio anexado e abre a
+  // conversa em Minhas Mensagens, onde ela continua em tempo real.
+  const sendMessage = async (event) => {
     event.preventDefault();
-    if (!message.trim()) return;
-    setMessages((current) => [...current, message.trim()]);
-    setMessage('');
+    const content = message.trim();
+    if (!content || chatSending) return;
+    if (!property.persisted) {
+      setChatError('Este anúncio é demonstrativo e não aceita mensagens.');
+      return;
+    }
+    if (!getAccessToken()) {
+      setChatError('Entre na sua conta para enviar mensagens.');
+      return;
+    }
+    setChatSending(true);
+    setChatError('');
+    try {
+      const chat = await startDirectChat({ listingId: property.listingId });
+      await sendChatMessage(chat.id, { content, listingId: property.listingId });
+      setMessage('');
+      navigate(`/mensagens?conversa=${encodeURIComponent(chat.id)}`);
+    } catch (error) {
+      setChatError(error.message || 'Não foi possível enviar a mensagem.');
+    } finally {
+      setChatSending(false);
+    }
   };
   const interestStatusLabels = {
     PENDING: 'Aguardando resposta',
@@ -242,7 +267,7 @@ export function PropertyDetailPage() {
           </div>
 
           <aside className="property-detail-right">
-            <section className="detail-contact-panel"><div className="detail-contact-intro"><span><LineIcon name="person" /></span><strong>Interessado nessa moradia?</strong><p>Tire suas dúvidas com o responsável ou demonstre interesse ao imóvel.</p>{!isListingOwner && <button type="button" disabled={interestLoading || (interest?.status === 'REJECTED')} onClick={handleInterest}>{interestLoading ? 'Atualizando…' : canWithdrawInterest ? 'Retirar manifestação' : interest?.status === 'REJECTED' ? 'Manifestação recusada' : interest?.status === 'WITHDRAWN' ? 'Demonstrar interesse novamente' : interest ? 'Interesse demonstrado ✓' : 'Demonstrar Interesse'}</button>}{property.persisted && !getAccessToken() && <Link to="/login">Entrar para manifestar interesse</Link>}{interest?.status && <span className="detail-interest-status">Situação: {interestStatusLabels[interest.status]}</span>}{isListingOwner && <Link to={`/proprietario/interessados?imovel=${encodeURIComponent(property.listingId)}`}>Gerenciar interessados</Link>}{interestError && <p className="detail-interest-message" role="alert">{interestError}</p>}{!property.persisted && <p className="detail-interest-message">Anúncio demonstrativo: não permite envio real.</p>}<Link to={`/mensagens?${messageParams.toString()}`}>Enviar mensagem</Link></div><div className="detail-mini-chat"><h2><LineIcon name="users" />Chat da Moradia</h2><span className="detail-online">Responsável Online</span><div className="detail-chat-history"><p className="from-visitor">Oi, Boa tarde, sou estudante da UFAL. Gostaria de saber se ainda há vagas disponíveis?</p><p className="from-host">Olá, tudo bem? Sim, ainda temos 2 vagas disponíveis. Qualquer dúvida que tiver, estou à disposição!</p>{messages.map((sent, index) => <p className="from-visitor" key={`${sent}-${index}`}>{sent}</p>)}</div><form className="detail-chat-form" onSubmit={sendMessage}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite sua mensagem..." aria-label="Digite sua mensagem" /><button type="submit" aria-label="Enviar mensagem"><LineIcon name="send" size={14} /></button></form></div></section>
+            <section className="detail-contact-panel"><div className="detail-contact-intro"><span><LineIcon name="person" /></span><strong>Interessado nessa moradia?</strong><p>Tire suas dúvidas com o responsável ou demonstre interesse ao imóvel.</p>{!isListingOwner && <button type="button" disabled={interestLoading || (interest?.status === 'REJECTED')} onClick={handleInterest}>{interestLoading ? 'Atualizando…' : canWithdrawInterest ? 'Retirar manifestação' : interest?.status === 'REJECTED' ? 'Manifestação recusada' : interest?.status === 'WITHDRAWN' ? 'Demonstrar interesse novamente' : interest ? 'Interesse demonstrado ✓' : 'Demonstrar Interesse'}</button>}{property.persisted && !getAccessToken() && <Link to="/login">Entrar para manifestar interesse</Link>}{interest?.status && <span className="detail-interest-status">Situação: {interestStatusLabels[interest.status]}</span>}{isListingOwner && <Link to={`/proprietario/interessados?imovel=${encodeURIComponent(property.listingId)}`}>Gerenciar interessados</Link>}{interestError && <p className="detail-interest-message" role="alert">{interestError}</p>}{!property.persisted && <p className="detail-interest-message">Anúncio demonstrativo: não permite envio real.</p>}<Link to={`/mensagens?${messageParams.toString()}`}>Enviar mensagem</Link></div><div className="detail-mini-chat"><h2><LineIcon name="users" />Chat da Moradia</h2><div className="detail-chat-history"><p className="from-host">{isListingOwner ? 'As mensagens dos interessados neste anúncio chegam em Minhas Mensagens.' : `Envie uma mensagem para ${property.host}. A conversa continua em Minhas Mensagens, em tempo real.`}</p></div>{isListingOwner ? <Link className="detail-chat-open" to="/mensagens">Abrir Minhas Mensagens</Link> : <form className="detail-chat-form" onSubmit={sendMessage}><input value={message} maxLength={10000} disabled={chatSending} onChange={(event) => setMessage(event.target.value)} placeholder="Digite sua mensagem..." aria-label="Digite sua mensagem" /><button type="submit" aria-label="Enviar mensagem" disabled={chatSending || !message.trim()}><LineIcon name="send" size={14} /></button></form>}{chatError && <p className="detail-interest-message" role="alert">{chatError}</p>}</div></section>
             <section className="detail-residents-card"><h2><LineIcon name="users" />Sobre os moradores</h2><div><span>2 moradores</span><span>Estudantes</span><span>Organizados</span><span>Respeitosos</span></div><Link to={`/usuarios/${property.hostId}`}>Ver perfil dos moradores <LineIcon name="arrow" size={17} /></Link></section>
           </aside>
         </div>
