@@ -5,7 +5,17 @@ import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing, getDemoListingStatuses, setDemoListingStatus } from '../utils/demoListings.js';
-import { getPaymentTransactionStatus, getPaymentTransactions } from '../services/api.js';
+import {
+  getAccessToken,
+  downloadContractDocument,
+  getContractDocuments,
+  getRentalContracts,
+  getPaymentTransactionStatus,
+  getPaymentTransactions,
+  getReceivedInterests,
+  uploadContractDocument,
+  updateInterestStatus,
+} from '../services/api.js';
 import { filterPaymentTransactions, summarizePaymentTransactions } from '../services/paymentHistory.js';
 import './OwnerDashboardPage.css';
 
@@ -240,32 +250,116 @@ function OwnerHome({ query, displayName, statuses = {} }) {
 
 function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) {
   const isOfferer = role === 'ofertante';
+  const authenticated = Boolean(getAccessToken());
   const roleProperties = isOfferer ? offererListings : properties;
   const roleApplicants = isOfferer ? offererApplicants : applicants;
+  const [receivedInterests, setReceivedInterests] = useState([]);
+  const [receivedLoading, setReceivedLoading] = useState(authenticated);
+  const [receivedError, setReceivedError] = useState('');
+  const [statusError, setStatusError] = useState('');
+  const [updatingInterest, setUpdatingInterest] = useState('');
+  const [filter, setFilter] = useState('Todos');
   const [applicantStatuses, setApplicantStatuses] = useState(() => {
     const initialStatuses = Object.fromEntries(roleApplicants.map((applicant) => [`${applicant.property}:${applicant.id}:${applicant.name}`, applicant.status]));
     try { return { ...initialStatuses, ...JSON.parse(localStorage.getItem(`morae.applicant-statuses.${role}`) || '{}') }; }
     catch { return initialStatuses; }
   });
-  const [filter, setFilter] = useState('Todos');
-  const property = roleProperties.find(({ id }) => id === selectedProperty) ?? roleProperties[0];
-  const statusFor = (applicant) => applicantStatuses[`${applicant.property}:${applicant.id}:${applicant.name}`] ?? applicant.status;
-  const propertyApplicants = roleApplicants.filter((applicant) => applicant.property === property.id);
-  const filteredApplicants = propertyApplicants.filter((applicant) => (filter === 'Todos' || statusFor(applicant) === filter) && (!query || `${applicant.name} ${applicant.course} ${applicant.university}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))));
-  const filters = ['Todos', 'Em conversa', 'Aguardando resposta', 'Recusado'];
+
   useEffect(() => {
+    if (!authenticated) return undefined;
+    let cancelled = false;
+    getReceivedInterests()
+      .then((items) => {
+        if (!cancelled) setReceivedInterests(items);
+      })
+      .catch((error) => {
+        if (!cancelled) setReceivedError(error.message || 'Não foi possível consultar os interessados.');
+      })
+      .finally(() => {
+        if (!cancelled) setReceivedLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [authenticated]);
+
+  const liveListings = [...new Map(receivedInterests.map((item) => [item.listingId, {
+    id: item.listingId,
+    title: item.listingTitle,
+    neighborhood: item.neighborhood,
+    type: 'Anúncio publicado',
+    room: '',
+    residents: 0,
+    rent: 0,
+    interested: 0,
+    status: 'Publicado',
+    image: 'apartment',
+  }])).values()];
+  const availableProperties = authenticated ? liveListings : roleProperties;
+  const property = availableProperties.find(({ id }) => id === selectedProperty) ?? availableProperties[0];
+  const liveApplicants = authenticated ? receivedInterests
+    .filter((item) => item.listingId === property?.id)
+    .map((item) => ({
+      id: item.userId,
+      name: item.name,
+      university: item.city,
+      course: item.course || 'Curso não informado',
+      period: item.period ? `${item.period}º período` : 'Período não informado',
+      gender: '',
+      status: ({
+        PENDING: 'Aguardando resposta',
+        IN_CONVERSATION: 'Em conversa',
+        ACCEPTED: 'Aceito',
+        REJECTED: 'Recusado',
+        WITHDRAWN: 'Retirado',
+      })[item.status],
+      property: item.listingId,
+      initials: item.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('pt-BR'),
+      email: item.email,
+      phone: item.phone,
+      interestedAt: item.interestedAt,
+    })) : [];
+  const propertyApplicants = authenticated ? liveApplicants : roleApplicants.filter((applicant) => applicant.property === property?.id);
+  const statusFor = (applicant) => authenticated
+    ? applicant.status
+    : applicantStatuses[`${applicant.property}:${applicant.id}:${applicant.name}`] ?? applicant.status;
+  const filteredApplicants = propertyApplicants.filter((applicant) => (filter === 'Todos' || statusFor(applicant) === filter) && (!query || `${applicant.name} ${applicant.course} ${applicant.university}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))));
+  const filters = ['Todos', 'Em conversa', 'Aguardando resposta', 'Aceito', 'Recusado', 'Retirado'];
+  useEffect(() => {
+    if (authenticated) return;
     try { localStorage.setItem(`morae.applicant-statuses.${role}`, JSON.stringify(applicantStatuses)); }
     catch { /* A ação continua disponível durante a sessão, mesmo sem armazenamento local. */ }
-  }, [applicantStatuses, role]);
+  }, [applicantStatuses, role, authenticated]);
   function rejectApplicant(applicant) {
     setApplicantStatuses((current) => ({ ...current, [`${applicant.property}:${applicant.id}:${applicant.name}`]: 'Recusado' }));
   }
+  async function changeInterestStatus(applicant, nextStatus) {
+    setStatusError('');
+    setUpdatingInterest(`${applicant.property}:${applicant.id}`);
+    try {
+      await updateInterestStatus(applicant.property, applicant.id, nextStatus);
+      setReceivedInterests((current) => current.map((interest) => (
+        interest.listingId === applicant.property && interest.userId === applicant.id
+          ? { ...interest, status: nextStatus }
+          : interest
+      )));
+    } catch (error) {
+      setStatusError(error.message || 'Não foi possível atualizar a manifestação.');
+    } finally {
+      setUpdatingInterest('');
+    }
+  }
+
+  if (authenticated && receivedLoading) return <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="users" size={28} /></span><div><h1>Interessados no seu anúncio</h1><p>Consultando manifestações recebidas…</p></div></section></div>;
+  if (authenticated && receivedError) return <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="users" size={28} /></span><div><h1>Interessados no seu anúncio</h1><p role="alert">{receivedError}</p></div></section></div>;
+  if (authenticated && !receivedInterests.length) return <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="users" size={28} /></span><div><h1>Interessados no seu anúncio</h1><p>As manifestações recebidas aparecerão aqui.</p></div></section><p className="owner-empty">Você ainda não recebeu manifestações de interesse.</p></div>;
+  if (!property) return <div className="owner-content"><p className="owner-empty">Nenhum anúncio disponível.</p></div>;
+
   return <div className="owner-content">
     <section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="users" size={28} /></span><div><h1>{isOfferer ? 'Interessados na sua vaga' : 'Interessados no seu imóvel'}</h1><p>Pessoas que demonstraram interesse no seu anúncio e estão em contato com você.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
-    <section className="owner-selected-property"><PropertyPhoto type={property.image} /><div><h2>{property.title}</h2><p><LineIcon name="pin" size={14} />{property.neighborhood} · Maceió/AL</p><div><span><LineIcon name="home" size={13} />{property.type}</span><span><LineIcon name="homeGroup" size={13} />{property.room}</span><span><LineIcon name="users" size={13} />{property.residents} moradores</span></div></div><span className="owner-status published">Ativo</span><Link to={`/imoveis/${property.id}`}>Ver anúncio <LineIcon name="arrow" size={15} /></Link></section>
-    <label className="owner-property-select">{isOfferer ? 'Vaga selecionada' : 'Imóvel selecionado'}<select value={property.id} onChange={(event) => setSelectedProperty(event.target.value)}>{roleProperties.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}</select></label>
+    <section className="owner-selected-property"><PropertyPhoto type={property.image} /><div><h2>{property.title}</h2><p><LineIcon name="pin" size={14} />{property.neighborhood} · Maceió/AL</p>{!authenticated && <div><span><LineIcon name="home" size={13} />{property.type}</span><span><LineIcon name="homeGroup" size={13} />{property.room}</span><span><LineIcon name="users" size={13} />{property.residents} moradores</span></div>}</div><span className="owner-status published">Ativo</span><Link to={`/imoveis/${property.id}`}>Ver anúncio <LineIcon name="arrow" size={15} /></Link></section>
+    <label className="owner-property-select">{isOfferer ? 'Vaga selecionada' : 'Imóvel selecionado'}<select value={property.id} onChange={(event) => setSelectedProperty(event.target.value)}>{availableProperties.map(({ id, title }) => <option key={id} value={id}>{title}</option>)}</select></label>
+    {statusError && <p role="alert" className="owner-empty">{statusError}</p>}
     <div className="owner-applicant-toolbar"><div className="owner-applicant-filters" role="group" aria-label="Filtrar interessados">{filters.map((item) => <button className={filter === item ? 'active' : ''} type="button" onClick={() => setFilter(item)} key={item}>{item}<small>{item === 'Todos' ? propertyApplicants.length : propertyApplicants.filter((applicant) => statusFor(applicant) === item).length}</small></button>)}</div><label className="owner-sort">Ordenar por<select defaultValue="recent"><option value="recent">Mais recentes</option><option value="name">Nome</option></select></label></div>
-    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant) => { const status = statusFor(applicant); const contactId = `estudante-${applicant.name.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-')}`; const chatParams = new URLSearchParams({ contato: contactId, nome: applicant.name, papel: 'Estudante', imovel: property.title }); return <article className="owner-applicant-card" key={`${applicant.property}:${applicant.id}:${applicant.name}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p></div><span className={`owner-applicant-status ${status === 'Em conversa' ? 'chatting' : status === 'Recusado' ? 'declined' : 'waiting'}`}>{status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to={`/mensagens?${chatParams.toString()}`}><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link>{status !== 'Recusado' && <button type="button" onClick={() => rejectApplicant(applicant)} aria-label={`Recusar ${applicant.name}`}>Recusar</button>}</div></article>; }) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
+    <section className="owner-applicant-list" aria-label="Lista de interessados">{filteredApplicants.length ? filteredApplicants.map((applicant) => { const status = statusFor(applicant); const contactId = authenticated ? applicant.id : `estudante-${applicant.name.toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]+/g, '-')}`; const chatParams = new URLSearchParams({ contato: contactId, nome: applicant.name, papel: 'Estudante', imovel: property.title }); const liveKey = `${applicant.property}:${applicant.id}`; const busy = updatingInterest === liveKey; return <article className="owner-applicant-card" key={`${applicant.property}:${applicant.id}:${applicant.name}`}><span className="owner-applicant-avatar">{applicant.initials}</span><div className="owner-applicant-info"><h3>{applicant.name}</h3><p>{applicant.university}</p><p>{applicant.course} <i /> {applicant.period} <i /> {applicant.gender}</p>{authenticated && <small>Manifestou interesse em {new Date(applicant.interestedAt).toLocaleDateString('pt-BR')}</small>}</div><span className={`owner-applicant-status ${['Em conversa', 'Aceito'].includes(status) ? 'chatting' : ['Recusado', 'Retirado'].includes(status) ? 'declined' : 'waiting'}`}>{status}</span><span className="owner-applicant-chevron" aria-hidden="true">›</span><div className="owner-applicant-actions"><Link to={`/mensagens?${chatParams.toString()}`}><LineIcon name="message" size={14} />Ver chat</Link><Link to={`/usuarios/${applicant.id}`}><LineIcon name="person" size={14} />Ver perfil</Link>{authenticated ? <>{status === 'Aguardando resposta' && <button type="button" disabled={busy} onClick={() => changeInterestStatus(applicant, 'IN_CONVERSATION')}>Iniciar conversa</button>}{['Aguardando resposta', 'Em conversa'].includes(status) && <><button type="button" disabled={busy} onClick={() => changeInterestStatus(applicant, 'ACCEPTED')}>Aceitar</button><button type="button" disabled={busy} onClick={() => changeInterestStatus(applicant, 'REJECTED')}>Recusar</button></>}</> : status !== 'Recusado' && <button type="button" onClick={() => rejectApplicant(applicant)} aria-label={`Recusar ${applicant.name}`}>Recusar</button>}</div></article>; }) : <p className="owner-empty">Nenhum interessado neste filtro.</p>}</section>
   </div>;
 }
 
@@ -564,12 +658,248 @@ const residentialLeaseClauses = [
   }
 ];
 
+const contractDocumentTypeOptions = [
+  ['SIGNED_CONTRACT', 'Contrato assinado'],
+  ['IDENTITY_DOCUMENT', 'Documento de identificação'],
+  ['PROOF_OF_ADDRESS', 'Comprovante de endereço'],
+  ['OTHER', 'Outro documento'],
+];
+
+const rentalContractStatusLabels = {
+  PENDING: 'Aguardando aceite',
+  ACTIVE: 'Ativo',
+  REJECTED: 'Recusado',
+  TERMINATED: 'Encerrado',
+};
+
+function formatContractCurrency(cents) {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(cents / 100);
+}
+
+function formatContractDate(date) {
+  if (!date) return 'Sem data final informada';
+  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' }).format(
+    new Date(`${date}T00:00:00.000Z`),
+  );
+}
+
+function formatDocumentSize(sizeBytes) {
+  return sizeBytes < 1024 * 1024
+    ? `${Math.max(1, Math.round(sizeBytes / 1024))} KB`
+    : `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ContractDocumentsPanel() {
+  const [contracts, setContracts] = useState([]);
+  const [selectedContractId, setSelectedContractId] = useState('');
+  const [documents, setDocuments] = useState([]);
+  const [documentType, setDocumentType] = useState('OTHER');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [contractsLoading, setContractsLoading] = useState(true);
+  const [documentsLoading, setDocumentsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    getRentalContracts()
+      .then((items) => {
+        if (!active) return;
+        setContracts(items);
+        setSelectedContractId((current) =>
+          items.some((contract) => contract.id === current)
+            ? current
+            : items[0]?.id ?? '',
+        );
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setContractsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedContractId) {
+      setDocuments([]);
+      return undefined;
+    }
+    let active = true;
+    setDocumentsLoading(true);
+    setError('');
+    getContractDocuments(selectedContractId)
+      .then((items) => {
+        if (active) setDocuments(items);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setDocumentsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedContractId]);
+
+  const selectedContract = contracts.find(
+    (contract) => contract.id === selectedContractId,
+  );
+  const canUpload = selectedContract && selectedContract.status !== 'REJECTED';
+
+  async function handleUpload(event) {
+    event.preventDefault();
+    if (!selectedContract || !selectedFile) return;
+    const form = event.currentTarget;
+    setUploading(true);
+    setError('');
+    setNotice('');
+    try {
+      const document = await uploadContractDocument(
+        selectedContract.id,
+        selectedFile,
+        documentType,
+      );
+      setDocuments((current) => [document, ...current]);
+      setSelectedFile(null);
+      form.reset();
+      setNotice('Documento enviado e armazenado com segurança.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDownload(document) {
+    setDownloadingId(document.id);
+    setError('');
+    try {
+      const blob = await downloadContractDocument(
+        document.contractId,
+        document.id,
+      );
+      const url = URL.createObjectURL(blob);
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.download = document.originalName;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setDownloadingId('');
+    }
+  }
+
+  return <section className="contract-documents" aria-labelledby="contract-documents-title">
+    <div className="contract-documents-heading">
+      <div>
+        <h2 id="contract-documents-title">Condições e documentos do contrato</h2>
+        <p>Consulte os dados registrados e os arquivos privados compartilhados pelas partes.</p>
+      </div>
+      {contracts.length > 0 && <label>
+        <span>Contrato</span>
+        <select
+          value={selectedContractId}
+          onChange={(event) => {
+            setSelectedContractId(event.target.value);
+            setDocuments([]);
+            setSelectedFile(null);
+            setNotice('');
+          }}
+        >
+          {contracts.map((contract) => (
+            <option key={contract.id} value={contract.id}>
+              {contract.listingTitle} · {rentalContractStatusLabels[contract.status]}
+            </option>
+          ))}
+        </select>
+      </label>}
+    </div>
+    {error && <p className="contract-documents-message error" role="alert">{error}</p>}
+    {notice && <p className="contract-documents-message success" role="status">{notice}</p>}
+    {contractsLoading ? <p className="contract-documents-empty" role="status">Carregando contratos...</p>
+      : contracts.length === 0 ? <p className="contract-documents-empty">Você ainda não possui contratos para enviar ou consultar documentos.</p>
+        : <>
+          {selectedContract && <section className="contract-conditions" aria-labelledby="contract-conditions-title">
+            <h3 id="contract-conditions-title">Condições da contratação</h3>
+            <div className="contract-condition-grid">
+              <article><small>Valor mensal</small><strong>{formatContractCurrency(selectedContract.monthlyRentInCents)}</strong></article>
+              <article><small>Vencimento</small><strong>Todo dia {selectedContract.dueDay}</strong></article>
+              <article><small>Vigência</small><strong>{formatContractDate(selectedContract.startsAt)} a {formatContractDate(selectedContract.endsAt)}</strong></article>
+              <article><small>Situação</small><strong>{rentalContractStatusLabels[selectedContract.status]}</strong></article>
+              <article><small>Imóvel</small><strong>{selectedContract.listingTitle}</strong><span>{selectedContract.neighborhood} · {selectedContract.city}</span></article>
+              <article><small>Proprietário(a)</small><strong>{selectedContract.ownerName}</strong></article>
+              <article><small>Estudante</small><strong>{selectedContract.tenantName}</strong></article>
+            </div>
+            <p>Estas são as condições cadastradas na plataforma. Consulte o documento assinado para confirmar outras cláusulas, encargos e obrigações; o aceite no aplicativo não substitui a formalização legal.</p>
+          </section>}
+          {canUpload && <form className="contract-document-upload" onSubmit={handleUpload}>
+            <label>
+              <span>Tipo do documento</span>
+              <select value={documentType} onChange={(event) => setDocumentType(event.target.value)}>
+                {contractDocumentTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              </select>
+            </label>
+            <label className="contract-document-file">
+              <span>Arquivo (PDF, PNG ou JPEG; até 10 MB)</span>
+              <input
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg"
+                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+              />
+            </label>
+            <button type="submit" disabled={!selectedFile || uploading}>
+              {uploading ? 'Enviando...' : 'Enviar documento'}
+            </button>
+          </form>}
+          {!canUpload && <p className="contract-documents-empty">Não é possível adicionar arquivos a um contrato recusado.</p>}
+          <div className="contract-document-list" aria-live="polite">
+            {documentsLoading ? <p className="contract-documents-empty">Carregando documentos...</p>
+              : documents.length === 0 ? <p className="contract-documents-empty">Nenhum documento enviado para este contrato.</p>
+                : documents.map((document) => (
+                  <article className="contract-document-item" key={document.id}>
+                    <span className="contract-document-icon" aria-hidden="true"><LineIcon name="paperclip" size={18} /></span>
+                    <div>
+                      <strong>{document.originalName}</strong>
+                      <small>
+                        {contractDocumentTypeOptions.find(([value]) => value === document.documentType)?.[1]}
+                        {' · '}{formatDocumentSize(document.sizeBytes)}
+                        {' · '}{new Intl.DateTimeFormat('pt-BR').format(new Date(document.createdAt))}
+                        {' · enviado por '}{document.uploadedByName}
+                      </small>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(document)}
+                      disabled={downloadingId === document.id}
+                    >
+                      {downloadingId === document.id ? 'Baixando...' : 'Baixar'}
+                    </button>
+                  </article>
+                ))}
+          </div>
+        </>}
+  </section>;
+}
+
 function ContractPage({ role }) {
   const isOfferer = role === 'ofertante';
   const ownerName = isOfferer ? 'Você · Aluno ofertador' : 'Lucas Souza · Proprietário';
   const tenantName = isOfferer ? 'Carla Santos · Estudante' : 'Ana Beatriz · Estudante';
   return <div className="owner-content contract-content">
-    <section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contrato de Locação</h1><p>Aqui estão as informações do seu contrato de locação.</p></div><span className="owner-status published">Ativo</span><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
+    <section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Gerencie documentos de contratos reais. A minuta e os dados de exemplo abaixo são apenas demonstrativos.</p></div><span className="owner-status reviewing">Exemplo</span><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
+    <ContractDocumentsPanel />
     <div className="contract-layout"><div className="contract-main-column">
       <section className="contract-property-card"><PropertyPhoto type="house" /><div><h2>Casa compartilhada no Farol</h2><p><LineIcon name="pin" size={14} />Farol · Maceió/AL <Link to="/imoveis/casa-farol">Ver detalhes do imóvel <LineIcon name="arrow" size={14} /></Link></p><div><span>Tipo de imóvel<strong>Casa</strong></span><span>Vaga<strong>Quarto individual</strong></span><span>Duração do contrato<strong>12 meses</strong></span></div></div></section>
       <section className="contract-parties"><h2>Partes do contrato</h2><div><article><small>{isOfferer ? 'Aluno ofertador' : 'Proprietário(a)'}</small><span className="contract-person-avatar">{isOfferer ? 'A' : 'LS'}</span><strong>{ownerName}</strong><p>CPF: ***.***.***-**</p><p>Telefone: (82) 9 9999-9999</p></article><article><small>Aluno(a)</small><span className="contract-person-avatar student">CS</span><strong>{tenantName}</strong><p>Matrícula UFAL: 20251123456</p><p>Telefone: (82) 9 9999-9999</p></article></div></section>

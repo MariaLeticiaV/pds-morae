@@ -4,12 +4,14 @@ import { getAdministratorSession, logoutAdministrator } from '../services/adminA
 import { getAdminListing, listAdminListings } from '../services/adminListings.js';
 import { changeAdminUserStatus, getAdminUser, listAdminUsers } from '../services/adminUsers.js';
 import { Logo } from '../components/Logo.jsx';
+import { AdminReportsPage } from './AdminReportsPage.jsx';
 import './AdminPanelPage.css';
 
 const navigation = [
   { path: '/admin', label: 'Visão geral', icon: '⌂' },
   { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
   { path: '/admin/anuncios', label: 'Anúncios', icon: '□' },
+  { path: '/admin/denuncias', label: 'Denúncias', icon: '⚑' },
   { path: '/admin/recomendacoes', label: 'Recomendações', icon: '◷' },
   { path: '/admin/verificacoes', label: 'Verificações', icon: '☑' },
   { path: '/admin/registros', label: 'Registros', icon: '☷' },
@@ -45,6 +47,7 @@ const pageInfo = {
   '': ['Visão geral', 'Acompanhe as revisões e mantenha a comunidade Moraê segura.'],
   usuarios: ['Usuários e vínculos', 'Confira o vínculo acadêmico e acompanhe as contas cadastradas.'],
   anuncios: ['Anúncios cadastrados', 'Consulte os imóveis e vagas publicados na plataforma.'],
+  denuncias: ['Denúncias', 'Analise ocorrências reportadas pela comunidade e registre o encaminhamento.'],
   recomendacoes: ['Recomendações', 'Acompanhe recomendações de convivência e os selos exibidos nos perfis.'],
   verificacoes: ['Verificações de vínculo', 'Revise solicitações de vínculo acadêmico enviadas por estudantes.'],
   registros: ['Registros de atividade', 'Consulte ações da equipe e eventos do sistema em um histórico único.'],
@@ -92,6 +95,7 @@ export function AdminPanelPage() {
   const [adsLoading, setAdsLoading] = useState(false);
   const [adsError, setAdsError] = useState('');
   const [adsRefresh, setAdsRefresh] = useState(0);
+  const [reportsRefresh, setReportsRefresh] = useState(0);
   const [adPage, setAdPage] = useState(1);
   const [adDetail, setAdDetail] = useState(null);
   const [adDetailLoading, setAdDetailLoading] = useState(false);
@@ -274,7 +278,7 @@ export function AdminPanelPage() {
         </Link>
         <span className="admin-nav-caption">ESPAÇO DE TRABALHO</span>
         <nav className="admin-navigation" aria-label="Administração">
-          {navigation.slice(0, 6).map((item) => (
+          {navigation.filter((item) => item.path !== '/admin/configuracoes').map((item) => (
             <NavLink
               end={item.path === '/admin'}
               key={item.path}
@@ -291,7 +295,7 @@ export function AdminPanelPage() {
           <span>⚙</span>Configurações
         </NavLink>
         <div className="admin-sidebar-bottom">
-          <div className="admin-trust-card"><strong><span>✓</span>{pageKey === 'usuarios' ? ' Contas protegidas' : ' Protótipo de equipe'}</strong><p>{pageKey === 'usuarios' ? 'Alterações de contas exigem permissão administrativa.' : 'As revisões demonstradas não são persistidas pela API.'}</p></div>
+          <div className="admin-trust-card"><strong><span>✓</span>{pageKey === 'usuarios' ? ' Contas protegidas' : pageKey === 'denuncias' ? ' Moderação protegida' : ' Protótipo de equipe'}</strong><p>{pageKey === 'usuarios' ? 'Alterações de contas exigem permissão administrativa.' : pageKey === 'denuncias' ? 'Acesso às denúncias exige a permissão VIEW_REPORTS.' : 'As revisões demonstradas não são persistidas pela API.'}</p></div>
           <div className="admin-sidebar-user"><Avatar>{initials}</Avatar><span><strong>{reviewerName}</strong><small>Administradora</small></span></div>
         </div>
       </aside>
@@ -310,6 +314,7 @@ export function AdminPanelPage() {
             <div><h1>{title}</h1><p>{subtitle}</p></div>
             {pageKey === '' && <button className="admin-primary-button" onClick={() => showNotice('O backend ainda não oferece uma operação para criar comunicados.')} type="button">＋ Novo comunicado</button>}
             {pageKey === 'anuncios' && <button className="admin-outline-button" onClick={() => setAdsRefresh((current) => current + 1)} type="button">Atualizar lista</button>}
+            {pageKey === 'denuncias' && <button className="admin-outline-button" onClick={() => setReportsRefresh((current) => current + 1)} type="button">Atualizar lista</button>}
             {pageKey === 'usuarios' && userId && <Link className="admin-outline-button" to="/admin/usuarios">‹ Voltar à lista</Link>}
           </div>
 
@@ -317,6 +322,8 @@ export function AdminPanelPage() {
             ? <div className="admin-prototype-banner" role="note"><strong>Gerenciamento de contas:</strong> os dados e alterações desta seção são consultados e salvos no banco de dados.</div>
             : pageKey === 'anuncios'
               ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> listagem e consulta obtidas diretamente do banco de dados.</div>
+            : pageKey === 'denuncias'
+              ? <div className="admin-prototype-banner" role="note"><strong>Moderação:</strong> denúncias e atualizações são persistidas; anotações ficam visíveis apenas à equipe autorizada.</div>
             : <div className="admin-prototype-banner" role="note"><strong>Protótipo:</strong> as demais áreas administrativas ainda exibem dados demonstrativos.</div>}
 
           {notice && <div className="admin-notice" role="status">{notice}<button onClick={() => setNotice('')} type="button" aria-label="Fechar aviso">×</button></div>}
@@ -364,6 +371,13 @@ export function AdminPanelPage() {
               onSearch={(value) => { setSearch(value); setAdPage(1); }}
             />
           )}
+          {pageKey === 'denuncias' && (
+            <AdminReportsPage
+              search={search}
+              refresh={reportsRefresh}
+              onNotice={showNotice}
+            />
+          )}
           {pageKey === 'recomendacoes' && (
             <RecommendationsPage
               items={filteredRecommendations}
@@ -379,7 +393,7 @@ export function AdminPanelPage() {
           {pageKey === 'verificacoes' && <VerificationsPage users={demoVerificationUsers} search={search} onSearch={setSearch} />}
           {pageKey === 'registros' && <RecordsPage onExport={exportRecords} search={search} onSearch={setSearch} />}
           {pageKey === 'configuracoes' && <SettingsPage settings={settings} setSettings={setSettings} onSave={() => showNotice('Preferências salvas nesta sessão do navegador.')} />}
-          {!['', 'usuarios', 'anuncios', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
+          {!['', 'usuarios', 'anuncios', 'denuncias', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
             <Overview showNotice={showNotice} />
           )}
         </div>

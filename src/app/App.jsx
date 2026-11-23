@@ -8,6 +8,7 @@ import { PasswordRecoveryPage } from '../pages/PasswordRecoveryPage.jsx';
 import { PasswordResetPage } from '../pages/PasswordResetPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
 import { UserProfilePage } from '../pages/UserProfilePage.jsx';
+import { ReviewExperiencePage } from '../pages/ReviewExperiencePage.jsx';
 import { MyProfilePage } from '../pages/MyProfilePage.jsx';
 import { MessagesPage } from '../pages/MessagesPage.jsx';
 import { AnnouncePropertyPage } from '../pages/AnnouncePropertyPage.jsx';
@@ -32,11 +33,12 @@ export default function App() {
   const isUserProfilePage = pathname === '/perfil' || pathname.startsWith('/usuarios/');
   const isAdminPage = pathname.startsWith('/admin');
   const isRentPaymentPage = pathname === '/pagamento-aluguel';
-  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isAdminPage || isRentPaymentPage;
+  const isReviewPage = pathname === '/avaliar-moradia';
+  const isStandalonePage = isSearchPage || isAuthPage || isSignupPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isAdminPage || isRentPaymentPage || isReviewPage;
 
   return (
-    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}${isAdminPage ? ' admin-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && !isRentPaymentPage && <header className="site-header">
+    <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isReviewPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}${isAdminPage ? ' admin-app' : ''}`}>
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && !isRentPaymentPage && !isReviewPage && <header className="site-header">
         <Link className="brand" to="/" aria-label="Moraê, página inicial">
           <Logo />
         </Link>
@@ -66,6 +68,7 @@ export default function App() {
           <Route path="/ofertante/*" element={<OwnerDashboardPage role="ofertante" />} />
           <Route path="/perfil" element={<MyProfilePage />} />
           <Route path="/usuarios/:id" element={<UserProfilePage />} />
+          <Route path="/avaliar-moradia" element={<ReviewExperiencePage />} />
           <Route path="*" element={<PlaceholderPage />} />
         </Routes>
       </main>

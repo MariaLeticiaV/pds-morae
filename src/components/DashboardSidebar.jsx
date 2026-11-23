@@ -11,6 +11,7 @@ const menuItems = [
   { id: 'announce', label: 'Anunciar imóvel', to: '/anunciar', icon: 'homeGroup' },
   { id: 'messages', label: 'Minhas Mensagens', to: '/mensagens', icon: 'message' },
   { id: 'favorites', label: 'Meus Favoritos', to: '/buscar?favoritos=1', icon: 'heart' },
+  { id: 'reviews', label: 'Avaliar moradia', to: '/avaliar-moradia', icon: 'star' },
   { id: 'profile', label: 'Meu Perfil', to: '/perfil', icon: 'user' },
 ];
 
@@ -19,6 +20,7 @@ function getActiveItem(pathname, search) {
   if (pathname.startsWith('/usuarios/')) return 'search';
   if (pathname === '/anunciar') return 'announce';
   if (pathname === '/mensagens') return 'messages';
+  if (pathname === '/avaliar-moradia') return 'reviews';
   if (pathname === '/perfil') return 'profile';
   return 'home';
 }

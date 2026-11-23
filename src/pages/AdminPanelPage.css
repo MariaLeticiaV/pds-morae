@@ -171,6 +171,32 @@
 .admin-ad-illustration { display: grid; width: 66px; height: 66px; flex: 0 0 66px; place-items: center; border-radius: 9px; color: #03999b; background: #d9f1ed; font-size: 35px; }
 .admin-ad-image { display: block; object-fit: cover; }
 .admin-api-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border: 1px solid #f0caca; border-radius: 8px; color: #994c4c; background: #fff7f7; font: 10px/1.5 'Inter', sans-serif; }
+.admin-reports-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 1.05fr); gap: 12px; align-items: start; }
+.admin-reports-list, .admin-report-detail { min-width: 0; }
+.admin-reports-list > .admin-panel-heading select { max-width: 155px; height: 29px; padding: 0 8px; border: 1px solid #dceaea; border-radius: 7px; color: #588185; background: #fff; font: 9px 'Inter', sans-serif; }
+.admin-report-row { display: flex; width: 100%; min-height: 67px; align-items: center; gap: 9px; padding: 9px 5px; border: 0; border-bottom: 1px solid #e6efef; color: inherit; background: #fff; text-align: left; cursor: pointer; }
+.admin-report-row:hover, .admin-report-row.active { background: #f0f9f6; }
+.admin-report-row.active { box-shadow: inset 3px 0 #009294; }
+.admin-report-alert { display: grid; width: 25px; height: 25px; flex: 0 0 25px; place-items: center; border-radius: 50%; color: #b04f81; background: #faeaf2; font: 700 12px 'Inter', sans-serif; }
+.admin-report-row-copy { display: grid; min-width: 0; flex: 1; gap: 4px; }
+.admin-report-row-copy strong { color: #356e72; font: 700 9px 'Inter', sans-serif; }
+.admin-report-row-copy small { overflow: hidden; color: #82a1a4; font: 8px 'Inter', sans-serif; text-overflow: ellipsis; white-space: nowrap; }
+.admin-report-person { display: grid; gap: 8px; margin: 14px 0; padding: 11px; border-radius: 9px; background: #f8fbfb; }
+.admin-report-person > span { display: grid; gap: 3px; }
+.admin-report-person small, .admin-report-description > span, .admin-report-description time { color: #82a1a4; font: 8px 'Inter', sans-serif; }
+.admin-report-person strong { color: #3c7074; font: 700 9px 'Inter', sans-serif; }
+.admin-report-description { padding: 11px; border: 1px solid #e2eeee; border-radius: 9px; }
+.admin-report-description > span { font-weight: 700; }
+.admin-report-description p { margin: 8px 0; color: #456f73; font: 10px/1.55 'Inter', sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; }
+.admin-report-field { display: grid; gap: 6px; margin-top: 12px; color: #5a8387; font: 700 9px 'Inter', sans-serif; }
+.admin-report-field select, .admin-report-field textarea { width: 100%; min-height: 33px; padding: 8px; border: 1px solid #dceaea; border-radius: 8px; outline-color: #008e90; color: #3b7074; background: #fff; font: 9px/1.5 'Inter', sans-serif; }
+.admin-report-field textarea { resize: vertical; }
+.admin-report-previous-note { padding: 8px; border-radius: 7px; color: #63888b; background: #f6f9f9; font: 8px/1.5 'Inter', sans-serif; }
+.admin-report-profile-link { margin: 12px 0 0 10px; color: #008b8c; font: 700 9px 'Inter', sans-serif; text-decoration: none; }
+.admin-report-profile-link:hover { text-decoration: underline; }
+.admin-report-action-hint { color: #809ea1; font: 8px/1.5 'Inter', sans-serif; }
+.admin-report-remove { width: 100%; margin-top: 8px; border-color: #eed4e1; color: #a85c7c; }
+.admin-report-remove:hover { border-color: #d9a8bf; color: #98496e; background: #fff7fa; }
 .admin-table-footer button:disabled { opacity: .45; cursor: not-allowed; }
 .admin-listing-gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); gap: 6px; margin: 12px 0; }
 .admin-listing-gallery img { width: 100%; height: 78px; border-radius: 8px; object-fit: cover; }
@@ -241,7 +267,7 @@
   .admin-sidebar { width: 165px; flex-basis: 165px; }
   .admin-content { padding: 16px; }
   .admin-topbar { padding: 0 16px; }
-  .admin-overview-grid, .admin-review-layout, .ads-layout { grid-template-columns: minmax(0, 1fr); }
+  .admin-overview-grid, .admin-review-layout, .admin-reports-layout, .ads-layout { grid-template-columns: minmax(0, 1fr); }
   .admin-overview-side { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .admin-review-layout > aside { order: 0; }
   .admin-filterbar { flex-wrap: wrap; }

@@ -72,6 +72,9 @@
 .listing-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 14px; }
 .listing-card { min-width: 0; overflow: hidden; border: 1px solid #e5e5de; border-radius: 14px; background: #fff; box-shadow: 0 3px 7px rgba(35, 70, 59, .11); }
 .listing-image-wrap { position: relative; height: 148px; overflow: hidden; }
+.property-card-photo { display:block; width:100%; height:100%; object-fit:cover; }
+.listing-load-error,.listing-load-notice { margin:10px 0; color:#8a5a17; font-size:12px; }
+.listing-load-error { color:#a33d3d; }
 .property-photo { position: relative; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(180deg, #d2e8e9 0 47%, #eee5d6 47% 72%, #d3c8b5 72%); }
 .property-photo:before { position: absolute; inset: 0; content: ''; background: linear-gradient(115deg, transparent 0 45%, #ffffff31 45% 48%, transparent 48%), linear-gradient(90deg, transparent 0 16%, #fff5 16.5% 17.5%, transparent 18% 69%, #fff6 69.5% 70.5%, transparent 71%); }
 .scene-window { position: absolute; top: 10%; right: 7%; display: grid; width: 39%; height: 58%; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 5px; padding: 6px; border: 7px solid #f7f5ee; background: #fff; box-shadow: 0 4px 12px #435c5d55; }

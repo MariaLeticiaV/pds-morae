@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListingStatuses } from '../utils/demoListings.js';
+import { searchApprovedListings } from '../services/api.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
@@ -53,11 +54,11 @@ function PropertyIllustration({ scene }) {
 
 function PropertyCard({ property, favorite, onFavorite }) {
   const navigate = useNavigate();
-  function openProperty() { navigate(`/imoveis/${property.id}`); }
+  function openProperty() { navigate(`/imoveis/${property.listingId}`); }
   return (
     <article className="listing-card" role="link" tabIndex={0} aria-label={`Ver detalhes de ${property.name}`} onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
       <div className="listing-image-wrap">
-        <PropertyIllustration scene={property.scene} />
+        {property.photoUrl ? <img className="property-card-photo" src={property.photoUrl} alt="" /> : <PropertyIllustration scene={property.scene} />}
         <span className="listing-photo-count">1 / 6</span>
         <button className={`favorite-button${favorite ? ' is-favorite' : ''}`} onClick={() => onFavorite(property.id)} aria-label={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} aria-pressed={favorite}>
           <Icon name="heart" size={20} fill={favorite ? 'currentColor' : 'none'} />
@@ -100,7 +101,7 @@ export function SearchPage() {
   const [favorites, setFavorites] = useState(() => {
     try {
       const savedFavorites = JSON.parse(localStorage.getItem('morae.favorites') || '[]');
-      return Array.isArray(savedFavorites) ? savedFavorites.filter(Number.isInteger) : [];
+      return Array.isArray(savedFavorites) ? savedFavorites.filter((id) => Number.isInteger(id) || typeof id === 'string') : [];
     } catch (error) {
       console.error('Não foi possível carregar os imóveis favoritos.', error);
       return [];
@@ -110,9 +111,52 @@ export function SearchPage() {
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
   const [listingStatuses] = useState(() => getDemoListingStatuses());
+  const [publishedListings, setPublishedListings] = useState([]);
+  const [listingError, setListingError] = useState('');
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+
+  useEffect(() => {
+    let cancelled = false;
+    searchApprovedListings()
+      .then((listings) => {
+        if (!cancelled) setPublishedListings(listings.map((listing) => {
+          const typeLabels = {
+            APARTMENT: 'Apartamento',
+            HOUSE: 'Casa',
+            ROOM: 'Quarto',
+            REPUBLIC: 'República',
+          };
+          const amenityLabels = {
+            WIFI: 'WI-FI',
+            FURNISHED: 'Mobiliado',
+            FURNITURE: 'Mobiliado',
+          };
+          return {
+            id: listing.listingId,
+            listingId: listing.listingId,
+            name: listing.title,
+            neighborhood: listing.location.neighborhood,
+            price: listing.rent,
+            type: typeLabels[listing.housingType] || listing.housingType,
+            rooms: listing.bedrooms,
+            baths: listing.bathrooms,
+            distance: `${listing.location.city}/${listing.location.state}`,
+            tags: listing.amenities.map((amenity) => amenityLabels[amenity] || amenity),
+            host: listing.advertiser.name,
+            profileId: listing.advertiser.userId,
+            profileName: listing.advertiser.name,
+            scene: listing.housingType === 'HOUSE' ? 'house' : listing.housingType === 'ROOM' ? 'room' : 'flat',
+            photoUrl: listing.media.find((item) => item.type === 'PHOTO')?.url,
+          };
+        }));
+      })
+      .catch((error) => {
+        if (!cancelled) setListingError(error.message || 'Não foi possível consultar os anúncios publicados.');
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     try {
@@ -122,7 +166,7 @@ export function SearchPage() {
     }
   }, [favorites]);
 
-  const filteredProperties = useMemo(() => properties.filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
+  const filteredProperties = useMemo(() => [...publishedListings, ...properties].filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
     const matchesPlace = showFavorites || !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
     const matchesType = showFavorites || type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
@@ -131,7 +175,7 @@ export function SearchPage() {
     const matchesAmenities = showFavorites || ((!wifiOnly || property.tags.includes('WI-FI')) && (!furnishedOnly || property.tags.includes('Mobiliado')));
     const matchesFavorite = !showFavorites || favorites.includes(property.id);
     return matchesPlace && matchesType && matchesBudget && matchesRooms && matchesAmenities && matchesFavorite;
-  }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses]);
+  }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses, publishedListings]);
 
   function toggleFavorite(id) {
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -196,6 +240,8 @@ export function SearchPage() {
           <div className={`results-layout${showFavorites ? ' favorites-results-layout' : ''}`}>
             <section className={`listing-section${showFavorites ? ' favorites-listing-section' : ''}`}>
               <div className="section-heading"><h2><Icon name={showFavorites ? 'heart' : 'home'} size={26} fill={showFavorites ? 'currentColor' : 'none'} />{showFavorites ? 'Sua lista de favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={showFavorites ? exploreProperties : () => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>{showFavorites ? 'Explorar imóveis' : 'Ver todos'} <Icon name="arrow" size={19} /></button></div>
+              {listingError && <p className="listing-load-error" role="alert">Não foi possível carregar anúncios publicados. As opções demonstrativas continuam disponíveis. {listingError}</p>}
+              {!listingError && !publishedListings.length && <p className="listing-load-notice" role="status">As opções exibidas incluem anúncios demonstrativos; anúncios publicados aparecerão aqui após aprovação.</p>}
               {showFavorites && <p className="favorites-help">Os anúncios que você favoritar ficam guardados aqui para consultar depois.</p>}
               {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : showFavorites ? <div className="favorites-empty"><span><Icon name="heart" size={28} /></span><h3>Seus favoritos começam aqui</h3><p>Toque no coração de um anúncio para salvá-lo nesta lista.</p><button type="button" onClick={exploreProperties}>Explorar imóveis <Icon name="arrow" size={17} /></button></div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={exploreProperties}>Limpar busca</button></div>}
             </section>
@@ -224,7 +270,7 @@ export function SearchPage() {
                 <article className="map-property-item" key={property.id}>
                   <div><strong>{property.name}</strong><span>{property.neighborhood} · Maceió/AL</span></div>
                   <b>R$ {property.price}<small>/mês</small></b>
-                  <Link to={`/imoveis/${property.id}`} onClick={() => setViewMap(false)}>Ver anúncio</Link>
+                  <Link to={`/imoveis/${property.listingId}`} onClick={() => setViewMap(false)}>Ver anúncio</Link>
                 </article>
               ))}
               {!filteredProperties.length && <p className="map-no-results">Nenhum imóvel corresponde aos filtros atuais.</p>}

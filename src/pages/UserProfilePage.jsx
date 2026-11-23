@@ -3,7 +3,8 @@ import { AccountMenu } from '../components/AccountMenu.jsx';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
-import { calculateCompatibility, getAccessToken, getUserById } from '../services/api.js';
+import { ReportDialog } from '../components/ReportDialog.jsx';
+import { calculateCompatibility, getAccessToken, getUserById, getUserReviews } from '../services/api.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import './UserProfilePage.css';
 
@@ -128,7 +129,7 @@ export function UserProfilePage() {
   const { id } = useParams();
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
-  const isOwnProfile = !id;
+  const isOwnProfile = !id || id === demoUser?.userId;
   const [profileRequest, setProfileRequest] = useState({
     id: null,
     user: null,
@@ -136,7 +137,14 @@ export function UserProfilePage() {
     error: '',
   });
   const [showCompatibility, setShowCompatibility] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('sobre');
+  const [reviewRequest, setReviewRequest] = useState({
+    id: null,
+    data: null,
+    loading: UUID_PATTERN.test(id || ''),
+    error: '',
+  });
   const profile = profiles[id] ?? (
     profileRequest.id === id && profileRequest.user
       ? profileFromUser(profileRequest.user)
@@ -151,6 +159,15 @@ export function UserProfilePage() {
     : !profileLoading && !profile && 'Este perfil não está disponível.';
   const contactParams = profile
     ? new URLSearchParams({ contato: id, nome: profile.name, papel: profile.role || 'Estudante' })
+    : null;
+  const profileReviews = profiles[id] ? profile.reviews : (
+    reviewRequest.id === id ? reviewRequest.data?.items ?? [] : []
+  );
+  const profileReviewCount = profiles[id]
+    ? profileReviews.length
+    : reviewRequest.id === id ? reviewRequest.data?.reviewCount ?? 0 : 0;
+  const profileReviewAverage = reviewRequest.id === id
+    ? reviewRequest.data?.averageRating
     : null;
 
   useEffect(() => {
@@ -185,6 +202,31 @@ export function UserProfilePage() {
     return () => { cancelled = true; };
   }, [id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!UUID_PATTERN.test(id || '')) {
+      setReviewRequest({ id, data: null, loading: false, error: '' });
+      return () => { cancelled = true; };
+    }
+
+    setReviewRequest({ id, data: null, loading: true, error: '' });
+    getUserReviews(id)
+      .then((data) => {
+        if (!cancelled) setReviewRequest({ id, data, loading: false, error: '' });
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setReviewRequest({
+            id,
+            data: null,
+            loading: false,
+            error: error.message || 'Não foi possível consultar as avaliações deste perfil.',
+          });
+        }
+      });
+    return () => { cancelled = true; };
+  }, [id]);
+
   return (
     <div className="user-profile-dashboard">
       <DashboardSidebar active={isOwnProfile ? 'profile' : 'search'} />
@@ -198,7 +240,7 @@ export function UserProfilePage() {
           {!profile ? <section className="profile-load-state" role={profileLoading ? 'status' : 'alert'}>{profileLoading ? 'Carregando perfil…' : profileError}</section> : <>
           <section className="profile-hero">
             <div className={`profile-large-avatar ${id === 'carolina-lima' ? 'avatar-carolina' : ''}`} aria-label={`Foto de perfil de ${profile.name}`}>{profile.photoUrl ? <img src={profile.photoUrl} alt="" /> : profile.initials}<i /></div>
-            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> {profile.role || 'Estudante'}</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to={`/mensagens?${contactParams.toString()}`}><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button></div></div>
+            <div className="profile-hero-info"><h1>{profile.name}</h1><p className="profile-role"><LineIcon name="graduation" size={14} /> {profile.role || 'Estudante'}</p><div className="profile-tags">{profile.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="profile-hero-actions"><Link to={`/mensagens?${contactParams.toString()}`}><LineIcon name="message" size={15} /> Enviar mensagem</Link><button type="button" onClick={() => setShowCompatibility(true)}><LineIcon name="compatibility" size={16} /> Ver compatibilidade</button>{UUID_PATTERN.test(id || '') && !isOwnProfile && <button className="profile-report-button" type="button" onClick={() => setShowReportDialog(true)}>Denunciar perfil</button>}</div></div>
             <span className="profile-hero-blob profile-blob-green" /><span className="profile-hero-blob profile-blob-pink" />
           </section>
           <nav className="profile-tabs" aria-label="Seções do perfil"><a className={activeTab === 'sobre' ? 'active' : ''} href="#sobre" onClick={() => setActiveTab('sobre')}>Sobre</a><a className={activeTab === 'preferencias' ? 'active' : ''} href="#preferencias" onClick={() => setActiveTab('preferencias')}>Preferências de Moradia</a><a className={activeTab === 'habitos' ? 'active' : ''} href="#habitos" onClick={() => setActiveTab('habitos')}>Hábitos e Rotina</a><a className={activeTab === 'avaliacoes' ? 'active' : ''} href="#avaliacoes" onClick={() => setActiveTab('avaliacoes')}>Avaliações Anteriores</a></nav>
@@ -208,11 +250,18 @@ export function UserProfilePage() {
           </div>
           <section className="profile-panel profile-preferences" id="preferencias"><h2><ProfileIcon name="home" />Preferências de Moradia</h2><div className="profile-preference-grid"><div><ProfileIcon name="homeGroup" /><span><small>Tipo de moradia</small><strong>{profile.housing}</strong></span></div><div><ProfileIcon name="pin" /><span><small>Localização</small><strong>{profile.distance}</strong></span></div><div><ProfileIcon name="home" /><span><small>Comodidades</small><strong>{profile.amenities}</strong></span></div><div><ProfileIcon name="money" /><span><small>Valor máximo</small><strong>{profile.budget}</strong></span></div></div></section>
           <section className="profile-panel profile-habits" id="habitos"><h2><ProfileIcon name="users" />Hábitos e Rotina</h2><div className="profile-habit-grid"><div><ProfileIcon name="users" /><span><strong>{profile.organization}</strong><small>{profile.organizationDescription || 'Gosta de manter o ambiente limpo e organizado'}</small></span></div><div><ProfileIcon name="moon" /><span><strong>{profile.environment}</strong><small>{profile.environmentDescription || 'Prefere um local calmo e com boa convivência'}</small></span></div><div><ProfileIcon name="smokeFree" /><span><strong>{profile.smoking}</strong><small>{profile.smokingDescription || 'Prefere ambientes livres de fumo'}</small></span></div></div></section>
-          <section className="profile-panel profile-reviews" id="avaliacoes"><h2><ProfileIcon name="star" />Avaliações Anteriores</h2>{profile.reviews.length ? <div className="review-grid">{profile.reviews.map((review) => <article className="review-card" key={review.title}><div><strong>{review.title}</strong><time>{review.date}</time></div><span className="review-stars" aria-label={`${review.stars} estrelas`}>{'★'.repeat(review.stars)}{'☆'.repeat(5 - review.stars)}</span><p>{review.text}</p></article>)}</div> : <div className="no-reviews"><LineIcon name="emptyReview" size={29} /><strong>Ainda não há avaliações para este perfil.</strong><p>Se você já dividiu um espaço ou foi locador(a) desta pessoa, deixe sua opinião e ajude outros estudantes!</p></div>}</section>
+          <section className="profile-panel profile-reviews" id="avaliacoes"><h2><ProfileIcon name="star" />Avaliações Anteriores{profileReviewCount > 0 && <span className="profile-review-summary">{profileReviewCount} {profileReviewCount === 1 ? 'avaliação' : 'avaliações'}{profileReviewAverage !== null && profileReviewAverage !== undefined ? ` · média ${profileReviewAverage.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}/5` : ''}</span>}</h2>{reviewRequest.id === id && reviewRequest.loading ? <p className="profile-review-load" role="status">Consultando avaliações…</p> : reviewRequest.id === id && reviewRequest.error ? <p className="profile-review-load" role="alert">{reviewRequest.error}</p> : profileReviews.length ? <div className="review-grid">{profileReviews.map((review) => {
+            const stars = review.overall ?? review.stars;
+            const date = review.createdAt
+              ? new Date(review.createdAt).toLocaleDateString('pt-BR')
+              : review.date;
+            return <article className="review-card" key={review.id || `${review.title}-${date}`}><div><strong>{review.listingTitle || review.title}</strong><time>{date}</time></div><span className="review-stars" aria-label={`${stars} estrelas`}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>{review.id && <small className="review-author">Avaliação de inquilino com contrato verificado</small>}<p>{review.comment || review.text}</p></article>;
+          })}</div> : <div className="no-reviews"><LineIcon name="emptyReview" size={29} /><strong>Ainda não há avaliações para este perfil.</strong><p>Avaliações são publicadas por inquilinos com contrato iniciado. Compartilhe sua experiência elegível.</p><Link to="/avaliar-moradia">Avaliar uma moradia</Link></div>}</section>
           </>}
         </div>
       </main>
       {showCompatibility && profile && <CompatibilityModal profile={profile} targetUserId={id} onClose={() => setShowCompatibility(false)} />}
+      {showReportDialog && profile && <ReportDialog targetUserId={id} targetName={profile.name} onClose={() => setShowReportDialog(false)} />}
     </div>
   );
 }

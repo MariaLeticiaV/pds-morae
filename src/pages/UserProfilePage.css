@@ -29,6 +29,8 @@
 .profile-hero-actions a { border-color: #008b8c; color: #fff; background: #008b8c; }
 .profile-hero-actions a:hover { background: #007477; }
 .profile-hero-actions button:hover { background: #d2f2e9; }
+.profile-hero-actions .profile-report-button { border-color:#eed4e1; color:#a85c7c; background:#fff7fa; }
+.profile-hero-actions .profile-report-button:hover { background:#fcebf3; }
 .profile-hero-blob { position: absolute; pointer-events: none; }
 .profile-blob-green { top: -79px; right: 4%; width: 162px; height: 162px; border-radius: 50%; background: #c9efc0; opacity: .75; }
 .profile-blob-pink { right: -32px; bottom: -83px; width: 130px; height: 170px; border-radius: 70% 0 0 0; background: #f5c7ec; transform: rotate(20deg); }
@@ -48,6 +50,10 @@
 .academic-detail small, .profile-preference-grid small { color: #347e79; font-size: 9px; }
 .academic-detail strong, .profile-preference-grid strong { color: #4f6c6d; font-size: 10px; font-weight: 500; }
 .profile-preferences, .profile-habits, .profile-reviews { scroll-margin-top: 16px; }
+.profile-review-summary { margin-left:auto; color:#73918e; font-size:10px; font-weight:500; }
+.profile-review-load { color:#6b8886; font-size:11px; }
+.review-card .review-author { display:block; margin-top:4px; color:#78918f; font-size:9px; }
+.no-reviews > a { margin-top:9px; color:#078889; font-size:10px; font-weight:700; }
 .profile-preference-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .profile-preference-grid > div { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 3px 11px; }
 .profile-preference-grid > div + div { border-left: 1px solid #edf0ef; }

@@ -1,10 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
+import { ReportDialog } from '../components/ReportDialog.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { MapView } from '../components/MapView/MapView.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing } from '../utils/demoListings.js';
+import {
+  getAccessToken,
+  getApprovedListing,
+  getMyInterestStatus,
+  submitInterest,
+  withdrawInterest,
+} from '../services/api.js';
 import { OwnerSidebar, OwnerTopbar, PropertyPhoto } from './OwnerDashboardPage.jsx';
 import './PropertyDetailPage.css';
 
@@ -40,14 +48,96 @@ export function PropertyDetailPage() {
   const role = user?.role === 'ofertante' || pathname.startsWith('/ofertante') ? 'ofertante' : 'proprietario';
   const [query, setQuery] = useState('');
   const [notification, setNotification] = useState('');
-  const [interested, setInterested] = useState(false);
+  const [publishedListing, setPublishedListing] = useState(null);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [interest, setInterest] = useState(null);
+  const [interestLoading, setInterestLoading] = useState(false);
+  const [interestError, setInterestError] = useState('');
+  const [showReportDialog, setShowReportDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('Descrição');
   const [photo, setPhoto] = useState(0);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const displayName = user?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+  const isListingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
+
+  useEffect(() => {
+    if (!isListingId) {
+      setPublishedListing(null);
+      setListingLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setPublishedListing(null);
+    setListingLoading(true);
+    getApprovedListing(id)
+      .then((listing) => {
+        if (!cancelled) setPublishedListing(listing);
+      })
+      .catch((error) => {
+        if (!cancelled) setNotification(error.message || 'Não foi possível carregar o anúncio.');
+      })
+      .finally(() => {
+        if (!cancelled) setListingLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [id, isListingId]);
+
+  useEffect(() => {
+    if (!isListingId || !getAccessToken()) {
+      setInterest(null);
+      setInterestLoading(false);
+      setInterestError('');
+      return undefined;
+    }
+    let cancelled = false;
+    setInterestLoading(true);
+    setInterestError('');
+    getMyInterestStatus(id)
+      .then((result) => {
+        if (!cancelled) setInterest(result);
+      })
+      .catch((error) => {
+        if (!cancelled) setInterestError(error.message || 'Não foi possível consultar sua manifestação.');
+      })
+      .finally(() => {
+        if (!cancelled) setInterestLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [id, isListingId]);
+
   const property = useMemo(() => {
+    if (publishedListing?.listingId === id) {
+      const typeLabels = {
+        APARTMENT: 'Apartamento',
+        HOUSE: 'Casa',
+        ROOM: 'Quarto',
+        REPUBLIC: 'República',
+      };
+      return {
+        listingId: publishedListing.listingId,
+        persisted: true,
+        title: publishedListing.title,
+        neighborhood: publishedListing.location.neighborhood,
+        type: typeLabels[publishedListing.housingType] || publishedListing.housingType,
+        room: `${publishedListing.bedrooms} quartos`,
+        rooms: String(publishedListing.bedrooms),
+        bathrooms: String(publishedListing.bathrooms),
+        rent: publishedListing.rent,
+        image: publishedListing.housingType === 'HOUSE' ? 'house' : 'apartment',
+        photoUrl: publishedListing.media.find((item) => item.type === 'PHOTO')?.url,
+        host: publishedListing.advertiser.name,
+        hostId: publishedListing.advertiser.userId,
+        hostRole: 'Anunciante',
+        description: publishedListing.description,
+        distance: `${publishedListing.location.city}/${publishedListing.location.state}`,
+        amenities: publishedListing.amenities,
+        rules: publishedListing.rules ? publishedListing.rules.split(/[\n,;]/).map((rule) => rule.trim()).filter(Boolean) : rules,
+        advertiserId: publishedListing.advertiser.userId,
+      };
+    }
     const source = propertyData[id];
     if (!source) return null;
     const listing = getDemoListing(id);
@@ -64,9 +154,10 @@ export function PropertyDetailPage() {
       bathrooms: listing.bathrooms || '2',
       rules: listing.rules ? listing.rules.split(/[\n,;]/).map((rule) => rule.trim()).filter(Boolean) : rules,
     } : source;
-  }, [id]);
+  }, [id, publishedListing]);
 
-  if (!property) return <section className="property-detail-empty"><h1>Anúncio não encontrado</h1><Link to="/buscar">Voltar para buscar imóveis</Link></section>;
+  if (listingLoading) return <section className="property-detail-empty" role="status"><h1>Carregando anúncio…</h1></section>;
+  if (!property) return <section className="property-detail-empty"><h1>Anúncio não encontrado</h1><Link to="/buscar">Voltar para buscar imóveis</Link>{notification && <p role="alert">{notification}</p>}</section>;
 
   const messageParams = new URLSearchParams({ contato: property.hostId, nome: property.host, papel: property.hostRole, imovel: property.title });
   const backPath = role === 'ofertante' ? '/ofertante/vagas' : isOwner ? '/proprietario/imoveis' : '/buscar';
@@ -76,6 +167,40 @@ export function PropertyDetailPage() {
     setMessages((current) => [...current, message.trim()]);
     setMessage('');
   };
+  const interestStatusLabels = {
+    PENDING: 'Aguardando resposta',
+    IN_CONVERSATION: 'Em conversa',
+    ACCEPTED: 'Aceito',
+    REJECTED: 'Recusado',
+    WITHDRAWN: 'Retirado',
+  };
+  const isListingOwner = property.persisted && property.advertiserId === user?.userId;
+  const canWithdrawInterest = interest && ['PENDING', 'IN_CONVERSATION', 'ACCEPTED'].includes(interest.status);
+
+  async function handleInterest() {
+    setInterestError('');
+    if (!property.persisted) {
+      setInterestError('Este anúncio é demonstrativo e não aceita manifestações persistidas.');
+      return;
+    }
+    if (!getAccessToken()) {
+      setInterestError('Entre na sua conta para demonstrar interesse.');
+      return;
+    }
+    setInterestLoading(true);
+    try {
+      if (canWithdrawInterest) {
+        await withdrawInterest(property.listingId);
+        setInterest(await getMyInterestStatus(property.listingId));
+      } else {
+        setInterest(await submitInterest(property.listingId));
+      }
+    } catch (error) {
+      setInterestError(error.message || 'Não foi possível atualizar sua manifestação.');
+    } finally {
+      setInterestLoading(false);
+    }
+  }
 
   return <div className={`property-detail-shell${isOwner ? ' owner-detail-shell' : ''}`}>
     {isOwner ? <OwnerSidebar pathname={pathname} role={role} /> : <DashboardSidebar active="search" />}
@@ -94,10 +219,11 @@ export function PropertyDetailPage() {
       </header>}
       <div className="property-detail-content">
         <Link className="property-detail-back" to={backPath}>← Voltar aos anúncios</Link>
+        {property.persisted && !isListingOwner && <button className="property-report-action" onClick={() => setShowReportDialog(true)} type="button">Denunciar anúncio</button>}
         <div className="property-detail-columns">
           <aside className="property-detail-left">
             <section className="detail-gallery-card" aria-label="Fotos do imóvel">
-              <div className={`detail-gallery-photo detail-photo-${property.image}`}><PropertyPhoto type={property.image} /><span className="detail-photo-count">{photo + 1}/8</span><button type="button" className="detail-gallery-arrow previous" aria-label="Foto anterior" onClick={() => setPhoto((current) => (current + 7) % 8)}>‹</button><button type="button" className="detail-gallery-arrow next" aria-label="Próxima foto" onClick={() => setPhoto((current) => (current + 1) % 8)}>›</button></div>
+              <div className={`detail-gallery-photo detail-photo-${property.image}`}>{property.photoUrl ? <img className="detail-listing-photo" src={property.photoUrl} alt={property.title} /> : <PropertyPhoto type={property.image} />}<span className="detail-photo-count">{photo + 1}/8</span><button type="button" className="detail-gallery-arrow previous" aria-label="Foto anterior" onClick={() => setPhoto((current) => (current + 7) % 8)}>‹</button><button type="button" className="detail-gallery-arrow next" aria-label="Próxima foto" onClick={() => setPhoto((current) => (current + 1) % 8)}>›</button></div>
               <div className="detail-gallery-thumbnails">{Array.from({ length: 4 }, (_, index) => <button type="button" key={index} className={photo % 4 === index ? 'selected' : ''} onClick={() => setPhoto(index)} aria-label={`Ver foto ${index + 1}`}><PropertyPhoto type={property.image} /></button>)}</div>
             </section>
             <section className="detail-price-card"><SectionHeading>Valor e condições</SectionHeading><div className="detail-price-info"><LineIcon name="money" /><span>Valor do aluguel<strong>R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></span></div><div className="detail-price-info"><LineIcon name="document" /><span>Taxas adicionais<strong>Água, luz e internet já inclusas</strong></span></div></section>
@@ -116,11 +242,12 @@ export function PropertyDetailPage() {
           </div>
 
           <aside className="property-detail-right">
-            <section className="detail-contact-panel"><div className="detail-contact-intro"><span><LineIcon name="person" /></span><strong>Interessado nessa moradia?</strong><p>Tire suas dúvidas com o responsável ou demonstre interesse ao imóvel.</p><button type="button" onClick={() => setInterested((value) => !value)}>{interested ? 'Interesse demonstrado ✓' : 'Demonstrar Interesse'}</button><Link to={`/mensagens?${messageParams.toString()}`}>Enviar mensagem</Link></div><div className="detail-mini-chat"><h2><LineIcon name="users" />Chat da Moradia</h2><span className="detail-online">Responsável Online</span><div className="detail-chat-history"><p className="from-visitor">Oi, Boa tarde, sou estudante da UFAL. Gostaria de saber se ainda há vagas disponíveis?</p><p className="from-host">Olá, tudo bem? Sim, ainda temos 2 vagas disponíveis. Qualquer dúvida que tiver, estou à disposição!</p>{messages.map((sent, index) => <p className="from-visitor" key={`${sent}-${index}`}>{sent}</p>)}</div><form className="detail-chat-form" onSubmit={sendMessage}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite sua mensagem..." aria-label="Digite sua mensagem" /><button type="submit" aria-label="Enviar mensagem"><LineIcon name="send" size={14} /></button></form></div></section>
+            <section className="detail-contact-panel"><div className="detail-contact-intro"><span><LineIcon name="person" /></span><strong>Interessado nessa moradia?</strong><p>Tire suas dúvidas com o responsável ou demonstre interesse ao imóvel.</p>{!isListingOwner && <button type="button" disabled={interestLoading || (interest?.status === 'REJECTED')} onClick={handleInterest}>{interestLoading ? 'Atualizando…' : canWithdrawInterest ? 'Retirar manifestação' : interest?.status === 'REJECTED' ? 'Manifestação recusada' : interest?.status === 'WITHDRAWN' ? 'Demonstrar interesse novamente' : interest ? 'Interesse demonstrado ✓' : 'Demonstrar Interesse'}</button>}{property.persisted && !getAccessToken() && <Link to="/login">Entrar para manifestar interesse</Link>}{interest?.status && <span className="detail-interest-status">Situação: {interestStatusLabels[interest.status]}</span>}{isListingOwner && <Link to={`/proprietario/interessados?imovel=${encodeURIComponent(property.listingId)}`}>Gerenciar interessados</Link>}{interestError && <p className="detail-interest-message" role="alert">{interestError}</p>}{!property.persisted && <p className="detail-interest-message">Anúncio demonstrativo: não permite envio real.</p>}<Link to={`/mensagens?${messageParams.toString()}`}>Enviar mensagem</Link></div><div className="detail-mini-chat"><h2><LineIcon name="users" />Chat da Moradia</h2><span className="detail-online">Responsável Online</span><div className="detail-chat-history"><p className="from-visitor">Oi, Boa tarde, sou estudante da UFAL. Gostaria de saber se ainda há vagas disponíveis?</p><p className="from-host">Olá, tudo bem? Sim, ainda temos 2 vagas disponíveis. Qualquer dúvida que tiver, estou à disposição!</p>{messages.map((sent, index) => <p className="from-visitor" key={`${sent}-${index}`}>{sent}</p>)}</div><form className="detail-chat-form" onSubmit={sendMessage}><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Digite sua mensagem..." aria-label="Digite sua mensagem" /><button type="submit" aria-label="Enviar mensagem"><LineIcon name="send" size={14} /></button></form></div></section>
             <section className="detail-residents-card"><h2><LineIcon name="users" />Sobre os moradores</h2><div><span>2 moradores</span><span>Estudantes</span><span>Organizados</span><span>Respeitosos</span></div><Link to={`/usuarios/${property.hostId}`}>Ver perfil dos moradores <LineIcon name="arrow" size={17} /></Link></section>
           </aside>
         </div>
       </div>
     </main>
+    {showReportDialog && property.persisted && <ReportDialog listingId={property.listingId} listingTitle={property.title} onClose={() => setShowReportDialog(false)} />}
   </div>;
 }

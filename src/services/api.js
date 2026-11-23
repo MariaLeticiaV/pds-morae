@@ -16,16 +16,21 @@ async function request(
   } = {},
 ) {
   let response;
+  const isMultipartBody = typeof FormData !== 'undefined' && body instanceof FormData;
 
   try {
     response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
-        ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        ...(body === undefined || isMultipartBody
+          ? {}
+          : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(body === undefined
+        ? {}
+        : { body: isMultipartBody ? body : JSON.stringify(body) }),
     });
   } catch (error) {
     if (error instanceof TypeError) {
@@ -100,6 +105,36 @@ export async function loginUser({ email, password }) {
   return body;
 }
 
+export function getGoogleLoginUrl() {
+  return `${API_URL}/auth/google`;
+}
+
+export async function completeGoogleLogin(code) {
+  if (typeof code !== 'string' || code.length === 0 || code.length > 256) {
+    throw new Error('O código de autenticação do Google é inválido.');
+  }
+  const session = await request('/auth/google/exchange', {
+    method: 'POST',
+    body: { code },
+  });
+  if (
+    !session ||
+    typeof session.userId !== 'string' ||
+    typeof session.name !== 'string' ||
+    typeof session.email !== 'string' ||
+    typeof session.status !== 'string' ||
+    typeof session.accessToken !== 'string' ||
+    session.accessToken.length === 0 ||
+    session.tokenType !== 'Bearer'
+  ) {
+    throw new Error('A resposta de autenticação do Google é inválida.');
+  }
+
+  localStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
+  saveUserSession(session);
+  return session;
+}
+
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
@@ -132,6 +167,261 @@ function authenticatedRequest(path, options = {}) {
     token: getAuthenticatedToken(),
     unauthorizedMessage: 'Sua sessão expirou. Entre novamente para continuar.',
   });
+}
+
+const interestStatuses = new Set([
+  'PENDING',
+  'IN_CONVERSATION',
+  'ACCEPTED',
+  'REJECTED',
+  'WITHDRAWN',
+]);
+
+function mapInterestReceipt(interest) {
+  if (
+    !interest ||
+    typeof interest.listingId !== 'string' ||
+    !interestStatuses.has(interest.status) ||
+    typeof interest.createdAt !== 'string' ||
+    Number.isNaN(Date.parse(interest.createdAt)) ||
+    typeof interest.updatedAt !== 'string' ||
+    Number.isNaN(Date.parse(interest.updatedAt))
+  ) {
+    throw new Error('A resposta da manifestação de interesse é inválida.');
+  }
+  return interest;
+}
+
+function mapListing(listing) {
+  if (
+    !listing ||
+    typeof listing.listingId !== 'string' ||
+    typeof listing.title !== 'string' ||
+    typeof listing.description !== 'string' ||
+    !Number.isFinite(listing.rent) ||
+    typeof listing.housingType !== 'string' ||
+    !Number.isInteger(listing.bedrooms) ||
+    !Number.isInteger(listing.bathrooms) ||
+    !Array.isArray(listing.amenities) ||
+    !listing.amenities.every((amenity) => typeof amenity === 'string') ||
+    !listing.location ||
+    typeof listing.location.neighborhood !== 'string' ||
+    typeof listing.location.city !== 'string' ||
+    typeof listing.location.state !== 'string' ||
+    !listing.advertiser ||
+    typeof listing.advertiser.userId !== 'string' ||
+    typeof listing.advertiser.name !== 'string' ||
+    !Array.isArray(listing.media)
+  ) {
+    throw new Error('A resposta do anúncio é inválida.');
+  }
+
+  return {
+    ...listing,
+    media: listing.media.map((item) => {
+      if (
+        !item ||
+        typeof item.url !== 'string' ||
+        typeof item.type !== 'string' ||
+        !Number.isInteger(item.position)
+      ) {
+        throw new Error('A resposta contém uma mídia de anúncio inválida.');
+      }
+      return item;
+    }),
+  };
+}
+
+export async function searchApprovedListings() {
+  const body = await request('/properties');
+  if (!Array.isArray(body)) {
+    throw new Error('A resposta da busca de anúncios é inválida.');
+  }
+  return body.map(mapListing);
+}
+
+export async function getApprovedListing(listingId) {
+  if (typeof listingId !== 'string' || listingId.length === 0) {
+    throw new Error('O identificador do anúncio é inválido.');
+  }
+  return mapListing(await request(`/properties/${encodeURIComponent(listingId)}`));
+}
+
+export async function getMyInterestStatus(listingId) {
+  const body = await authenticatedRequest(
+    `/interests/mine/${encodeURIComponent(listingId)}`,
+  );
+  if (body === null) return null;
+  return mapInterestReceipt(body);
+}
+
+export async function submitInterest(listingId) {
+  return mapInterestReceipt(
+    await authenticatedRequest(`/interests/${encodeURIComponent(listingId)}`, {
+      method: 'PUT',
+    }),
+  );
+}
+
+export async function withdrawInterest(listingId) {
+  await authenticatedRequest(`/interests/${encodeURIComponent(listingId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function getReceivedInterests() {
+  const body = await authenticatedRequest('/interests/received');
+  if (!body || !Array.isArray(body.items)) {
+    throw new Error('A resposta das manifestações recebidas é inválida.');
+  }
+  return body.items.map((item) => {
+    if (
+      !item ||
+      typeof item.userId !== 'string' ||
+      typeof item.listingId !== 'string' ||
+      typeof item.listingTitle !== 'string' ||
+      typeof item.neighborhood !== 'string' ||
+      typeof item.city !== 'string' ||
+      typeof item.name !== 'string' ||
+      !interestStatuses.has(item.status) ||
+      typeof item.interestedAt !== 'string' ||
+      Number.isNaN(Date.parse(item.interestedAt))
+    ) {
+      throw new Error('A resposta contém uma manifestação de interesse inválida.');
+    }
+    return item;
+  });
+}
+
+export async function updateInterestStatus(listingId, userId, status) {
+  if (!['IN_CONVERSATION', 'ACCEPTED', 'REJECTED'].includes(status)) {
+    throw new Error('A situação da manifestação de interesse é inválida.');
+  }
+  return mapInterestReceipt(
+    await authenticatedRequest(
+      `/interests/listings/${encodeURIComponent(listingId)}/${encodeURIComponent(userId)}/status`,
+      { method: 'PATCH', body: { status } },
+    ),
+  );
+}
+
+function mapReview(review) {
+  const ratingKeys = [
+    'cleanliness',
+    'condition',
+    'location',
+    'communication',
+    'value',
+    'overall',
+  ];
+  if (
+    !review ||
+    typeof review.id !== 'string' ||
+    typeof review.reviewedUserId !== 'string' ||
+    typeof review.listingId !== 'string' ||
+    typeof review.listingTitle !== 'string' ||
+    typeof review.comment !== 'string' ||
+    typeof review.createdAt !== 'string' ||
+    Number.isNaN(Date.parse(review.createdAt)) ||
+    !ratingKeys.every((key) => Number.isInteger(review[key]) && review[key] >= 1 && review[key] <= 5)
+  ) {
+    throw new Error('A resposta da avaliação de moradia é inválida.');
+  }
+  return review;
+}
+
+export async function getUserReviews(userId) {
+  const body = await request(`/reviews/users/${encodeURIComponent(userId)}`);
+  if (
+    !body ||
+    !Array.isArray(body.items) ||
+    !Number.isInteger(body.reviewCount) ||
+    body.reviewCount !== body.items.length ||
+    (body.averageRating !== null &&
+      (!Number.isFinite(body.averageRating) || body.averageRating < 1 || body.averageRating > 5))
+  ) {
+    throw new Error('A resposta das avaliações do perfil é inválida.');
+  }
+  return {
+    items: body.items.map(mapReview),
+    averageRating: body.averageRating,
+    reviewCount: body.reviewCount,
+  };
+}
+
+export async function getEligibleReviewContracts() {
+  const body = await authenticatedRequest('/reviews/eligible-contracts');
+  if (!Array.isArray(body)) {
+    throw new Error('A resposta dos contratos elegíveis para avaliação é inválida.');
+  }
+  return body.map((contract) => {
+    if (
+      !contract ||
+      typeof contract.contractId !== 'string' ||
+      typeof contract.listingId !== 'string' ||
+      typeof contract.listingTitle !== 'string' ||
+      typeof contract.neighborhood !== 'string' ||
+      typeof contract.ownerId !== 'string' ||
+      typeof contract.ownerName !== 'string' ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(contract.startsAt) ||
+      !['ACTIVE', 'TERMINATED'].includes(contract.status)
+    ) {
+      throw new Error('A resposta contém um contrato elegível inválido.');
+    }
+    return contract;
+  });
+}
+
+export async function submitHousingReview(review) {
+  if (
+    !review ||
+    typeof review.contractId !== 'string' ||
+    !['cleanliness', 'condition', 'location', 'communication', 'value', 'overall']
+      .every((key) => Number.isInteger(review[key]) && review[key] >= 1 && review[key] <= 5) ||
+    typeof review.comment !== 'string' ||
+    review.comment.trim().length < 20 ||
+    review.comment.trim().length > 1000
+  ) {
+    throw new Error('Preencha todos os critérios e escreva um comentário entre 20 e 1.000 caracteres.');
+  }
+  return mapReview(await authenticatedRequest('/reviews', {
+    method: 'POST',
+    body: { ...review, comment: review.comment.trim() },
+  }));
+}
+
+export async function submitReport(report) {
+  const categories = [
+    'FRAUD',
+    'HARASSMENT',
+    'INAPPROPRIATE_CONTENT',
+    'SAFETY',
+    'OTHER',
+  ];
+  const hasUserTarget = typeof report?.targetUserId === 'string';
+  const hasListingTarget = typeof report?.listingId === 'string';
+  if (
+    hasUserTarget === hasListingTarget ||
+    !categories.includes(report.category) ||
+    typeof report.description !== 'string' ||
+    report.description.trim().length < 20 ||
+    report.description.trim().length > 2000
+  ) {
+    throw new Error('Selecione o motivo e descreva a denúncia com pelo menos 20 caracteres.');
+  }
+  const body = await authenticatedRequest('/reports', {
+    method: 'POST',
+    body: {
+      ...(hasUserTarget ? { targetUserId: report.targetUserId } : {}),
+      ...(hasListingTarget ? { listingId: report.listingId } : {}),
+      category: report.category,
+      description: report.description.trim(),
+    },
+  });
+  if (!body || typeof body.id !== 'string' || body.status !== 'OPEN') {
+    throw new Error('A resposta do registro da denúncia é inválida.');
+  }
+  return body;
 }
 
 export async function getPaymentTransactions({ from, to, status } = {}) {
@@ -253,6 +543,89 @@ export async function getRentalContracts() {
     throw new Error('A resposta de contratos de aluguel é inválida.');
   }
   return body.map(mapRentalContract);
+}
+
+const contractDocumentTypes = new Set([
+  'SIGNED_CONTRACT',
+  'IDENTITY_DOCUMENT',
+  'PROOF_OF_ADDRESS',
+  'OTHER',
+]);
+const contractDocumentMimeTypes = new Set([
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+]);
+
+function mapContractDocument(document) {
+  if (
+    !document ||
+    typeof document.id !== 'string' ||
+    typeof document.contractId !== 'string' ||
+    typeof document.originalName !== 'string' ||
+    !contractDocumentMimeTypes.has(document.mimeType) ||
+    !Number.isInteger(document.sizeBytes) ||
+    document.sizeBytes < 1 ||
+    !contractDocumentTypes.has(document.documentType) ||
+    typeof document.createdAt !== 'string' ||
+    Number.isNaN(Date.parse(document.createdAt)) ||
+    typeof document.uploadedByName !== 'string'
+  ) {
+    throw new Error('A resposta do documento do contrato é inválida.');
+  }
+  return document;
+}
+
+export async function getContractDocuments(contractId) {
+  const body = await authenticatedRequest(
+    `/rental-contracts/${encodeURIComponent(contractId)}/documents`,
+  );
+  if (!Array.isArray(body)) {
+    throw new Error('A resposta dos documentos do contrato é inválida.');
+  }
+  return body.map(mapContractDocument);
+}
+
+export async function uploadContractDocument(contractId, file, documentType) {
+  if (
+    !file ||
+    !contractDocumentTypes.has(documentType) ||
+    file.size < 1 ||
+    file.size > 10 * 1024 * 1024
+  ) {
+    throw new Error('Selecione um arquivo válido de até 10 MB e informe o tipo do documento.');
+  }
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('documentType', documentType);
+  return mapContractDocument(await authenticatedRequest(
+    `/rental-contracts/${encodeURIComponent(contractId)}/documents`,
+    { method: 'POST', body: formData },
+  ));
+}
+
+export async function downloadContractDocument(contractId, documentId) {
+  const token = getAuthenticatedToken();
+  let response;
+  try {
+    response = await fetch(
+      `${API_URL}/rental-contracts/${encodeURIComponent(contractId)}/documents/${encodeURIComponent(documentId)}/download`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Não foi possível conectar à API em ${API_URL}.`);
+    }
+    throw error;
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const message = Array.isArray(body?.message)
+      ? body.message.join(' ')
+      : body?.message;
+    throw new Error(message || 'Não foi possível acessar este documento.');
+  }
+  return response.blob();
 }
 
 export async function getOwnedRentalListings() {
