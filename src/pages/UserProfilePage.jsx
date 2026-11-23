@@ -102,6 +102,8 @@ function CompatibilityModal({ profile, targetUserId, onClose }) {
   const score = result?.score ?? 0;
   const commonPoints = result?.commonPoints ?? [];
   const differences = result?.differences ?? [];
+  const breakdown = result?.breakdown ?? [];
+  const levelLabels = { HIGH: 'Alta compatibilidade', MEDIUM: 'Compatibilidade moderada', LOW: 'Baixa compatibilidade' };
   const iconByField = { sleepTime: 'moon', studyAtHome: 'graduation', organization: 'users', visitors: 'users', smoking: 'smokeFree', pets: 'homeGroup', cleaning: 'home', environment: 'moon', lifestyle: 'users' };
 
   return (
@@ -115,9 +117,10 @@ function CompatibilityModal({ profile, targetUserId, onClose }) {
             <div className="compatibility-score" style={{ '--compatibility-score': `${score}%` }}><span className="compatibility-fit-icon" aria-hidden="true"><LineIcon name="homeGroup" size={15} /></span><div><strong>{score}%</strong><small>Compatibilidade</small></div></div>
             <div className="compatibility-person"><span className="compatibility-avatar avatar-you">{result.viewer.name?.slice(0, 2).toLocaleUpperCase('pt-BR')}</span><strong>{result.viewer.name}</strong><small>Seu perfil</small></div>
           </div>
-          <p className="compatibility-summary">{result.summary}</p>
+          <p className={`compatibility-summary level-${(result.level || 'medium').toLowerCase()}`}><span className="compatibility-level">{levelLabels[result.level] || 'Compatibilidade'}</span>{result.summary}</p>
+          {breakdown.length > 0 && <section className="compatibility-breakdown" aria-label="Compatibilidade por característica"><h3>Por característica</h3><ul>{breakdown.map((criterion) => <li key={criterion.field}><span>{criterion.label}</span><span className="compatibility-bar" role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={criterion.similarity} aria-label={`${criterion.label}: ${criterion.similarity}%`}><i style={{ width: `${criterion.similarity}%` }} /></span><small>{criterion.similarity}%</small></li>)}</ul></section>}
           <section className="compatibility-list common-list"><h3><span>✓</span>Pontos em comum <small>{commonPoints.length} itens</small></h3>{commonPoints.length ? <ul>{commonPoints.map((point, index) => <li key={`${point.field}-${index}`}><ProfileIcon name={iconByField[point.field] || 'users'} />{point.message}</li>)}</ul> : <p>Ainda não há respostas semelhantes entre os perfis.</p>}</section>
-          <section className="compatibility-list difference-list"><h3><span>!</span>Diferenças para conversar <small>{differences.length} itens</small></h3>{differences.length ? <ul>{differences.map((point, index) => <li key={`${point.field}-${index}`}><ProfileIcon name={iconByField[point.field] || 'users'} />{point.message}</li>)}</ul> : <p>Nenhuma diferença foi encontrada nas respostas cadastradas.</p>}</section>
+          <section className="compatibility-list difference-list"><h3><span>!</span>Diferenças para conversar <small>{differences.length} itens</small></h3>{differences.length ? <ul>{differences.map((point, index) => <li className={point.critical ? 'is-critical' : undefined} key={`${point.field}-${index}`}><ProfileIcon name={iconByField[point.field] || 'users'} />{point.critical && <strong className="compatibility-critical-tag">Importante</strong>}{point.message}</li>)}</ul> : <p>Nenhuma diferença foi encontrada nas respostas cadastradas.</p>}</section>
           <p className="compatibility-note">O índice compara as respostas de convivência informadas pelos dois estudantes. Ele ajuda a iniciar uma conversa, mas não garante que a convivência será compatível.</p>
         </>}
       </section>

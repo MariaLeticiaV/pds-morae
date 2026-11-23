@@ -779,8 +779,12 @@ export async function getPaymentTransactionStatus(transactionId) {
   return body;
 }
 
-export async function getUserById(userId) {
-  const body = await request(`/users/${encodeURIComponent(userId)}`);
+// GET /users/:id exige login no backend.
+export async function getUserById(userId, token = getAccessToken()) {
+  const body = await request(`/users/${encodeURIComponent(userId)}`, {
+    token,
+    unauthorizedMessage: 'Entre na sua conta para ver o perfil de outros usuários.',
+  });
 
   if (
     !body ||
@@ -814,6 +818,25 @@ export function calculateCompatibility(
     `/matching/compatibility/${encodeURIComponent(targetUserId)}`,
     { token },
   );
+}
+
+export function listCompatibleStudents(
+  { limit, minScore } = {},
+  token = getAccessToken(),
+) {
+  if (!token) {
+    throw new Error('Faça login para ver pessoas compatíveis com você.');
+  }
+
+  const params = new URLSearchParams();
+  if (limit) params.set('limit', String(limit));
+  if (minScore !== undefined) params.set('minScore', String(minScore));
+  const query = params.toString();
+
+  return request(`/matching/recommendations${query ? `?${query}` : ''}`, {
+    token,
+    unauthorizedMessage: 'Sua sessão expirou. Entre novamente para ver pessoas compatíveis.',
+  });
 }
 
 export async function publishProperty({ fields, photos }) {
