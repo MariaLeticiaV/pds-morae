@@ -13,6 +13,7 @@ import {
   getPaymentTransactionStatus,
   getPaymentTransactions,
   getReceivedInterests,
+  listCompatibleStudents,
   uploadContractDocument,
   updateInterestStatus,
 } from '../services/api.js';
@@ -168,16 +169,63 @@ function PropertyCard({
   );
 }
 
+const demoCompatibleProfiles = [
+  { name: 'Ana Clara', id: 'ana-beatriz', subtitle: '20 anos · Estudante', tags: ['Organizada', 'Tranquila', 'Não fuma'], initials: 'AC' },
+  { name: 'Lucas Ferreira', id: 'carolina-lima', subtitle: '21 anos · Estudante', tags: ['Responsável', 'Comunicativo', 'Não tem pets'], initials: 'LF' },
+  { name: 'Beatriz Lima', id: 'ana-beatriz', subtitle: '22 anos · Estudante', tags: ['Estudiosa', 'Organizada', 'Tem pets'], initials: 'BL' },
+];
+
+function initialsOf(name = '') {
+  return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('pt-BR') || '?';
+}
+
+// Sem login (modo demonstração) mostra perfis de exemplo; logado, usa o ranking da API.
+function useCompatibleProfiles() {
+  const [state, setState] = useState(() => (getAccessToken() ? { status: 'loading', profiles: [], error: '' } : { status: 'demo', profiles: demoCompatibleProfiles, error: '' }));
+
+  useEffect(() => {
+    if (!getAccessToken()) return undefined;
+    let cancelled = false;
+    listCompatibleStudents({ limit: 6 })
+      .then((data) => {
+        if (cancelled) return;
+        setState({
+          status: 'ready',
+          error: '',
+          profiles: (data.items ?? []).map((item) => ({
+            id: item.userId,
+            name: item.name,
+            initials: initialsOf(item.name),
+            subtitle: `${item.course} · ${item.period}º período`,
+            tags: item.sharedTraits ?? [],
+            score: item.score,
+            level: item.level,
+            hasCriticalDifference: item.hasCriticalDifference,
+          })),
+        });
+      })
+      .catch((error) => {
+        if (!cancelled) setState({ status: 'error', profiles: [], error: error.message || 'Não foi possível carregar as sugestões de compatibilidade.' });
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  return state;
+}
+
 function OffererHome({ query, displayName, statuses = {} }) {
-  const profiles = [
-    { name: 'Ana Clara', id: 'ana-beatriz', age: 20, tags: ['Organizada', 'Tranquila', 'Não fuma'], initials: 'AC' },
-    { name: 'Lucas Ferreira', id: 'carolina-lima', age: 21, tags: ['Responsável', 'Comunicativo', 'Não tem pets'], initials: 'LF' },
-    { name: 'Beatriz Lima', id: 'ana-beatriz', age: 22, tags: ['Estudiosa', 'Organizada', 'Tem pets'], initials: 'BL' },
-  ].filter((person) => !query || `${person.name} ${person.tags.join(' ')}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
+  const compatible = useCompatibleProfiles();
+  const normalizedQuery = query?.toLocaleLowerCase('pt-BR');
+  const profiles = compatible.profiles.filter((person) => !normalizedQuery || `${person.name} ${person.tags.join(' ')}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
   const listing = offererListings.find((item) => (statuses[item.id] ?? 'active') === 'active');
+  const emptyMessage = compatible.status === 'loading'
+    ? 'Calculando quem combina com você…'
+    : compatible.status === 'error'
+      ? compatible.error
+      : query ? 'Nenhuma pessoa compatível corresponde à busca.' : 'Ainda não há outros estudantes com o questionário de convivência respondido.';
   return <div className="owner-content offerer-content">
     <section className="owner-welcome"><span className="owner-welcome-icon"><LineIcon name="person" size={30} /></span><div><h1>Olá, {displayName || 'Ofertador'}!</h1><p>Aqui você pode encontrar pessoas compatíveis, anunciar sua vaga e acompanhar todo o processo.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
-    <section className="offerer-matches"><h2><LineIcon name="users" size={22} />Pessoas que podem ser compatíveis com você</h2><p>Com base no seu perfil e preferências</p><div className="offerer-match-grid">{profiles.map((person) => <article className="offerer-match-card" key={`${person.name}-${person.id}`}><span className="owner-applicant-avatar">{person.initials}</span><h3>{person.name}</h3><p>{person.age} anos · Estudante</p><div>{person.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><Link to={`/usuarios/${person.id}`}>Ver perfil <LineIcon name="arrow" size={14} /></Link></article>)}</div></section>
+    <section className="offerer-matches"><h2><LineIcon name="users" size={22} />Pessoas que podem ser compatíveis com você</h2><p>Com base nas suas respostas do questionário de convivência</p>{profiles.length ? <div className="offerer-match-grid">{profiles.map((person) => <article className="offerer-match-card" key={`${person.name}-${person.id}`}><span className="owner-applicant-avatar">{person.initials}</span><h3>{person.name}</h3>{person.score !== undefined && <strong className={`offerer-match-score level-${(person.level || 'medium').toLowerCase()}`} title={person.hasCriticalDifference ? 'Há uma diferença importante de hábitos' : undefined}>{person.score}% compatível{person.hasCriticalDifference ? ' · atenção' : ''}</strong>}<p>{person.subtitle}</p>{person.tags.length > 0 && <div>{person.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}<Link to={`/usuarios/${person.id}`}>Ver perfil <LineIcon name="arrow" size={14} /></Link></article>)}</div> : <p className="owner-empty" role={compatible.status === 'loading' ? 'status' : undefined}>{emptyMessage}</p>}</section>
     <section className="offerer-vacancies-preview"><div className="offerer-subheading"><div><h2><LineIcon name="homeGroup" size={22} />Suas vagas anunciadas</h2><p>Gerencie suas vagas e acompanhe as interações.</p></div><Link to="/ofertante/vagas">Ver todas</Link></div>{listing ? <PropertyCard property={listing} query={query} basePath="/ofertante" /> : <p className="owner-empty">Você não possui vagas ativas. Acesse Minhas vagas para consultar os anúncios arquivados.</p>}</section>
   </div>;
 }

@@ -110,6 +110,9 @@
 .offerer-match-card > div span { padding: 5px 9px; border-radius: 999px; color: #278d8c; background: #d9f0ed; font-size: 7px; font-weight: 700; }
 .offerer-match-card > div span:last-child { color: #c03996; background: #f8d2ed; }
 .offerer-match-card:nth-child(3) > div span:last-child { color: #389846; background: #d8f1d4; }
+.offerer-match-score { margin: 0 0 4px; padding: 3px 9px; border-radius: 999px; color: #fff; background: #078889; font-size: 8px; font-weight: 700; }
+.offerer-match-score.level-medium { color: #6b4f0e; background: #ffe9a8; }
+.offerer-match-score.level-low { color: #8a2f3c; background: #fde0e5; }
 .offerer-match-card > a { display: inline-flex; min-height: 25px; align-items: center; justify-content: center; gap: 5px; margin-top: 8px; padding: 0 15px; border: 1px solid #9bd3d1; border-radius: 999px; color: #078889; font-size: 8px; font-weight: 700; }
 .offerer-vacancies-preview { max-width: 740px; margin: 0 auto; padding: 13px 15px 15px; border: 1px solid #cce8e5; border-radius: 16px; background: #fff; }
 .offerer-subheading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
