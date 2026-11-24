@@ -1,5 +1,5 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   checkRegistrationAvailability,
   registerPropertyOwner,
@@ -69,6 +69,81 @@ const studentProfileOptions = [
   'Aventureiro',
   'Estudioso',
 ];
+const brazilianStates = [
+  'Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal',
+  'Espírito Santo', 'Goiás', 'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul',
+  'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí',
+  'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia',
+  'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins',
+];
+
+function digits(value) {
+  return String(value ?? '').replace(/\D/g, '');
+}
+
+function isValidCpf(value) {
+  const cpf = digits(value);
+  if (cpf.length !== 11 || /^([0-9])\1{10}$/.test(cpf)) return false;
+  const checkDigit = (length) => {
+    let sum = 0;
+    for (let index = 0; index < length; index += 1) {
+      sum += Number(cpf[index]) * (length + 1 - index);
+    }
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+  return checkDigit(9) === Number(cpf[9]) && checkDigit(10) === Number(cpf[10]);
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(value ?? '').trim());
+}
+
+function isValidCellphone(value) {
+  return digits(value).length === 11;
+}
+
+function isAtLeast18(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value ?? ''))) return false;
+  const birthDate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime()) || birthDate > new Date()) return false;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const beforeBirthday = today.getMonth() < birthDate.getMonth()
+    || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 18;
+}
+
+function adultBirthDateLimit() {
+  const today = new Date();
+  const year = today.getFullYear() - 18;
+  const month = today.getMonth();
+  const day = Math.min(today.getDate(), new Date(year, month + 1, 0).getDate());
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function SignupDataValidation({ answers }) {
+  const checks = [
+    ['CPF', answers.cpf, isValidCpf(answers.cpf)],
+    ['E-mail', answers.email, isValidEmail(answers.email)],
+    ['Celular', answers.phone, isValidCellphone(answers.phone)],
+    ['Data de nascimento (mínimo 18 anos)', answers.birthDate, isAtLeast18(answers.birthDate)],
+  ];
+  return (
+    <aside className="signup-live-validation" aria-live="polite">
+      <strong>Informe CPF, e-mail, celular e data de nascimento válidos.</strong>
+      <ul>
+        {checks.map(([label, value, valid]) => (
+          <li className={!value ? 'pending' : valid ? 'valid' : 'invalid'} key={label}>
+            <span aria-hidden="true">{!value ? '•' : valid ? '✓' : '!'}</span>
+            {label}: {!value ? 'aguardando preenchimento' : valid ? 'válido' : 'verifique o valor informado'}
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
 
 // Persist only scalar answers and simple arrays. Never send passwords or File objects
 // from the multi-step form as profile data.
@@ -310,13 +385,56 @@ export function SignupPage() {
   const [passwordError, setPasswordError] = useState('');
   const [stepError, setStepError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cepLookupMessage, setCepLookupMessage] = useState('');
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
-
   const activeProfile = profiles.find(({ id }) => id === profileId);
+
+  useEffect(() => {
+    const isOwnerAddress = profileId === 'proprietario' && activeStep === 1;
+    const isOwnerProperty = profileId === 'proprietario' && activeStep === 2;
+    const cepField = isOwnerAddress ? 'zip' : isOwnerProperty ? 'propertyZip' : null;
+    if (!cepField) return undefined;
+
+    const cep = digits(answers[cepField]);
+    if (cep.length !== 8) {
+      setCepLookupMessage('');
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    setCepLookupMessage('Buscando endereço pelo CEP…');
+    fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error('Falha ao consultar o CEP.');
+        return response.json();
+      })
+      .then((result) => {
+        if (result.erro) throw new Error('CEP não encontrado. Preencha o endereço manualmente.');
+        setAnswers((current) => isOwnerAddress
+          ? {
+            ...current,
+            address: result.logradouro || current.address || '',
+            neighborhood: result.bairro || current.neighborhood || '',
+            city: result.localidade || current.city || '',
+            state: result.estado || current.state || '',
+          }
+          : {
+            ...current,
+            propertyStreet: result.logradouro || current.propertyStreet || '',
+            propertyNeighborhood: result.bairro || current.propertyNeighborhood || '',
+            propertyCity: result.localidade || current.propertyCity || '',
+            propertyState: result.estado || current.propertyState || '',
+          });
+        setCepLookupMessage('Endereço preenchido pelo CEP. Confira e complete o número.');
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') setCepLookupMessage(error.message || 'Não foi possível buscar o CEP.');
+      });
+    return () => controller.abort();
+  }, [activeStep, answers.propertyZip, answers.zip, profileId]);
 
   function updateAnswer(event) {
     const { name, type, value, files, multiple } = event.target;
-
     setAnswers((current) => ({
       ...current,
       [name]:
@@ -369,6 +487,18 @@ export function SignupPage() {
     event.preventDefault();
 
     if (isSubmitting) return;
+
+    if (activeStep === 1) {
+      const validRegistrationData = isValidCpf(answers.cpf)
+        && isValidEmail(answers.email)
+        && isValidCellphone(answers.phone)
+        && isAtLeast18(answers.birthDate)
+        && Boolean(answers.gender);
+      if (!validRegistrationData) {
+        setStepError('Informe CPF, e-mail, celular e data de nascimento válidos. É necessário ter pelo menos 18 anos e selecionar o gênero.');
+        return;
+      }
+    }
 
     if (
       activeStep === 1 &&
@@ -492,6 +622,7 @@ export function SignupPage() {
             email: answers.email,
             cpf: answers.cpf,
             password: answers.password,
+            phone: answers.phone,
             enrollmentNumber: answers.enrollment,
             course: answers.course,
             period: Number(answers.period),
@@ -514,7 +645,10 @@ export function SignupPage() {
           error,
         );
 
-        setStepError(error.message || 'Não foi possível concluir o cadastro. Confira os dados e tente novamente.');
+        const message = error.message || 'Não foi possível concluir o cadastro. Confira os dados e tente novamente.';
+        setStepError(/cpf/i.test(message) && /(já|ja|existe|cadastrad|duplic|used|already)/i.test(message)
+          ? 'Este CPF já está cadastrado. Confira o número ou entre na sua conta.'
+          : message);
       } finally {
         setIsSubmitting(false);
       }
@@ -543,6 +677,7 @@ export function SignupPage() {
             name="email"
             type="email"
             required
+            autoComplete="email"
             placeholder="seuemail@exemplo.com"
             value={answers.email}
             onChange={updateAnswer}
@@ -589,10 +724,32 @@ export function SignupPage() {
           />
 
           <Field
+            label="Celular"
+            name="phone"
+            type="tel"
+            required
+            placeholder="(00) 00000-0000"
+            inputMode="numeric"
+            autoComplete="tel"
+            value={answers.phone}
+            onChange={updateAnswer}
+          />
+
+          <SelectField
+            label="Gênero"
+            name="gender"
+            options={['Feminino', 'Masculino', 'Não binário', 'Prefiro não informar']}
+            required
+            value={answers.gender}
+            onChange={updateAnswer}
+          />
+
+          <Field
             label="Data de nascimento"
             name="birthDate"
             type="date"
             required
+            max={adultBirthDateLimit()}
             value={answers.birthDate}
             onChange={updateAnswer}
           />
@@ -684,6 +841,8 @@ export function SignupPage() {
           />
         </div>
 
+        <SignupDataValidation answers={answers} />
+
         <p className="signup-privacy">
           Seus dados estão seguros. Usaremos essas informações apenas para
           cadastro e validação na plataforma.
@@ -709,6 +868,7 @@ export function SignupPage() {
             name="email"
             type="email"
             required
+            autoComplete="email"
             value={answers.email}
             onChange={updateAnswer}
           />
@@ -759,6 +919,8 @@ export function SignupPage() {
             type="tel"
             required
             placeholder="(00) 00000-0000"
+            inputMode="numeric"
+            autoComplete="tel"
             value={answers.phone}
             onChange={updateAnswer}
           />
@@ -768,6 +930,7 @@ export function SignupPage() {
             name="birthDate"
             type="date"
             required
+            max={adultBirthDateLimit()}
             value={answers.birthDate}
             onChange={updateAnswer}
           />
@@ -775,12 +938,7 @@ export function SignupPage() {
           <SelectField
             label="Gênero"
             name="gender"
-            options={[
-              'Feminino',
-              'Masculino',
-              'Não binário',
-              'Prefiro não informar',
-            ]}
+            options={['Feminino', 'Masculino', 'Não binário', 'Prefiro não informar']}
             required
             value={answers.gender}
             onChange={updateAnswer}
@@ -790,8 +948,9 @@ export function SignupPage() {
             label="CEP"
             name="zip"
             required
-            placeholder="00000-000"
             inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="00000-000"
             value={answers.zip}
             onChange={updateAnswer}
           />
@@ -816,7 +975,7 @@ export function SignupPage() {
           <SelectField
             label="Estado"
             name="state"
-            options={['Alagoas', 'Pernambuco', 'Sergipe', 'Outro']}
+            options={brazilianStates}
             required
             value={answers.state ?? 'Alagoas'}
             onChange={updateAnswer}
@@ -830,6 +989,9 @@ export function SignupPage() {
             onChange={updateAnswer}
           />
         </div>
+
+        <SignupDataValidation answers={answers} />
+        {cepLookupMessage && <p className="signup-cep-message" role="status">{cepLookupMessage}</p>}
 
         <p className="signup-privacy">
           Seus dados estão seguros. Usaremos essas informações apenas para
@@ -1103,7 +1265,7 @@ export function SignupPage() {
             name="listingState"
             options={['Alagoas']}
             required
-            value="Alagoas"
+            value={answers.listingState || 'Alagoas'}
             onChange={updateAnswer}
           />
 
@@ -1173,7 +1335,7 @@ export function SignupPage() {
             name="propertyZip"
             required
             inputMode="numeric"
-            placeholder="00000-000"
+            autoComplete="postal-code"            placeholder="00000-000"
             value={answers.propertyZip}
             onChange={updateAnswer}
           />
@@ -1181,9 +1343,9 @@ export function SignupPage() {
           <SelectField
             label="Estado do imóvel"
             name="propertyState"
-            options={['Alagoas']}
+            options={brazilianStates}
             required
-            value="Alagoas"
+            value={answers.propertyState || 'Alagoas'}
             onChange={updateAnswer}
           />
 
@@ -1326,6 +1488,7 @@ export function SignupPage() {
             onChange={updateAnswer}
           />
         </div>
+        {cepLookupMessage && <p className="signup-cep-message" role="status">{cepLookupMessage}</p>}
       </>
     );
   }
@@ -1575,3 +1738,4 @@ export function SignupPage() {
     </section>
   );
 }
+
