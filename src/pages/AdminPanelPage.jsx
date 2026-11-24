@@ -154,8 +154,17 @@ export function AdminPanelPage() {
         limit: 25,
         signal: controller.signal,
       }).then((result) => {
-        setUsers(result.items);
-        setTotalUsers(result.total);
+        const adminIdentity = [session.id, session.email, session.login]
+          .filter(Boolean)
+          .map((value) => String(value).trim().toLocaleLowerCase('pt-BR'));
+        const visibleUsers = result.items.filter((user) => (
+          ![user.id, user.email, user.login, user.username]
+            .filter(Boolean)
+            .some((value) => adminIdentity.includes(String(value).trim().toLocaleLowerCase('pt-BR')))
+        ));
+        const excludedCount = result.items.length - visibleUsers.length;
+        setUsers(visibleUsers);
+        setTotalUsers(Math.max(0, result.total - excludedCount));
       }).catch((error) => {
         if (error.name !== 'AbortError') setUsersError(error.message);
       }).finally(() => {
