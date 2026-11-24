@@ -70,6 +70,32 @@ const studentProfileOptions = [
   'Estudioso',
 ];
 
+// Persist only scalar answers and simple arrays. Never send passwords or File objects
+// from the multi-step form as profile data.
+const persistedProfileFields = new Set([
+  'birthDate', 'country', 'state', 'city', 'university', 'campus', 'course',
+  'period', 'expectedGraduation', 'enrollment', 'gender', 'zip', 'address',
+  'neighborhood', 'sleepTime', 'studyAtHome', 'organization', 'visitors',
+  'smoking', 'pets', 'cleaning', 'environment', 'lifestyle', 'aboutMe',
+  'housingType', 'budget', 'distance', 'preferredNeighborhoods', 'roommates',
+  'roommateGender', 'rooms', 'vacancies', 'rent', 'expenses', 'listingState',
+  'campusDistance', 'amenities', 'houseRules', 'listingDescription',
+  'propertyZip', 'propertyState', 'propertyCity', 'propertyNeighborhood',
+  'propertyStreet', 'propertyNumber', 'propertyComplement', 'propertyType',
+  'propertyRooms', 'bathrooms', 'parking', 'propertyRent', 'condominium',
+  'minimumStay', 'propertyAmenities', 'propertyDescription', 'propertyRules',
+]);
+
+function makePersistableProfile(answers) {
+  return Object.fromEntries(Object.entries(answers).filter(([key, value]) => (
+    persistedProfileFields.has(key)
+    && (
+      ['string', 'number', 'boolean'].includes(typeof value)
+      || (Array.isArray(value) && value.every((item) => ['string', 'number', 'boolean'].includes(typeof item)))
+    )
+  )));
+}
+
 
 function Field({
   label,
@@ -459,6 +485,7 @@ export function SignupPage() {
             password: answers.password,
             phone: answers.phone || undefined,
             profileDetails: makeProfileDetails(profileId, answers),
+            profileData: makePersistableProfile(answers),
           })
           : await registerStudent({
             name: answers.fullName,
@@ -472,6 +499,7 @@ export function SignupPage() {
             compatibilityAnswers: makeCompatibilityAnswers(answers),
             advertisesProperty: profileId === 'ofertante',
             profileDetails: makeProfileDetails(profileId, answers),
+            profileData: makePersistableProfile(answers),
           });
 
         saveDemoUser(answers.fullName, profileId, answers, {
