@@ -1,6 +1,7 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
 import { registerPropertyOwner, registerStudent } from '../services/api.js';
+import { makeCompatibilityAnswers, makeProfileDetails } from '../services/profileOptions.js';
 import { saveDemoUser } from '../utils/demoUser.js';
 import './SignupPage.css';
 
@@ -57,26 +58,6 @@ const studentProfileOptions = [
   'Estudioso',
 ];
 
-const compatibilityOptionValues = {
-  sleepTime: { 'Antes das 21h': 'BEFORE_21', '21h–23h': 'FROM_21_TO_23', '23h–01h': 'FROM_23_TO_01', 'Depois da 01h': 'AFTER_01' },
-  studyAtHome: { Sim: 'YES', 'Às vezes': 'SOMETIMES', Não: 'NO' },
-  organization: { 'Muito organizado': 'VERY_ORGANIZED', 'Mais ou menos': 'SOMEWHAT', 'Estou melhorando': 'IMPROVING' },
-  visitors: { Raramente: 'RARELY', 'Às vezes': 'SOMETIMES', Frequentemente: 'FREQUENTLY' },
-  smoking: { Sim: 'YES', 'Às vezes': 'SOMETIMES', Não: 'NO' },
-  pets: { Sim: 'YES', Não: 'NO' },
-  cleaning: { Diária: 'DAILY', Semanal: 'WEEKLY', Flexível: 'FLEXIBLE' },
-  environment: { Silenciosos: 'QUIET', Movimentados: 'BUSY', Indiferente: 'INDIFFERENT' },
-  lifestyle: { Tranquilo: 'CALM', Social: 'SOCIAL', Aventureiro: 'ADVENTUROUS', Estudioso: 'STUDIOUS' },
-};
-
-function makeCompatibilityAnswers(answers) {
-  return Object.fromEntries(Object.entries(compatibilityOptionValues).map(([field, values]) => [
-    field,
-    Array.isArray(answers[field])
-      ? answers[field].map((answer) => values[answer])
-      : values[answers[field]],
-  ]));
-}
 
 function Field({
   label,
@@ -399,6 +380,7 @@ export function SignupPage() {
             cpf: answers.cpf,
             password: answers.password,
             phone: answers.phone || undefined,
+            profileDetails: makeProfileDetails(profileId, answers),
           })
           : await registerStudent({
             name: answers.fullName,
@@ -411,6 +393,7 @@ export function SignupPage() {
             expectedGraduation: answers.expectedGraduation,
             compatibilityAnswers: makeCompatibilityAnswers(answers),
             advertisesProperty: profileId === 'ofertante',
+            profileDetails: makeProfileDetails(profileId, answers),
           });
 
         saveDemoUser(answers.fullName, profileId, answers, {
