@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { ReportDialog } from '../components/ReportDialog.jsx';
-import { calculateCompatibility, getAccessToken, getUserById, getUserReviews } from '../services/api.js';
+import { calculateCompatibility, getAccessToken, getUserProfile, getUserReviews } from '../services/api.js';
+import { formatBudget, toLabel } from '../services/profileOptions.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import './UserProfilePage.css';
 
@@ -25,6 +26,28 @@ const profiles = {
   },
 };
 
+const NOT_INFORMED = 'Não informado';
+const accountTypeLabels = {
+  STUDENT_SEEKER: 'Estudante',
+  STUDENT_OFFERER: 'Estudante · oferece vaga',
+  PROPERTY_OWNER: 'Proprietário',
+  ADMINISTRATOR: 'Administrador',
+};
+const habitText = {
+  organization: { VERY_ORGANIZED: 'Muito organizado(a)', SOMEWHAT: 'Organização moderada', IMPROVING: 'Melhorando a organização' },
+  environment: { QUIET: 'Prefere ambientes silenciosos', BUSY: 'Gosta de ambientes movimentados', INDIFFERENT: 'Sem preferência de ambiente' },
+  smoking: { NO: 'Não fuma', SOMETIMES: 'Fuma às vezes', YES: 'Fuma' },
+  cleaning: { DAILY: 'Limpeza diária', WEEKLY: 'Limpeza semanal', FLEXIBLE: 'Limpeza flexível' },
+  sleepTime: { BEFORE_21: 'dorme antes das 21h', FROM_21_TO_23: 'dorme entre 21h e 23h', FROM_23_TO_01: 'dorme entre 23h e 1h', AFTER_01: 'dorme depois da 1h' },
+  visitors: { RARELY: 'Recebe visitas raramente', SOMETIMES: 'Recebe visitas às vezes', FREQUENTLY: 'Recebe visitas com frequência' },
+  pets: { YES: 'Tem animal de estimação', NO: 'Não tem animais de estimação' },
+};
+
+function joined(...parts) {
+  return parts.filter(Boolean).join(' · ');
+}
+
+// Converte GET /users/:id/profile para o formato usado pela página.
 function profileFromUser(user) {
   const initials = user.name
     .trim()
@@ -33,26 +56,38 @@ function profileFromUser(user) {
     .map((part) => part[0])
     .join('')
     .toLocaleUpperCase('pt-BR');
+  const student = user.student;
+  const prefs = user.housingPreferences ?? {};
+  const answers = student?.compatibilityAnswers;
+  const period = student ? `${student.period}º período` : '';
+  const roommates = joined(
+    toLabel('desiredRoommates', prefs.desiredRoommates),
+    prefs.roommateGender && prefs.roommateGender !== 'ANY' ? `moradoras(es) do gênero ${toLabel('roommateGender', prefs.roommateGender).toLocaleLowerCase('pt-BR')}` : '',
+  );
 
   return {
     name: user.name,
     initials,
     photoUrl: user.photoUrl,
-    role: 'Usuário',
-    tags: [],
-    about: 'Este usuário ainda não adicionou uma apresentação ao perfil.',
-    course: 'Não informado',
-    period: 'Não informado',
-    housing: 'Não informado',
-    distance: 'Não informado',
-    amenities: 'Não informado',
-    budget: 'Não informado',
-    organization: 'Não informado',
-    organizationDescription: 'Preferência não informada.',
-    environment: 'Não informado',
-    environmentDescription: 'Preferência não informada.',
-    smoking: 'Não informado',
-    smokingDescription: 'Preferência não informada.',
+    role: accountTypeLabels[user.accountType] || 'Usuário',
+    tags: [user.age ? `${user.age} anos` : '', period, student?.course, student?.university, user.city].filter(Boolean),
+    about: user.bio || 'Este usuário ainda não adicionou uma apresentação ao perfil.',
+    course: student?.course || NOT_INFORMED,
+    period: period || NOT_INFORMED,
+    housing: toLabel('housingType', prefs.housingType) || NOT_INFORMED,
+    distance: joined(
+      prefs.campusDistance && prefs.campusDistance !== 'ANY' ? `${toLabel('campusDistance', prefs.campusDistance)} do campus${student?.campus ? ` ${student.campus}` : ''}` : '',
+      prefs.preferredNeighborhoods,
+    ) || NOT_INFORMED,
+    amenitiesLabel: 'Moradores',
+    amenities: roommates || NOT_INFORMED,
+    budget: formatBudget(prefs.maxBudget) || NOT_INFORMED,
+    organization: habitText.organization[answers?.organization] || NOT_INFORMED,
+    organizationDescription: answers ? joined(habitText.cleaning[answers.cleaning], habitText.sleepTime[answers.sleepTime]) : 'Preferência não informada.',
+    environment: habitText.environment[answers?.environment] || NOT_INFORMED,
+    environmentDescription: answers ? habitText.visitors[answers.visitors] : 'Preferência não informada.',
+    smoking: habitText.smoking[answers?.smoking] || NOT_INFORMED,
+    smokingDescription: answers ? habitText.pets[answers.pets] : 'Preferência não informada.',
     reviews: [],
   };
 }
@@ -187,7 +222,7 @@ export function UserProfilePage() {
     }
 
     setProfileRequest({ id, user: null, loading: true, error: '' });
-    getUserById(id)
+    getUserProfile(id)
       .then((user) => {
         if (!cancelled) setProfileRequest({ id, user, loading: false, error: '' });
       })
@@ -251,7 +286,7 @@ export function UserProfilePage() {
             <section className="profile-panel profile-about"><h2><ProfileIcon name="person" />Sobre mim</h2><p>{profile.about}</p></section>
             <section className="profile-panel profile-academics"><h2><ProfileIcon name="graduation" />Informações acadêmicas</h2><div className="academic-detail"><ProfileIcon name="graduation" /><div><small>Curso</small><strong>{profile.course}</strong></div></div><div className="academic-detail"><ProfileIcon name="calendar" /><div><small>Período</small><strong>{profile.period}</strong></div></div></section>
           </div>
-          <section className="profile-panel profile-preferences" id="preferencias"><h2><ProfileIcon name="home" />Preferências de Moradia</h2><div className="profile-preference-grid"><div><ProfileIcon name="homeGroup" /><span><small>Tipo de moradia</small><strong>{profile.housing}</strong></span></div><div><ProfileIcon name="pin" /><span><small>Localização</small><strong>{profile.distance}</strong></span></div><div><ProfileIcon name="home" /><span><small>Comodidades</small><strong>{profile.amenities}</strong></span></div><div><ProfileIcon name="money" /><span><small>Valor máximo</small><strong>{profile.budget}</strong></span></div></div></section>
+          <section className="profile-panel profile-preferences" id="preferencias"><h2><ProfileIcon name="home" />Preferências de Moradia</h2><div className="profile-preference-grid"><div><ProfileIcon name="homeGroup" /><span><small>Tipo de moradia</small><strong>{profile.housing}</strong></span></div><div><ProfileIcon name="pin" /><span><small>Localização</small><strong>{profile.distance}</strong></span></div><div><ProfileIcon name="home" /><span><small>{profile.amenitiesLabel || 'Comodidades'}</small><strong>{profile.amenities}</strong></span></div><div><ProfileIcon name="money" /><span><small>Valor máximo</small><strong>{profile.budget}</strong></span></div></div></section>
           <section className="profile-panel profile-habits" id="habitos"><h2><ProfileIcon name="users" />Hábitos e Rotina</h2><div className="profile-habit-grid"><div><ProfileIcon name="users" /><span><strong>{profile.organization}</strong><small>{profile.organizationDescription || 'Gosta de manter o ambiente limpo e organizado'}</small></span></div><div><ProfileIcon name="moon" /><span><strong>{profile.environment}</strong><small>{profile.environmentDescription || 'Prefere um local calmo e com boa convivência'}</small></span></div><div><ProfileIcon name="smokeFree" /><span><strong>{profile.smoking}</strong><small>{profile.smokingDescription || 'Prefere ambientes livres de fumo'}</small></span></div></div></section>
           <section className="profile-panel profile-reviews" id="avaliacoes"><h2><ProfileIcon name="star" />Avaliações Anteriores{profileReviewCount > 0 && <span className="profile-review-summary">{profileReviewCount} {profileReviewCount === 1 ? 'avaliação' : 'avaliações'}{profileReviewAverage !== null && profileReviewAverage !== undefined ? ` · média ${profileReviewAverage.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}/5` : ''}</span>}</h2>{reviewRequest.id === id && reviewRequest.loading ? <p className="profile-review-load" role="status">Consultando avaliações…</p> : reviewRequest.id === id && reviewRequest.error ? <p className="profile-review-load" role="alert">{reviewRequest.error}</p> : profileReviews.length ? <div className="review-grid">{profileReviews.map((review) => {
             const stars = review.overall ?? review.stars;

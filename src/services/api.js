@@ -978,6 +978,22 @@ export async function updateMyAccount(changes) {
   );
 }
 
+// Perfil completo (dados pessoais, acadêmicos e preferências).
+// O próprio perfil traz também o bloco `private` (e-mail, telefone, nascimento...).
+export async function getMyProfile() {
+  return authenticatedRequest('/users/me/profile');
+}
+
+export async function getUserProfile(userId) {
+  return authenticatedRequest(`/users/${encodeURIComponent(userId)}/profile`);
+}
+
+// Envie só o que mudou: { details?, course?, period?, compatibilityAnswers? }.
+// Em details, null ou "" apaga o valor.
+export async function updateMyProfile(changes) {
+  return authenticatedRequest('/users/me/profile', { method: 'PATCH', body: changes });
+}
+
 // ---------------------------------------------------------------------------
 // Favoritos
 
