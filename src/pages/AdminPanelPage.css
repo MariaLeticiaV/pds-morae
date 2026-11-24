@@ -316,3 +316,9 @@
   .admin-content { padding: 0; }
   .admin-app, .admin-shell { background: #fff; }
 }
+
+.admin-listing-moderation { display: grid; gap: 8px; margin: 10px 0 14px; padding: 12px; border: 1px solid #d4e7e7; border-radius: 10px; background: #f5fbfb; }
+.admin-listing-moderation p { margin: 0; color: #316c70; font: 600 11px/1.45 'Inter', sans-serif; }
+.admin-listing-moderation-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-listing-moderation-actions button { min-height: 35px; flex: 1 1 140px; }
+.admin-listing-moderation-actions button:disabled { opacity: .6; cursor: wait; }
