@@ -1,9 +1,21 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 import { useRef, useState } from 'react';
-import { registerPropertyOwner, registerStudent } from '../services/api.js';
+import {
+  checkRegistrationAvailability,
+  registerPropertyOwner,
+  registerStudent,
+} from '../services/api.js';
 import { makeCompatibilityAnswers, makeProfileDetails } from '../services/profileOptions.js';
 import { saveDemoUser } from '../utils/demoUser.js';
+import { maskCellPhone, maskCep, maskCpf } from '../utils/masks.js';
 import './SignupPage.css';
+
+const signupInputMasks = {
+  cpf: maskCpf,
+  phone: maskCellPhone,
+  zip: maskCep,
+  propertyZip: maskCep,
+};
 
 const profiles = [
   {
@@ -272,20 +284,21 @@ export function SignupPage() {
   const [passwordError, setPasswordError] = useState('');
   const [stepError, setStepError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   function updateAnswer(event) {
-    const { name, type, value, files } = event.target;
+    const { name, type, value, files, multiple } = event.target;
 
     setAnswers((current) => ({
       ...current,
       [name]:
         type === 'file'
-          ? event.target.multiple
+          ? multiple
             ? [...files]
             : files[0]
-          : value,
+          : signupInputMasks[name]?.(value) ?? value,
     }));
 
     if (name === 'password' || name === 'confirmPassword') {
@@ -368,6 +381,71 @@ export function SignupPage() {
     setStepError('');
 
     if (activeStep < activeProfile.steps.length) {
+      if (
+        activeProfile.steps[activeStep - 1]
+          .toLocaleLowerCase('pt-BR') === 'dados pessoais'
+      ) {
+        setIsSubmitting(true);
+        setIsCheckingAvailability(true);
+
+        try {
+          const fields = [
+            { key: 'cpf', label: 'CPF' },
+            { key: 'email', label: 'E-mail' },
+            ...(profileId === 'proprietario'
+              ? []
+              : [{ key: 'enrollmentNumber', label: 'Número de matrícula' }]),
+          ];
+          const availability = await checkRegistrationAvailability({
+            cpf: answers.cpf,
+            email: answers.email,
+            ...(profileId === 'proprietario'
+              ? {}
+              : { enrollmentNumber: answers.enrollment }),
+          });
+
+          const malformedResponse = fields.some(({ key }) => {
+            const result = availability?.[key];
+            return (
+              !result ||
+              typeof result.valid !== 'boolean' ||
+              (result.valid
+                ? typeof result.unique !== 'boolean'
+                : result.unique !== null)
+            );
+          });
+
+          if (malformedResponse) {
+            setStepError('Não foi possível verificar os dados informados. Tente novamente.');
+            return;
+          }
+
+          const invalidField = fields.find(
+            ({ key }) => !availability[key].valid,
+          );
+          if (invalidField) {
+            setStepError(`${invalidField.label} inválido. Confira o valor informado.`);
+            return;
+          }
+
+          const unavailableField = fields.find(
+            ({ key }) => !availability[key].unique,
+          );
+          if (unavailableField) {
+            setStepError(`${unavailableField.label} já está cadastrado.`);
+            return;
+          }
+        } catch (error) {
+          setStepError(
+            error.message || 'Não foi possível verificar os dados informados. Tente novamente.',
+          );
+          return;
+        } finally {
+          setIsSubmitting(false);
+          setIsCheckingAvailability(false);
+        }
+      }
+
       setActiveStep((step) => step + 1);
     } else {
       setIsSubmitting(true);
@@ -476,6 +554,7 @@ export function SignupPage() {
             label="CPF"
             name="cpf"
             required
+            inputMode="numeric"
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
@@ -640,6 +719,7 @@ export function SignupPage() {
             label="CPF"
             name="cpf"
             required
+            inputMode="numeric"
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
@@ -683,6 +763,7 @@ export function SignupPage() {
             name="zip"
             required
             placeholder="00000-000"
+            inputMode="numeric"
             value={answers.zip}
             onChange={updateAnswer}
           />
@@ -1063,6 +1144,8 @@ export function SignupPage() {
             label="CEP"
             name="propertyZip"
             required
+            inputMode="numeric"
+            placeholder="00000-000"
             value={answers.propertyZip}
             onChange={updateAnswer}
           />
@@ -1449,7 +1532,13 @@ export function SignupPage() {
               type="submit"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Cadastrando...' : activeStep === activeProfile.steps.length ? 'Finalizar cadastro' : 'Avançar'}
+              {isCheckingAvailability
+                ? 'Verificando dados...'
+                : isSubmitting
+                  ? 'Cadastrando...'
+                  : activeStep === activeProfile.steps.length
+                    ? 'Finalizar cadastro'
+                    : 'Avançar'}
               <span aria-hidden="true">→</span>
             </button>
           </div>
