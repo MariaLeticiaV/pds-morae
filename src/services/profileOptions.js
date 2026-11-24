@@ -72,6 +72,7 @@ export function makeProfileDetails(profileId, answers) {
   const common = {
     bio: text(answers.aboutMe),
     birthDate: text(answers.birthDate),
+    gender: toCode('gender', answers.gender),
     country: text(answers.country),
     state: text(answers.state),
     city: text(answers.city),
@@ -80,7 +81,6 @@ export function makeProfileDetails(profileId, answers) {
   if (profileId === 'proprietario') {
     return withoutEmpty({
       ...common,
-      gender: toCode('gender', answers.gender),
       neighborhood: text(answers.neighborhood),
       postalCode: text(answers.zip),
       address: text(answers.address),
