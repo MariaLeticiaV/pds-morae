@@ -16,6 +16,12 @@ import { getUserSession } from '../services/userAuth.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
+const DEMO_PROPERTIES = [
+  { id: 1, listingId: 'apt-ufal', name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
+  { id: 2, listingId: 'casa-farol', name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
+  { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
+  { id: 4, listingId: 'vaga-village', name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
+];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Anúncios reais (id UUID) têm os favoritos salvos na API; os de demonstração
 // (id numérico) continuam só no navegador.
@@ -115,6 +121,9 @@ export function SearchPage() {
   const showFavorites = searchParams.get('favoritos') === '1';
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
+  const [apiProperties, setApiProperties] = useState(null);
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [listingsError, setListingsError] = useState('');
   const [listingStatuses] = useState(() => getDemoListingStatuses());
   const [publishedListings, setPublishedListings] = useState([]);
   const [listingError, setListingError] = useState('');
@@ -187,9 +196,10 @@ export function SearchPage() {
     }
   }, [favorites]);
 
-  const filteredProperties = useMemo(() => [...publishedListings, ...properties].filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
+  const filteredProperties = useMemo(() => [...publishedListings, ...DEMO_PROPERTIES].filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
-    const matchesPlace = showFavorites || !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
+    const searchableLocation = `${property.neighborhood} ${property.city || ''} ${property.state || ''} ${property.distance || ''}`.toLocaleLowerCase('pt-BR');
+    const matchesPlace = showFavorites || !term || searchableLocation.includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
     const matchesType = showFavorites || type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
     const matchesBudget = showFavorites || !budget || property.price <= Number(budget);
     const matchesRooms = showFavorites || rooms === 'Qualquer' || property.rooms >= Number(rooms);
@@ -324,6 +334,9 @@ export function SearchPage() {
     </div>
   );
 }
+
+
+
 
 
 
