@@ -76,6 +76,14 @@ const brazilianStates = [
   'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia',
   'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins',
 ];
+const brazilianStatesByUf = {
+  AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia', CE: 'Ceará',
+  DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás', MA: 'Maranhão',
+  MT: 'Mato Grosso', MS: 'Mato Grosso do Sul', MG: 'Minas Gerais', PA: 'Pará',
+  PB: 'Paraíba', PR: 'Paraná', PE: 'Pernambuco', PI: 'Piauí', RJ: 'Rio de Janeiro',
+  RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul', RO: 'Rondônia', RR: 'Roraima',
+  SC: 'Santa Catarina', SP: 'São Paulo', SE: 'Sergipe', TO: 'Tocantins',
+};
 
 function digits(value) {
   return String(value ?? '').replace(/\D/g, '');
@@ -391,74 +399,99 @@ export function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cepLookupMessage, setCepLookupMessage] = useState('');
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const cepLookupController = useRef(null);
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   useEffect(() => {
-    const isOwnerAddress = profileId === 'proprietario' && activeStep === 1;
-    const isOwnerProperty = profileId === 'proprietario' && activeStep === 2;
-    const isHostListing = profileId === 'ofertante' && activeStep === 3;
-    const cepField = isOwnerAddress
-      ? 'zip'
-      : (isOwnerProperty || isHostListing) ? 'propertyZip' : null;
-    if (!cepField) return undefined;
+    cepLookupController.current?.abort();
+    setCepLookupMessage('');
+    return () => cepLookupController.current?.abort();
+  }, [activeStep, profileId]);
 
-    const cep = digits(answers[cepField]);
-    if (cep.length !== 8) {
-      setCepLookupMessage('');
-      return undefined;
-    }
-
+  async function lookupAddressByCep(cep, destination) {
+    cepLookupController.current?.abort();
     const controller = new AbortController();
+    cepLookupController.current = controller;
     setCepLookupMessage('Buscando endereço pelo CEP…');
-    fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal })
-      .then((response) => {
-        if (!response.ok) throw new Error('Falha ao consultar o CEP.');
-        return response.json();
-      })
-      .then((result) => {
-        if (result.erro) throw new Error('CEP não encontrado. Preencha o endereço manualmente.');
-        setAnswers((current) => (isOwnerAddress
-          ? {
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+        signal: controller.signal,
+      });
+      if (!response.ok) throw new Error('Falha ao consultar o CEP. Tente novamente.');
+
+      const result = await response.json();
+      if (result.erro) throw new Error('CEP não encontrado. Confira os números.');
+      if (controller !== cepLookupController.current) return;
+
+      const state = result.estado || brazilianStatesByUf[result.uf] || '';
+      setAnswers((current) => {
+        if (destination === 'owner-address') {
+          return {
             ...current,
             address: result.logradouro || current.address || '',
             neighborhood: result.bairro || current.neighborhood || '',
             city: result.localidade || current.city || '',
-            state: result.estado || current.state || '',
-          }
-          : isHostListing
-            ? {
-              ...current,
-              propertyAddress: [result.logradouro, result.bairro, result.localidade, result.estado]
-                .filter(Boolean).join(', '),
-              neighborhood: result.bairro || current.neighborhood || '',
-              listingState: result.estado || current.listingState || '',
-            }
-            : {
-              ...current,
-              propertyStreet: result.logradouro || current.propertyStreet || '',
-              propertyNeighborhood: result.bairro || current.propertyNeighborhood || '',
-              propertyCity: result.localidade || current.propertyCity || '',
-              propertyState: result.estado || current.propertyState || '',
-            }));
-        setCepLookupMessage('Endereço preenchido pelo CEP. Confira e complete o número.');
-      })
-      .catch((error) => {
-        if (error.name !== 'AbortError') setCepLookupMessage(error.message || 'Não foi possível buscar o CEP.');
+            state: state || current.state || '',
+          };
+        }
+
+        if (destination === 'offerer-property') {
+          return {
+            ...current,
+            propertyAddress: [result.logradouro, result.bairro, result.localidade, state]
+              .filter(Boolean).join(', '),
+            neighborhood: result.bairro || current.neighborhood || '',
+            listingState: state || current.listingState || '',
+          };
+        }
+
+        return {
+          ...current,
+          propertyStreet: result.logradouro || current.propertyStreet || '',
+          propertyNeighborhood: result.bairro || current.propertyNeighborhood || '',
+          propertyCity: result.localidade || current.propertyCity || '',
+          propertyState: state || current.propertyState || '',
+        };
       });
-    return () => controller.abort();
-  }, [activeStep, answers.propertyZip, answers.zip, profileId]);
+      setCepLookupMessage('Endereço preenchido pelo CEP. Confira e complete o número.');
+    } catch (error) {
+      if (error.name !== 'AbortError' && controller === cepLookupController.current) {
+        setCepLookupMessage(error instanceof TypeError
+          ? 'Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.'
+          : error.message || 'Não foi possível buscar o CEP. Tente novamente.');
+      }
+    }
+  }
 
   function updateAnswer(event) {
     const { name, type, value, files, multiple } = event.target;
+    const nextValue = type === 'file'
+      ? multiple ? [...files] : files[0]
+      : signupInputMasks[name]?.(value) ?? value;
+
     setAnswers((current) => ({
       ...current,
-      [name]:
-        type === 'file'
-          ? multiple
-            ? [...files]
-            : files[0]
-          : signupInputMasks[name]?.(value) ?? value,
+      [name]: nextValue,
     }));
+
+    if (name === 'zip' || name === 'propertyZip') {
+      const cep = digits(nextValue);
+      const destination = name === 'zip'
+        ? profileId === 'proprietario' && activeStep === 1 ? 'owner-address' : null
+        : profileId === 'proprietario' && activeStep === 2
+          ? 'owner-property'
+          : profileId === 'ofertante' && activeStep === 3
+            ? 'offerer-property'
+            : null;
+
+      if (cep.length === 8 && destination) {
+        lookupAddressByCep(cep, destination);
+      } else {
+        cepLookupController.current?.abort();
+        setCepLookupMessage(cep.length ? 'Informe os 8 números do CEP.' : '');
+      }
+    }
 
     if (name === 'cpf') setCpfServerError('');
 
