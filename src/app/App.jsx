@@ -6,6 +6,7 @@ import { SearchPage } from '../pages/SearchPage.jsx';
 import { LoginPage } from '../pages/LoginPage.jsx';
 import { PasswordRecoveryPage } from '../pages/PasswordRecoveryPage.jsx';
 import { PasswordResetPage } from '../pages/PasswordResetPage.jsx';
+import { EmailVerificationPage } from '../pages/EmailVerificationPage.jsx';
 import { SignupPage } from '../pages/SignupPage.jsx';
 import { UserProfilePage } from '../pages/UserProfilePage.jsx';
 import { ReviewExperiencePage } from '../pages/ReviewExperiencePage.jsx';
@@ -23,7 +24,8 @@ export default function App() {
   const isLoginPage = pathname === '/login';
   const isPasswordRecoveryPage = pathname === '/recuperar-senha';
   const isPasswordResetPage = pathname === '/redefinir-senha';
-  const isAuthPage = isLoginPage || isPasswordRecoveryPage || isPasswordResetPage;
+  const isEmailVerificationPage = pathname === '/verificar-email';
+  const isAuthPage = isLoginPage || isPasswordRecoveryPage || isPasswordResetPage || isEmailVerificationPage;
   const isSignupPage = pathname === '/cadastro';
   const isMessagesPage = pathname === '/mensagens';
   const isAnnouncePage = pathname === '/anunciar';
@@ -60,6 +62,7 @@ export default function App() {
           <Route path="/admin/*" element={<AdminPanelPage />} />
           <Route path="/recuperar-senha" element={<PasswordRecoveryPage />} />
           <Route path="/redefinir-senha" element={<PasswordResetPage />} />
+          <Route path="/verificar-email" element={<EmailVerificationPage />} />
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
           <Route path="/pagamento-aluguel" element={<RentPaymentPage />} />
