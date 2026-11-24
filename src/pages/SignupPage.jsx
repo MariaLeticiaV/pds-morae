@@ -3,7 +3,15 @@ import { useRef, useState } from 'react';
 import { registerPropertyOwner, registerStudent } from '../services/api.js';
 import { makeCompatibilityAnswers, makeProfileDetails } from '../services/profileOptions.js';
 import { saveDemoUser } from '../utils/demoUser.js';
+import { maskCellPhone, maskCep, maskCpf } from '../utils/masks.js';
 import './SignupPage.css';
+
+const signupInputMasks = {
+  cpf: maskCpf,
+  phone: maskCellPhone,
+  zip: maskCep,
+  propertyZip: maskCep,
+};
 
 const profiles = [
   {
@@ -276,16 +284,16 @@ export function SignupPage() {
   const activeProfile = profiles.find(({ id }) => id === profileId);
 
   function updateAnswer(event) {
-    const { name, type, value, files } = event.target;
+    const { name, type, value, files, multiple } = event.target;
 
     setAnswers((current) => ({
       ...current,
       [name]:
         type === 'file'
-          ? event.target.multiple
+          ? multiple
             ? [...files]
             : files[0]
-          : value,
+          : signupInputMasks[name]?.(value) ?? value,
     }));
 
     if (name === 'password' || name === 'confirmPassword') {
@@ -476,6 +484,7 @@ export function SignupPage() {
             label="CPF"
             name="cpf"
             required
+            inputMode="numeric"
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
@@ -640,6 +649,7 @@ export function SignupPage() {
             label="CPF"
             name="cpf"
             required
+            inputMode="numeric"
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
@@ -683,6 +693,7 @@ export function SignupPage() {
             name="zip"
             required
             placeholder="00000-000"
+            inputMode="numeric"
             value={answers.zip}
             onChange={updateAnswer}
           />
@@ -1063,6 +1074,8 @@ export function SignupPage() {
             label="CEP"
             name="propertyZip"
             required
+            inputMode="numeric"
+            placeholder="00000-000"
             value={answers.propertyZip}
             onChange={updateAnswer}
           />
