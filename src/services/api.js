@@ -99,6 +99,13 @@ export function registerPropertyOwner(payload) {
   });
 }
 
+export function checkRegistrationAvailability(payload) {
+  return request('/registration/availability', {
+    method: 'POST',
+    body: payload,
+  });
+}
+
 export async function loginUser({ email, password }) {
   const body = await request('/auth/login', {
     method: 'POST',
