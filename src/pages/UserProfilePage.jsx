@@ -11,6 +11,7 @@ import './UserProfilePage.css';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/* Exemplo visual ocultado; mantido para referência.
 const profiles = {
   'ana-beatriz': {
     name: 'Ana Beatriz', initials: 'AB', course: 'Arquitetura e Urbanismo', period: '3º período', tags: ['3º período', 'Arquitetura e Urbanismo', 'Moradia Estudantil'],
@@ -25,6 +26,8 @@ const profiles = {
     reviews: [],
   },
 };
+*/
+const profiles = {};
 
 const NOT_INFORMED = 'Não informado';
 const accountTypeLabels = {

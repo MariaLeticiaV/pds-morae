@@ -9,6 +9,7 @@ import { formatBudget, optionLabels, parseBudget, toCode, toLabel } from '../ser
 import { getUserSession, saveUserSession } from '../services/userAuth.js';
 import './MyProfilePage.css';
 
+/* Dados de perfil demonstrativos ocultados; mantidos para referência.
 const initialProfile = {
   name: 'Ana Beatriz', gender: 'Feminino', cpf: '123.456.789-00', email: 'ana.beatriz@ufal.br', phone: '(82) 99999-9999', birthDate: '2004-05-18',
   course: 'Arquitetura e Urbanismo', period: '3º período', enrollment: 'Matrícula ativa', university: 'UFAL', campus: 'A. C. Simões', status: 'Em procura',
@@ -16,6 +17,10 @@ const initialProfile = {
   organization: 'Organizada', environment: 'Ambiente tranquilo', smoking: 'Não fumante', guests: 'Recebe visitas às vezes',
   about: 'Oi! Sou a Ana Beatriz, estudante de Arquitetura e Urbanismo. Sou uma pessoa organizada, tranquila e respeito muito o espaço e a rotina dos outros. Gosto de ambientes limpos, acolhedores e com boa convivência. Estou em busca de uma moradia próxima ao campus, com fácil acesso ao transporte e em um ambiente calmo para conciliar os estudos e a rotina.',
   photo: '',
+};
+*/
+const initialProfile = {
+  name: '', gender: '', cpf: '', email: '', phone: '', birthDate: '', course: '', period: '', enrollment: '', university: '', campus: '', status: '', housing: '', location: '', amenities: '', budget: '', organization: '', environment: '', smoking: '', guests: '', about: '', photo: '',
 };
 
 function profileFromSignup(user) {
@@ -48,7 +53,7 @@ function profileFromSignup(user) {
     environment: data.environment || '',
     smoking: data.smoking || '',
     guests: data.guests || data.visitors || '',
-    about: data.about || data.aboutMe || data.listingDescription || data.propertyDescription || demoDefaults.about,
+    about: data.about || data.aboutMe || data.listingDescription || data.propertyDescription || '',
     photo: data.photo || '',
   };
 }

@@ -7,6 +7,7 @@ import { Logo } from '../components/Logo.jsx';
 import { AdminReportsPage } from './AdminReportsPage.jsx';
 import './AdminPanelPage.css';
 
+/* Navegação do protótipo preservada para referência.
 const navigation = [
   { path: '/admin', label: 'Visão geral', icon: '⌂' },
   { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
@@ -17,7 +18,14 @@ const navigation = [
   { path: '/admin/registros', label: 'Registros', icon: '☷' },
   { path: '/admin/configuracoes', label: 'Configurações', icon: '⚙' },
 ];
+*/
+const navigation = [
+  { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
+  { path: '/admin/anuncios', label: 'Anúncios', icon: '□' },
+  { path: '/admin/denuncias', label: 'Denúncias', icon: '⚑' },
+];
 
+/* Exemplo visual ocultado; mantido para referência.
 const demoVerificationUsers = [
   { id: 'vnk-1038', name: 'Bianca Martins', email: 'bianca.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '12 nov 2026', initials: 'BM' },
   { id: 'vnk-1029', name: 'Lucas Nascimento', email: 'lucas.n@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '11 nov 2026', initials: 'LN' },
@@ -26,14 +34,20 @@ const demoVerificationUsers = [
   { id: 'vnk-1032', name: 'Ana Martins', email: 'ana.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '08 nov 2026', initials: 'AM' },
   { id: 'vnk-1024', name: 'Caio Ribeiro', email: 'caio.r@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '07 nov 2026', initials: 'CR' },
 ];
+*/
+const demoVerificationUsers = [];
 
+/* Exemplo visual ocultado; mantido para referência.
 const initialRecommendations = [
   { id: 'REC-0185', person: 'Pedro Souza', author: 'Marina Alves', profile: 'Aluno-anfitrião · UFAL', status: 'Em conferência', message: 'Pedro cuida dos espaços comuns e mantém uma comunicação clara durante a nossa convivência.' },
   { id: 'REC-0182', person: 'Lucas Nascimento', author: 'Ana Clara', profile: 'Aluno-anfitrião · UFAL', status: 'Publicada', message: 'Uma convivência muito boa e responsável.' },
   { id: 'REC-0179', person: 'Mariana Costa', author: 'Luiza Barbosa', profile: 'Ofertante de imóvel', status: 'Conferir vínculo', message: 'Moramos juntas e tivemos uma boa experiência.' },
   { id: 'REC-0175', person: 'João Nascimento', author: 'Caio Ribeiro', profile: 'Aluno-organizador · IFAL', status: 'Publicada', message: 'Organizado, atencioso e respeitoso com a casa.' },
 ];
+*/
+const initialRecommendations = [];
 
+/* Exemplo visual ocultado; mantido para referência.
 const initialRecords = [
   { date: '13 nov 2026', time: '10:24', owner: 'Carla Mendes', initials: 'CM', action: 'Vínculo universitário aprovado', area: 'Verificações', reference: 'VNK-1038', result: 'Concluído' },
   { date: '13 nov 2026', time: '10:11', owner: 'Rafael Lima', initials: 'RL', action: 'Recomendação confirmada', area: 'Recomendações', reference: 'REC-0185', result: 'Concluído' },
@@ -42,6 +56,8 @@ const initialRecords = [
   { date: '12 nov 2026', time: '16:10', owner: 'Rafael Lima', initials: 'RL', action: 'Consentimento de exibição confirmado', area: 'Recomendações', reference: 'REC-0182', result: 'Concluído' },
   { date: '12 nov 2026', time: '15:42', owner: 'Rafael Lima', initials: 'RL', action: 'Domínio institucional atualizado', area: 'Verificações', reference: 'UFAL', result: 'Concluído' },
 ];
+*/
+const initialRecords = [];
 
 const pageInfo = {
   '': ['Visão geral', 'Acompanhe as revisões e mantenha a comunidade Moraê segura.'],
@@ -104,7 +120,7 @@ export function AdminPanelPage() {
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
   const [selectedAd, setSelectedAd] = useState('');
-  const [selectedRecommendation, setSelectedRecommendation] = useState(initialRecommendations[0].id);
+  const [selectedRecommendation, setSelectedRecommendation] = useState(initialRecommendations[0]?.id ?? '');
   const [userStatus, setUserStatus] = useState('Todos');
   const [adStatus, setAdStatus] = useState('');
   const [recommendationStatus, setRecommendationStatus] = useState('Status');
@@ -119,7 +135,7 @@ export function AdminPanelPage() {
     `${item.id} ${item.person} ${item.author}`.toLocaleLowerCase('pt-BR').includes(searchValue) &&
     (recommendationStatus === 'Status' || item.status === recommendationStatus)
   ));
-  const activeRecommendation = recommendations.find((item) => item.id === selectedRecommendation) || recommendations[0];
+  const activeRecommendation = recommendations.find((item) => item.id === selectedRecommendation) || null;
   const reviewerName = session?.login.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toLocaleUpperCase('pt-BR')) || '';
   const initials = reviewerName.split(' ').map((part) => part[0]).slice(0, 2).join('');
 
@@ -324,11 +340,11 @@ export function AdminPanelPage() {
               ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> listagem e consulta obtidas diretamente do banco de dados.</div>
             : pageKey === 'denuncias'
               ? <div className="admin-prototype-banner" role="note"><strong>Moderação:</strong> denúncias e atualizações são persistidas; anotações ficam visíveis apenas à equipe autorizada.</div>
-            : <div className="admin-prototype-banner" role="note"><strong>Protótipo:</strong> as demais áreas administrativas ainda exibem dados demonstrativos.</div>}
+            : null}
 
           {notice && <div className="admin-notice" role="status">{notice}<button onClick={() => setNotice('')} type="button" aria-label="Fechar aviso">×</button></div>}
 
-          {pageKey === '' && <Overview showNotice={showNotice} />}
+          {pageKey === '' && <p className="admin-empty">O resumo administrativo ainda não possui dados integrados.</p>}
           {pageKey === 'usuarios' && !userId && (
             <UsersPage
               users={users}
@@ -378,23 +394,12 @@ export function AdminPanelPage() {
               onNotice={showNotice}
             />
           )}
-          {pageKey === 'recomendacoes' && (
-            <RecommendationsPage
-              items={filteredRecommendations}
-              active={activeRecommendation}
-              onSelect={setSelectedRecommendation}
-              onAction={updateRecommendationStatus}
-              search={search}
-              onSearch={setSearch}
-              status={recommendationStatus}
-              onStatus={setRecommendationStatus}
-            />
-          )}
-          {pageKey === 'verificacoes' && <VerificationsPage users={demoVerificationUsers} search={search} onSearch={setSearch} />}
-          {pageKey === 'registros' && <RecordsPage onExport={exportRecords} search={search} onSearch={setSearch} />}
-          {pageKey === 'configuracoes' && <SettingsPage settings={settings} setSettings={setSettings} onSave={() => showNotice('Preferências salvas nesta sessão do navegador.')} />}
+          {pageKey === 'recomendacoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'verificacoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'registros' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'configuracoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
           {!['', 'usuarios', 'anuncios', 'denuncias', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
-            <Overview showNotice={showNotice} />
+            <p className="admin-empty">Esta área ainda não possui dados integrados.</p>
           )}
         </div>
       </div>
@@ -402,6 +407,7 @@ export function AdminPanelPage() {
   );
 }
 
+/* Protótipo ocultado; mantido para referência.
 function Overview({ showNotice }) {
   return (
     <>
@@ -445,6 +451,8 @@ function Overview({ showNotice }) {
     </>
   );
 }
+
+*/
 
 function ActivityItem({ title, detail, time }) {
   return <div className="admin-activity-item"><span /><div><strong>{title}</strong><small>{detail}</small></div><time>{time}</time></div>;
@@ -678,6 +686,7 @@ function listingStatusTone(value) {
   return ({ APPROVED: 'green', REJECTED: 'pink', PENDING: 'purple', IN_REVIEW: 'teal' })[value] || 'neutral';
 }
 
+/* Protótipo ocultado; mantido para referência.
 function RecommendationsPage({ items, active, onSelect, onAction, search, onSearch, status, onStatus }) {
   return (
     <>
@@ -707,6 +716,9 @@ function RecommendationsPage({ items, active, onSelect, onAction, search, onSear
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function VerificationsPage({ users, search, onSearch }) {
   const [stage, setStage] = useState('Etapa');
   const requests = users.filter((user) => (
@@ -746,6 +758,9 @@ function VerificationsPage({ users, search, onSearch }) {
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function RecordsPage({ onExport, search, onSearch }) {
   const filteredRecords = initialRecords.filter((record) => `${record.date} ${record.owner} ${record.action} ${record.area} ${record.reference}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')));
   return (
@@ -769,6 +784,9 @@ function RecordsPage({ onExport, search, onSearch }) {
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function SettingsPage({ settings, setSettings, onSave }) {
   function toggle(key) {
     setSettings((current) => ({ ...current, [key]: !current[key] }));
@@ -791,6 +809,8 @@ function SettingsPage({ settings, setSettings, onSave }) {
     </div>
   );
 }
+
+*/
 
 function SettingRow({ title, description, enabled, onToggle, button, onClick }) {
   return <div className="admin-setting-row"><div><strong>{title}</strong>{description && <small>{description}</small>}</div>{button ? <button className="admin-outline-button" onClick={onClick} type="button">{button}</button> : <button aria-checked={enabled} aria-label={title} className={`admin-toggle${enabled ? ' on' : ''}`} onClick={onToggle} role="switch" type="button"><span /></button>}</div>;

@@ -18,6 +18,7 @@ import {
 import { OwnerSidebar, OwnerTopbar, PropertyPhoto } from './OwnerDashboardPage.jsx';
 import './PropertyDetailPage.css';
 
+/* Exemplo visual ocultado; mantido para referência.
 const propertyData = {
   '1': { title: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', type: 'Apartamento', room: '2 quartos', rent: 900, image: 'apartment', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Apartamento mobiliado, com boa iluminação e acesso fácil ao transporte e à UFAL.', distance: '1,8 km da UFAL', amenities: ['WI-FI', 'Mobiliado', 'Próximo à UFAL'] },
   '2': { title: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', type: 'Casa', room: '3 quartos', rent: 850, image: 'house', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Casa compartilhada com quintal, ambientes arejados e espaços comuns mobiliados.', distance: '4,2 km da UFAL', amenities: ['WI-FI', 'Quintal', 'Mobiliado'] },
@@ -29,14 +30,23 @@ const propertyData = {
   'vaga-village': { title: 'Apartamento compartilhado – Village', neighborhood: 'Village Campestre', type: 'Apartamento', room: 'Quarto individual', rent: 500, image: 'apartment', host: 'Maria Letícia', hostId: 'aluno-ofertador-maria-leticia', hostRole: 'Aluno ofertador', description: 'Vaga em apartamento compartilhado, ideal para estudante que busca dividir as despesas e a rotina.', distance: 'Village Campestre · Maceió/AL', amenities: ['WI-FI', 'Compartilhado', '2 moradores'] },
   'vaga-farol': { title: 'Casa compartilhada no Farol', neighborhood: 'Farol', type: 'Casa', room: 'Quarto individual', rent: 700, image: 'house', host: 'Maria Letícia', hostId: 'aluno-ofertador-maria-leticia', hostRole: 'Aluno ofertador', description: 'Vaga em casa compartilhada, com quarto individual e espaços comuns mobiliados.', distance: 'Farol · Maceió/AL', amenities: ['WI-FI', 'Cozinha compartilhada', '2 moradores'] },
 };
+*/
+const propertyData = {};
 
-const tabs = ['Descrição', 'Características', 'Convivência', 'Contrato', 'Regras'];
+/* Abas de protótipo preservadas: Convivência e Contrato dependem de dados ainda não disponíveis na API. */
+const tabs = ['Descrição', 'Características', 'Regras'];
+/* Exemplo visual ocultado; mantido para referência.
 const featureRows = [
   ['Tipo de moradia', 'República'], ['Quartos', '4 quartos'], ['Banheiros', '2'],
   ['Mobiliado', 'Sim'], ['Lavanderia', 'Sim'], ['Varanda', 'Não'],
   ['Garagem', 'Não'], ['Tipo de ambiente', 'Compartilhado'],
 ];
+*/
+const featureRows = [];
+/* Exemplo visual ocultado; mantido para referência.
 const rules = ['Respeitar horários de silêncio', 'Manter os espaços compartilhados limpos', 'Visitas com aviso prévio', 'Não é permitido fumar'];
+*/
+const rules = [];
 
 function SectionHeading({ children }) {
   return <h2 className="detail-section-heading"><span><LineIcon name="document" size={17} /></span>{children}</h2>;
@@ -248,20 +258,20 @@ export function PropertyDetailPage() {
         <div className="property-detail-columns">
           <aside className="property-detail-left">
             <section className="detail-gallery-card" aria-label="Fotos do imóvel">
-              <div className={`detail-gallery-photo detail-photo-${property.image}`}>{property.photoUrl ? <img className="detail-listing-photo" src={property.photoUrl} alt={property.title} /> : <PropertyPhoto type={property.image} />}<span className="detail-photo-count">{photo + 1}/8</span><button type="button" className="detail-gallery-arrow previous" aria-label="Foto anterior" onClick={() => setPhoto((current) => (current + 7) % 8)}>‹</button><button type="button" className="detail-gallery-arrow next" aria-label="Próxima foto" onClick={() => setPhoto((current) => (current + 1) % 8)}>›</button></div>
-              <div className="detail-gallery-thumbnails">{Array.from({ length: 4 }, (_, index) => <button type="button" key={index} className={photo % 4 === index ? 'selected' : ''} onClick={() => setPhoto(index)} aria-label={`Ver foto ${index + 1}`}><PropertyPhoto type={property.image} /></button>)}</div>
+              <div className={`detail-gallery-photo detail-photo-${property.image}`}>{property.photoUrl ? <img className="detail-listing-photo" src={property.photoUrl} alt={property.title} /> : <PropertyPhoto type={property.image} />}</div>
+              {/* Miniaturas de exemplo ocultadas; serão exibidas quando a API fornecer uma galeria. */}
             </section>
-            <section className="detail-price-card"><SectionHeading>Valor e condições</SectionHeading><div className="detail-price-info"><LineIcon name="money" /><span>Valor do aluguel<strong>R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></span></div><div className="detail-price-info"><LineIcon name="document" /><span>Taxas adicionais<strong>Água, luz e internet já inclusas</strong></span></div></section>
+            <section className="detail-price-card"><SectionHeading>Valor e condições</SectionHeading><div className="detail-price-info"><LineIcon name="money" /><span>Valor do aluguel<strong>R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></span></div></section>
             <section className="detail-location-section"><h2><span><LineIcon name="pin" size={21} /></span>Localização</h2><div className="detail-map"><MapView properties={[{ id: property.hostId, name: property.title, neighborhood: property.neighborhood, price: property.rent }]} /><button type="button" className="detail-map-button"><LineIcon name="map" />Ver mapa</button></div></section>
           </aside>
 
           <div className="property-detail-center">
-            <section className="detail-summary-card"><h1>{property.title === 'Apartamento próximo à UFAL' ? 'República Sol Nascente' : property.title}</h1><div className="detail-summary-location"><span><LineIcon name="pin" size={14} />{property.neighborhood} - Maceió/AL</span><span className="detail-tag">República</span><span className="detail-tag feminine">Feminina</span></div><div className="detail-summary-facts"><span><LineIcon name="homeGroup" /><span>{property.rooms || '4'} quartos<small>(2 disponíveis)</small></span></span><span><LineIcon name="home" /><span>{property.bathrooms || '2'} banheiros</span></span><span><LineIcon name="pin" /><span>Aproximadamente<small>{property.distance || '3,2 km da UFAL'}</small></span></span></div><strong className="detail-summary-price">R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></section>
+            <section className="detail-summary-card"><h1>{property.title}</h1><div className="detail-summary-location"><span><LineIcon name="pin" size={14} />{property.neighborhood} - Maceió/AL</span><span className="detail-tag">{property.type}</span></div><div className="detail-summary-facts"><span><LineIcon name="homeGroup" /><span>{property.rooms} quartos</span></span><span><LineIcon name="home" /><span>{property.bathrooms} banheiros</span></span><span><LineIcon name="pin" /><span>Localização<small>{property.distance}</small></span></span></div><strong className="detail-summary-price">R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></section>
             <section className="detail-information-card"><nav className="detail-tabs" aria-label="Seções do anúncio">{tabs.map((tab) => <a key={tab} href={`#detail-${tab.toLowerCase()}`} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</a>)}</nav>
-              <section id="detail-descrição" className="detail-info-section"><SectionHeading>Descrição</SectionHeading><div className="detail-description-text"><p>{property.description === 'Apartamento próximo à UFAL, com quarto individual e estrutura para uma convivência confortável.' ? 'A república Sol Nascente é uma moradia estudantil organizada e acolhedora, ideal para quem busca praticidade e um ambiente tranquilo para estudar e viver bem. Localizada no bairro A. C. Simões, em Maceió, fica próxima à UFAL, com fácil acesso a mercados, farmácias, ponto de ônibus e restaurantes.' : property.description}</p><p>O espaço conta com {property.rooms || '4'} quartos (sendo 2 disponíveis), {property.bathrooms || '2'} banheiros, sala, cozinha equipada e área de serviço. Todos os ambientes são mobiliados e bem cuidados, oferecendo conforto e comodidade no dia a dia.</p><p>A moradia valoriza o respeito, a organização e a boa convivência entre os moradores.</p></div></section>
+              <section id="detail-descrição" className="detail-info-section"><SectionHeading>Descrição</SectionHeading><div className="detail-description-text"><p>{property.description}</p></div></section>
               <section id="detail-características" className="detail-info-section"><SectionHeading>Características do imóvel</SectionHeading><div className="detail-feature-grid">{featureRows.map(([label, value], index) => <div className="detail-feature" key={label}><span className="detail-feature-icon"><LineIcon name={['homeGroup', 'homeGroup', 'home', 'home', 'calendar', 'home', 'home', 'users'][index]} size={16} /></span><span>{label}<small>{index === 1 ? `${property.rooms || value.split(' ')[0]} quartos` : index === 2 ? property.bathrooms || value : value}</small></span></div>)}</div></section>
-              <section id="detail-convivência" className="detail-info-section"><SectionHeading>Sobre a convivência</SectionHeading><div className="detail-community-grid"><div>Perfil dos moradores<strong>Feminino</strong></div><div>Idade<strong>18 - 25</strong></div><div>Cursos<strong>Diversos</strong></div><div>Preferência<strong>Estudantes da UFAL</strong></div></div><h3>Comodidades e Rotina</h3><div className="detail-community-grid routine"><div>Horário de silêncio<strong>21h - 08h</strong></div><div>Limpeza<strong>Semanal</strong></div><div>Área de lazer<strong>Não</strong></div><div>Permite pets<strong>Sim</strong></div></div></section>
-              <section id="detail-contrato" className="detail-info-section"><SectionHeading>Contrato de locação</SectionHeading><p className="detail-contract-intro">Aqui você encontra um resumo das principais informações do contrato. O documento completo será disponibilizado após o seu interesse ser confirmado.</p><div className="detail-contract-list">{[['Tipo de contrato', 'Locação residencial (temporário)'], ['Prazo de vigência', '6 meses'], ['Caução', '1 mês de aluguel'], ['Multa por rescisão', 'Conforme contrato'], ['Forma de pagamento', 'Boleto ou transferência bancária']].map(([label, value]) => <div key={label}><span className="detail-contract-icon"><LineIcon name="document" size={16} /></span><strong>{label}</strong><span>{value}</span></div>)}</div><button className="detail-full-contract" type="button">Ver contrato completo em PDF</button></section>
+              {/* Protótipo de convivência ocultado e preservado no histórico do projeto. */}
+              {/* Protótipo de contrato ocultado e preservado no histórico do projeto. */}
               <section id="detail-regras" className="detail-info-section"><SectionHeading>Regras da casa</SectionHeading><div className="detail-rules">{(property.rules?.length ? property.rules : rules).map((rule) => <span key={rule}>{rule}</span>)}</div></section>
             </section>
           </div>

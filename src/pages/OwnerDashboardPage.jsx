@@ -20,17 +20,24 @@ import {
 import { filterPaymentTransactions, summarizePaymentTransactions } from '../services/paymentHistory.js';
 import './OwnerDashboardPage.css';
 
+/* Exemplo visual ocultado; mantido para referência.
 const properties = [
   { id: 'apt-ufal', title: 'Apartamento próximo à UFAL', neighborhood: 'Clima Bom', type: 'Apartamento', room: 'Quarto individual', residents: 2, rent: 600, interested: 3, status: 'Publicado', image: 'apartment' },
   { id: 'casa-farol', title: 'Casa compartilhada no Farol', neighborhood: 'Farol', type: 'Casa', room: 'Quarto individual', residents: 2, rent: 700, interested: 5, status: 'Em análise', image: 'house' },
   { id: 'kitnet-ponta-verde', title: 'Kitnet mobiliada na Ponta Verde', neighborhood: 'Ponta Verde', type: 'Kitnet', room: 'Imóvel inteiro', residents: 1, rent: 950, interested: 2, status: 'Publicado', image: 'kitnet' },
 ];
+*/
+const properties = [];
 
+/* Exemplo visual ocultado; mantido para referência.
 const offererListings = [
   { id: 'vaga-village', title: 'Apartamento compartilhado – Village', neighborhood: 'Village Campestre', type: 'Apartamento', room: 'Quarto individual', residents: 2, rent: 500, interested: 3, status: 'Ativa', image: 'apartment' },
   { id: 'vaga-farol', title: 'Casa compartilhada no Farol', neighborhood: 'Farol', type: 'Casa', room: 'Quarto individual', residents: 2, rent: 700, interested: 5, status: 'Encerrada', image: 'house' },
 ];
+*/
+const offererListings = [];
 
+/* Exemplo visual ocultado; mantido para referência.
 const applicants = [
   { id: 'ana-beatriz', name: 'Ana Clara', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Ciência da Computação', period: '2º período', gender: 'Feminino', status: 'Em conversa', property: 'apt-ufal', initials: 'AC' },
   { id: 'carolina-lima', name: 'Beatriz Lima', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Administração', period: '1º período', gender: 'Feminino', status: 'Aguardando resposta', property: 'apt-ufal', initials: 'BL' },
@@ -38,12 +45,17 @@ const applicants = [
   { id: 'carolina-lima', name: 'Marina Santos', university: 'Centro Universitário CESMAC', course: 'Psicologia', period: '4º período', gender: 'Feminino', status: 'Aguardando resposta', property: 'casa-farol', initials: 'MS' },
   { id: 'ana-beatriz', name: 'Rafael Costa', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Arquitetura e Urbanismo', period: '5º período', gender: 'Masculino', status: 'Em conversa', property: 'casa-farol', initials: 'RC' },
 ];
+*/
+const applicants = [];
 
+/* Exemplo visual ocultado; mantido para referência.
 const offererApplicants = [
   { id: 'ana-beatriz', name: 'Ana Clara', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Ciência da Computação', period: '2º período', gender: 'Feminino', status: 'Em conversa', property: 'vaga-village', initials: 'AC', age: 20, habits: ['Organizada', 'Tranquila', 'Não fuma'] },
   { id: 'carolina-lima', name: 'Lucas Ferreira', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Engenharia da Computação', period: '3º período', gender: 'Masculino', status: 'Aguardando resposta', property: 'vaga-village', initials: 'LF', age: 21, habits: ['Responsável', 'Comunicativo', 'Não tem pets'] },
   { id: 'ana-beatriz', name: 'Beatriz Lima', university: 'Universidade Federal de Alagoas (UFAL)', course: 'Administração', period: '1º período', gender: 'Feminino', status: 'Recusado', property: 'vaga-village', initials: 'BL', age: 22, habits: ['Estudiosa', 'Organizada', 'Tem pets'] },
 ];
+*/
+const offererApplicants = [];
 
 const ownerSections = [
   { path: '/proprietario', label: 'Início', icon: 'home', end: true },
@@ -169,11 +181,14 @@ function PropertyCard({
   );
 }
 
+/* Exemplo visual ocultado; mantido para referência.
 const demoCompatibleProfiles = [
   { name: 'Ana Clara', id: 'ana-beatriz', subtitle: '20 anos · Estudante', tags: ['Organizada', 'Tranquila', 'Não fuma'], initials: 'AC' },
   { name: 'Lucas Ferreira', id: 'carolina-lima', subtitle: '21 anos · Estudante', tags: ['Responsável', 'Comunicativo', 'Não tem pets'], initials: 'LF' },
   { name: 'Beatriz Lima', id: 'ana-beatriz', subtitle: '22 anos · Estudante', tags: ['Estudiosa', 'Organizada', 'Tem pets'], initials: 'BL' },
 ];
+*/
+const demoCompatibleProfiles = [];
 
 function initialsOf(name = '') {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('pt-BR') || '?';
@@ -284,9 +299,9 @@ function OwnerHome({ query, displayName, statuses = {} }) {
   const visibleProperties = properties.filter((property) => (statuses[property.id] ?? 'active') === 'active').filter((property) => !query || `${property.title} ${property.neighborhood}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
   const stats = [
     { label: 'Imóveis anunciados', value: properties.length, icon: 'home', to: '/proprietario/imoveis' },
-    { label: 'Interessados', value: applicants.length + 3, icon: 'users', to: '/proprietario/interessados' },
-    { label: 'Contratos ativos', value: 2, icon: 'paperclip', to: '/proprietario/contratos' },
-    { label: 'Pagamentos pendentes', value: 1, icon: 'money', to: '/proprietario/pagamentos', pink: true },
+    { label: 'Interessados', value: applicants.length, icon: 'users', to: '/proprietario/interessados' },
+    { label: 'Contratos ativos', value: 0, icon: 'paperclip', to: '/proprietario/contratos' },
+    { label: 'Pagamentos pendentes', value: 0, icon: 'money', to: '/proprietario/pagamentos', pink: true },
   ];
   return <div className="owner-content">
     <section className="owner-welcome"><span className="owner-welcome-icon"><LineIcon name="homeGroup" size={29} /></span><div><h1>Olá, {displayName || 'Proprietário'}!</h1><p>Acompanhe seus imóveis, interessados e recebimentos em um só lugar.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
@@ -600,6 +615,7 @@ function PaymentHistoryPage({ role, query }) {
   </div>;
 }
 
+/* Exemplo visual ocultado; mantido para referência.
 const residentialLeaseClauses = [
   {
     title: 'Partes e legislação aplicável',
@@ -705,6 +721,8 @@ const residentialLeaseClauses = [
     ]
   }
 ];
+*/
+const residentialLeaseClauses = [];
 
 const contractDocumentTypeOptions = [
   ['SIGNED_CONTRACT', 'Contrato assinado'],
@@ -941,6 +959,7 @@ function ContractDocumentsPanel() {
   </section>;
 }
 
+/* Protótipo ocultado; mantido para referência.
 function ContractPage({ role }) {
   const isOfferer = role === 'ofertante';
   const ownerName = isOfferer ? 'Você · Aluno ofertador' : 'Lucas Souza · Proprietário';
@@ -967,6 +986,8 @@ function ContractPage({ role }) {
   </div>;
 }
 
+*/
+
 export function OwnerDashboardPage({ role = 'proprietario' }) {
   const isOfferer = role === 'ofertante';
   const basePath = isOfferer ? '/ofertante' : '/proprietario';
@@ -976,7 +997,7 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   const [statuses, setStatuses] = useState(() => getDemoListingStatuses());
   const [listingConfirmation, setListingConfirmation] = useState(null);
   const displayName = getDemoUser()?.name;
-  const selectedProperty = searchParams.get('imovel') ?? (isOfferer ? offererListings[0].id : properties[0].id);
+  const selectedProperty = searchParams.get('imovel') ?? (isOfferer ? offererListings[0]?.id : properties[0]?.id) ?? '';
   const setSelectedProperty = (id) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('imovel', id); return next; });
   const section = pathname.split('/')[2] ?? '';
   const roleListings = isOfferer ? offererListings : properties;
@@ -1013,7 +1034,7 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
 
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
-  else if (section === 'contratos') content = <ContractPage role={role} />;
+  else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><ContractDocumentsPanel /></div>;
   else if (section === 'pagamentos') content = <PaymentHistoryPage query={query} />;
   else if ((isOfferer && section === 'vagas') || (!isOfferer && section === 'imoveis')) {
     content = <ListingsManager query={query} listings={roleListings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} />;

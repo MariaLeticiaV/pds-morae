@@ -16,12 +16,15 @@ import { getUserSession } from '../services/userAuth.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
+/* Exemplo visual ocultado; mantido para referência.
 const properties = [
   { id: 1, listingId: 'apt-ufal', name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
   { id: 2, listingId: 'casa-farol', name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
   { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
   { id: 4, listingId: 'vaga-village', name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
 ];
+*/
+const properties = [];
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Anúncios reais (id UUID) têm os favoritos salvos na API; os de demonstração
@@ -288,8 +291,8 @@ export function SearchPage() {
             <section className={`listing-section${showFavorites ? ' favorites-listing-section' : ''}`}>
               <div className="section-heading"><h2><Icon name={showFavorites ? 'heart' : 'home'} size={26} fill={showFavorites ? 'currentColor' : 'none'} />{showFavorites ? 'Sua lista de favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={showFavorites ? exploreProperties : () => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>{showFavorites ? 'Explorar imóveis' : 'Ver todos'} <Icon name="arrow" size={19} /></button></div>
               {favoriteError && <p className="listing-load-error" role="alert">{favoriteError}</p>}
-              {listingError && <p className="listing-load-error" role="alert">Não foi possível carregar anúncios publicados. As opções demonstrativas continuam disponíveis. {listingError}</p>}
-              {!listingError && !publishedListings.length && <p className="listing-load-notice" role="status">As opções exibidas incluem anúncios demonstrativos; anúncios publicados aparecerão aqui após aprovação.</p>}
+              {listingError && <p className="listing-load-error" role="alert">Não foi possível carregar anúncios publicados. {listingError}</p>}
+              {!listingError && !publishedListings.length && <p className="listing-load-notice" role="status">Ainda não há anúncios aprovados para exibição.</p>}
               {showFavorites && <p className="favorites-help">Os anúncios que você favoritar ficam guardados aqui para consultar depois.</p>}
               {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : showFavorites ? <div className="favorites-empty"><span><Icon name="heart" size={28} /></span><h3>Seus favoritos começam aqui</h3><p>Toque no coração de um anúncio para salvá-lo nesta lista.</p><button type="button" onClick={exploreProperties}>Explorar imóveis <Icon name="arrow" size={17} /></button></div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={exploreProperties}>Limpar busca</button></div>}
             </section>
