@@ -46,7 +46,9 @@ async function request(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error(unauthorizedMessage);
+      const error = new Error(unauthorizedMessage);
+      error.status = 401;
+      throw error;
     }
 
     const message = Array.isArray(result?.message)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { getAdministratorSession, logoutAdministrator } from '../services/adminAuth.js';
-import { getAdminListing, listAdminListings } from '../services/adminListings.js';
+import { getAdminListing, listAdminListings, moderateAdminListing } from '../services/adminListings.js';
 import { changeAdminUserStatus, getAdminUser, listAdminUsers } from '../services/adminUsers.js';
 import { Logo } from '../components/Logo.jsx';
 import { AdminReportsPage } from './AdminReportsPage.jsx';
@@ -22,7 +22,7 @@ const initialRecords = [];
 const pageInfo = {
   '': ['Visão geral', 'Acompanhe as revisões e mantenha a comunidade Moraê segura.'],
   usuarios: ['Usuários e vínculos', 'Confira o vínculo acadêmico e acompanhe as contas cadastradas.'],
-  anuncios: ['Anúncios cadastrados', 'Consulte os imóveis e vagas publicados na plataforma.'],
+  anuncios: ['Anúncios cadastrados', 'Aprove ou rejeite os imóveis e vagas enviados à plataforma.'],
   denuncias: ['Denúncias', 'Analise ocorrências reportadas pela comunidade e registre o encaminhamento.'],
   recomendacoes: ['Recomendações', 'Acompanhe recomendações de convivência e os selos exibidos nos perfis.'],
   verificacoes: ['Verificações de vínculo', 'Revise solicitações de vínculo acadêmico enviadas por estudantes.'],
@@ -76,6 +76,7 @@ export function AdminPanelPage() {
   const [adDetail, setAdDetail] = useState(null);
   const [adDetailLoading, setAdDetailLoading] = useState(false);
   const [adDetailError, setAdDetailError] = useState('');
+  const [adModerating, setAdModerating] = useState(false);
   const [recommendations, setRecommendations] = useState(initialRecommendations);
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
@@ -113,8 +114,13 @@ export function AdminPanelPage() {
         limit: 25,
         signal: controller.signal,
       }).then((result) => {
-        setUsers(result.items);
-        setTotalUsers(result.total);
+        const adminUserId = session.userId.trim().toLocaleLowerCase('pt-BR');
+        const visibleUsers = result.items.filter((user) => (
+          String(user.id).trim().toLocaleLowerCase('pt-BR') !== adminUserId
+        ));
+        const excludedCount = result.items.length - visibleUsers.length;
+        setUsers(visibleUsers);
+        setTotalUsers(Math.max(0, result.total - excludedCount));
       }).catch((error) => {
         if (error.name !== 'AbortError') setUsersError(error.message);
       }).finally(() => {
@@ -226,6 +232,27 @@ export function AdminPanelPage() {
     }
   }
 
+  async function moderateAd(status) {
+    if (!adDetail || adModerating) return;
+    if (status === 'REJECTED' && !window.confirm(`Rejeitar o anúncio "${adDetail.title}"? Ele não aparecerá na busca.`)) return;
+
+    setAdModerating(true);
+    try {
+      const updated = await moderateAdminListing(adDetail.listingId, status);
+      setAdDetail(updated);
+      setAds((current) => current.map((ad) => (
+        ad.listingId === updated.listingId ? { ...ad, status: updated.status } : ad
+      )));
+      showNotice(status === 'APPROVED'
+        ? `Anúncio "${updated.title}" aprovado: ele já aparece na busca.`
+        : `Anúncio "${updated.title}" rejeitado.`);
+    } catch (error) {
+      showNotice(error.message || 'Não foi possível moderar o anúncio.');
+    } finally {
+      setAdModerating(false);
+    }
+  }
+
   function updateRecommendationStatus(status) {
     setRecommendations((current) => current.map((item) => item.id === activeRecommendation.id ? { ...item, status } : item));
     showNotice(`Recomendação ${activeRecommendation.id}: ${status.toLocaleLowerCase('pt-BR')}. A alteração está nesta sessão do navegador.`);
@@ -297,7 +324,7 @@ export function AdminPanelPage() {
           {pageKey === 'usuarios'
             ? <div className="admin-prototype-banner" role="note"><strong>Gerenciamento de contas:</strong> os dados e alterações desta seção são consultados e salvos no banco de dados.</div>
             : pageKey === 'anuncios'
-              ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> listagem e consulta obtidas diretamente do banco de dados.</div>
+              ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> anúncios novos ficam pendentes até serem aprovados aqui; só os aprovados aparecem na busca.</div>
             : pageKey === 'denuncias'
               ? <div className="admin-prototype-banner" role="note"><strong>Moderação:</strong> denúncias e atualizações são persistidas; anotações ficam visíveis apenas à equipe autorizada.</div>
             : null}
@@ -343,6 +370,8 @@ export function AdminPanelPage() {
               detailLoading={adDetailLoading}
               detailError={adDetailError}
               onSelect={setSelectedAd}
+              moderating={adModerating}
+              onModerate={moderateAd}
               search={search}
               onSearch={(value) => { setSearch(value); setAdPage(1); }}
             />
@@ -520,6 +549,8 @@ function AdsPage({
   detailLoading,
   detailError,
   onSelect,
+  moderating,
+  onModerate,
   search,
   onSearch,
 }) {
@@ -538,6 +569,8 @@ function AdsPage({
             <option value="IN_REVIEW">Em análise</option>
             <option value="APPROVED">Aprovado</option>
             <option value="REJECTED">Rejeitado</option>
+            <option value="ARCHIVED">Arquivado</option>
+            <option value="REMOVED">Removido</option>
           </select>
         </div>
         {loading && <p className="admin-empty" role="status">Carregando anúncios...</p>}
@@ -586,6 +619,7 @@ function AdsPage({
           <>
             <div className="admin-panel-heading"><h2>{activeAd.title}</h2><Badge tone={listingStatusTone(activeAd.status)}>{listingStatusLabel(activeAd.status)}</Badge></div>
             <p className="admin-panel-subtitle">ID: {activeAd.listingId}</p>
+            <ListingModeration listing={activeAd} moderating={moderating} onModerate={onModerate} />
             {activeAd.media?.length > 0 && (
               <div className="admin-listing-gallery">
                 {activeAd.media.map((image) => (
@@ -638,8 +672,33 @@ function minimumStayLabel(value) {
   return ({ NO_MINIMUM: 'Sem permanência mínima', THREE_MONTHS: '3 meses', SIX_MONTHS: '6 meses', TWELVE_MONTHS: '12 meses' })[value] || value;
 }
 
+function ListingModeration({ listing, moderating, onModerate }) {
+  const awaitingReview = listing.status === 'PENDING' || listing.status === 'IN_REVIEW';
+  const message = {
+    PENDING: 'Aguardando moderação: o anúncio só aparece na busca depois de aprovado.',
+    IN_REVIEW: 'Em análise: o anúncio só aparece na busca depois de aprovado.',
+    APPROVED: 'Publicado na busca. Para retirá-lo do ar, use a área de Denúncias.',
+    REJECTED: 'Rejeitado: fora da busca. Você pode reavaliar e aprovar.',
+    ARCHIVED: 'Arquivado pelo anunciante.',
+    REMOVED: 'Removido após denúncia.',
+  }[listing.status];
+
+  return (
+    <div className="admin-listing-moderation">
+      {message && <p>{message}</p>}
+      {(awaitingReview || listing.status === 'REJECTED') && (
+        <div className="admin-listing-moderation-actions">
+          <button className="admin-primary-button" disabled={moderating} onClick={() => onModerate('APPROVED')} type="button">Aprovar anúncio</button>
+          {awaitingReview && <button className="admin-outline-button" disabled={moderating} onClick={() => onModerate('REJECTED')} type="button">Rejeitar anúncio</button>}
+        </div>
+      )}
+      {moderating && <p role="status">Salvando decisão...</p>}
+    </div>
+  );
+}
+
 function listingStatusLabel(value) {
-  return ({ PENDING: 'Pendente', IN_REVIEW: 'Em análise', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' })[value] || value;
+  return ({ PENDING: 'Pendente', IN_REVIEW: 'Em análise', APPROVED: 'Aprovado', REJECTED: 'Rejeitado', ARCHIVED: 'Arquivado', REMOVED: 'Removido' })[value] || value;
 }
 
 function listingStatusTone(value) {
