@@ -4,6 +4,7 @@ import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { ReportDialog } from '../components/ReportDialog.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { MapView } from '../components/MapView/MapView.jsx';
+import { ListingPhotoManager } from '../components/ListingPhotoManager.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing } from '../utils/demoListings.js';
 import {
@@ -41,6 +42,9 @@ export function PropertyDetailPage() {
   const [query, setQuery] = useState('');
   const [notification, setNotification] = useState('');
   const [publishedListing, setPublishedListing] = useState(null);
+  // A rota pública só devolve anúncios aprovados; o status muda aqui quando
+  // o dono adiciona fotos e o anúncio volta para a moderação.
+  const [listingStatus, setListingStatus] = useState('APPROVED');
   const [listingLoading, setListingLoading] = useState(false);
   const [interest, setInterest] = useState(null);
   const [interestLoading, setInterestLoading] = useState(false);
@@ -67,7 +71,10 @@ export function PropertyDetailPage() {
     setListingLoading(true);
     getApprovedListing(id)
       .then((listing) => {
-        if (!cancelled) setPublishedListing(listing);
+        if (!cancelled) {
+          setPublishedListing(listing);
+          setListingStatus('APPROVED');
+        }
       })
       .catch((error) => {
         if (!cancelled) setNotification(error.message || 'Não foi possível carregar o anúncio.');
@@ -120,7 +127,7 @@ export function PropertyDetailPage() {
         bathrooms: String(publishedListing.bathrooms),
         rent: publishedListing.rent,
         image: publishedListing.housingType === 'HOUSE' ? 'house' : 'apartment',
-        photoUrl: publishedListing.media.find((item) => item.type === 'PHOTO')?.url,
+        photos: publishedListing.media.filter((item) => item.type === 'PHOTO'),
         host: publishedListing.advertiser.name,
         hostId: publishedListing.advertiser.userId,
         hostRole: 'Anunciante',
@@ -189,6 +196,15 @@ export function PropertyDetailPage() {
     WITHDRAWN: 'Retirado',
   };
   const isListingOwner = property.persisted && property.advertiserId === user?.userId;
+  const photos = property.photos ?? [];
+  const photoIndex = photos.length ? Math.min(photo, photos.length - 1) : 0;
+  const currentPhoto = photos[photoIndex];
+  const showPhoto = (offset) => setPhoto((current) => (current + offset + photos.length) % photos.length);
+  const updatePhotos = ({ status: nextStatus, photos: nextPhotos }) => {
+    setListingStatus(nextStatus);
+    setPublishedListing((current) => current && { ...current, media: nextPhotos });
+    setPhoto((current) => Math.min(current, Math.max(nextPhotos.length - 1, 0)));
+  };
   const canWithdrawInterest = interest && ['PENDING', 'IN_CONVERSATION', 'ACCEPTED'].includes(interest.status);
 
   async function handleInterest() {
@@ -237,8 +253,10 @@ export function PropertyDetailPage() {
         <div className="property-detail-columns">
           <aside className="property-detail-left">
             <section className="detail-gallery-card" aria-label="Fotos do imóvel">
-              <div className={`detail-gallery-photo detail-photo-${property.image}`}>{property.photoUrl ? <img className="detail-listing-photo" src={property.photoUrl} alt={property.title} /> : <PropertyPhoto type={property.image} />}</div>
+              <div className={`detail-gallery-photo detail-photo-${property.image}`}>{currentPhoto ? <><img className="detail-listing-photo" src={currentPhoto.url} alt={`${property.title} – foto ${photoIndex + 1} de ${photos.length}`} />{photos.length > 1 && <><span className="detail-photo-count">{photoIndex + 1}/{photos.length}</span><button type="button" className="detail-gallery-arrow previous" aria-label="Foto anterior" onClick={() => showPhoto(-1)}>‹</button><button type="button" className="detail-gallery-arrow next" aria-label="Próxima foto" onClick={() => showPhoto(1)}>›</button></>}</> : <PropertyPhoto type={property.image} />}</div>
+              {photos.length > 1 && <div className="detail-gallery-thumbnails">{photos.map((item, index) => <button type="button" key={item.id ?? item.url} className={photoIndex === index ? 'selected' : ''} onClick={() => setPhoto(index)} aria-label={`Ver foto ${index + 1}`}><img className="detail-thumbnail-photo" src={item.url} alt="" /></button>)}</div>}
             </section>
+            {isListingOwner && <ListingPhotoManager listingId={property.listingId} status={listingStatus} photos={photos} onChange={updatePhotos} />}
             <section className="detail-price-card"><SectionHeading>Valor e condições</SectionHeading><div className="detail-price-info"><LineIcon name="money" /><span>Valor do aluguel<strong>R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></span></div></section>
             <section className="detail-location-section"><h2><span><LineIcon name="pin" size={21} /></span>Localização</h2><div className="detail-map"><MapView properties={[{ id: property.hostId, name: property.title, neighborhood: property.neighborhood, price: property.rent }]} /><button type="button" className="detail-map-button"><LineIcon name="map" />Ver mapa</button></div></section>
           </aside>

@@ -6,6 +6,30 @@ const API_URL = (
 
 const ACCESS_TOKEN_KEY = 'morae.accessToken';
 
+// Fotos enviadas ao servidor voltam como caminho relativo à API
+// ("/uploads/listings/..."). Como o front e a API ficam em endereços
+// diferentes, o caminho precisa do endereço da API na frente.
+export function resolveMediaUrl(url) {
+  if (typeof url !== 'string' || url === '') return '';
+  return url.startsWith('/uploads/') ? `${API_URL}${url}` : url;
+}
+
+const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_LISTING_PHOTOS = 10;
+
+// Mesmas regras do backend, para avisar antes do envio.
+export function validateImageFile(file) {
+  if (!file || !ACCEPTED_IMAGE_TYPES.has(file.type)) {
+    return 'Use somente imagens JPEG, PNG ou WEBP.';
+  }
+  if (file.size > MAX_IMAGE_BYTES) {
+    return `A imagem "${file.name}" passa de 5 MB.`;
+  }
+  return null;
+}
+
+
 async function request(
   path,
   {
@@ -224,7 +248,7 @@ function mapListing(listing) {
       ) {
         throw new Error('A resposta contém uma mídia de anúncio inválida.');
       }
-      return item;
+      return { ...item, url: resolveMediaUrl(item.url) };
     }),
   };
 }
@@ -795,7 +819,7 @@ export async function getUserById(userId, token = getAccessToken()) {
   return {
     userId: body.userId,
     name: body.name,
-    photoUrl: body.photoUrl,
+    photoUrl: resolveMediaUrl(body.photoUrl) || null,
   };
 }
 
@@ -963,7 +987,7 @@ function mapMyAccount(body) {
     name: body.name,
     email: body.email,
     phone: body.phone,
-    photoUrl: typeof body.photoUrl === 'string' ? body.photoUrl : null,
+    photoUrl: resolveMediaUrl(body.photoUrl) || null,
     emailVerified: body.emailVerified,
     status: body.status,
   };
@@ -971,6 +995,86 @@ function mapMyAccount(body) {
 
 export async function getMyAccount() {
   return mapMyAccount(await authenticatedRequest('/users/me'));
+}
+
+export async function uploadMyPhoto(file) {
+  const problem = validateImageFile(file);
+  if (problem) throw new Error(problem);
+  const form = new FormData();
+  form.append('photo', file);
+  return mapMyAccount(
+    await authenticatedRequest('/users/me/photo', { method: 'PUT', body: form }),
+  );
+}
+
+export async function removeMyPhoto() {
+  return mapMyAccount(
+    await authenticatedRequest('/users/me/photo', { method: 'DELETE' }),
+  );
+}
+
+const listingStatuses = new Set(['PENDING', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'ARCHIVED', 'REMOVED']);
+
+// Resposta das rotas de fotos: { status, photos }. Adicionar fotos a um
+// anúncio aprovado ou arquivado o devolve para a moderação (PENDING).
+function mapListingPhotos(body) {
+  const photos = body?.photos;
+  if (
+    !body ||
+    !listingStatuses.has(body.status) ||
+    !Array.isArray(photos) ||
+    !photos.every(
+      (photo) =>
+        photo &&
+        typeof photo.id === 'string' &&
+        typeof photo.url === 'string' &&
+        Number.isInteger(photo.position),
+    )
+  ) {
+    throw new Error('A resposta das fotos do anúncio é inválida.');
+  }
+  return {
+    status: body.status,
+    photos: photos.map((photo) => ({ ...photo, url: resolveMediaUrl(photo.url) })),
+  };
+}
+
+function listingPhotosPath(listingId) {
+  return `/properties/${encodeURIComponent(listingId)}/photos`;
+}
+
+export async function getListingPhotos(listingId) {
+  return mapListingPhotos(await authenticatedRequest(listingPhotosPath(listingId)));
+}
+
+export async function addListingPhotos(listingId, files) {
+  const list = Array.from(files ?? []);
+  if (list.length === 0) throw new Error('Selecione ao menos uma foto.');
+  const problem = list.map(validateImageFile).find(Boolean);
+  if (problem) throw new Error(problem);
+  const form = new FormData();
+  list.forEach((file) => form.append('photos', file));
+  return mapListingPhotos(
+    await authenticatedRequest(listingPhotosPath(listingId), { method: 'POST', body: form }),
+  );
+}
+
+export async function removeListingPhoto(listingId, photoId) {
+  return mapListingPhotos(
+    await authenticatedRequest(
+      `${listingPhotosPath(listingId)}/${encodeURIComponent(photoId)}`,
+      { method: 'DELETE' },
+    ),
+  );
+}
+
+export async function reorderListingPhotos(listingId, photoIds) {
+  return mapListingPhotos(
+    await authenticatedRequest(`${listingPhotosPath(listingId)}/order`, {
+      method: 'PUT',
+      body: { photoIds },
+    }),
+  );
 }
 
 // Envie só os campos alterados: name, email, cpf e/ou phone (null apaga o telefone).
@@ -982,18 +1086,29 @@ export async function updateMyAccount(changes) {
 
 // Perfil completo (dados pessoais, acadêmicos e preferências).
 // O próprio perfil traz também o bloco `private` (e-mail, telefone, nascimento...).
+// A foto de perfil pode vir como caminho relativo à API (/uploads/users/...).
+function withResolvedPhoto(view) {
+  return view && typeof view.photoUrl === 'string'
+    ? { ...view, photoUrl: resolveMediaUrl(view.photoUrl) }
+    : view;
+}
+
 export async function getMyProfile() {
-  return authenticatedRequest('/users/me/profile');
+  return withResolvedPhoto(await authenticatedRequest('/users/me/profile'));
 }
 
 export async function getUserProfile(userId) {
-  return authenticatedRequest(`/users/${encodeURIComponent(userId)}/profile`);
+  return withResolvedPhoto(
+    await authenticatedRequest(`/users/${encodeURIComponent(userId)}/profile`),
+  );
 }
 
 // Envie só o que mudou: { details?, course?, period?, compatibilityAnswers? }.
 // Em details, null ou "" apaga o valor.
 export async function updateMyProfile(changes) {
-  return authenticatedRequest('/users/me/profile', { method: 'PATCH', body: changes });
+  return withResolvedPhoto(
+    await authenticatedRequest('/users/me/profile', { method: 'PATCH', body: changes }),
+  );
 }
 
 // ---------------------------------------------------------------------------
