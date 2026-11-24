@@ -16,16 +16,6 @@ import { getUserSession } from '../services/userAuth.js';
 import { MapView } from '../components/MapView/MapView.jsx';
 import './SearchPage.css';
 
-/* Exemplo visual ocultado; mantido para referência.
-const properties = [
-  { id: 1, listingId: 'apt-ufal', name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
-  { id: 2, listingId: 'casa-farol', name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
-  { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
-  { id: 4, listingId: 'vaga-village', name: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', price: 500, type: 'Quarto', rooms: 2, baths: 1, distance: '2,5 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Compartilhado'], host: 'Estudante', profileId: 'carolina-lima', profileName: 'Carolina Lima', scene: 'flat' },
-];
-*/
-const properties = [];
-
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Anúncios reais (id UUID) têm os favoritos salvos na API; os de demonstração
 // (id numérico) continuam só no navegador.

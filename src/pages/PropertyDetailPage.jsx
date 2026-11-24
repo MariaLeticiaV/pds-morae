@@ -18,34 +18,13 @@ import {
 import { OwnerSidebar, OwnerTopbar, PropertyPhoto } from './OwnerDashboardPage.jsx';
 import './PropertyDetailPage.css';
 
-/* Exemplo visual ocultado; mantido para referência.
-const propertyData = {
-  '1': { title: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', type: 'Apartamento', room: '2 quartos', rent: 900, image: 'apartment', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Apartamento mobiliado, com boa iluminação e acesso fácil ao transporte e à UFAL.', distance: '1,8 km da UFAL', amenities: ['WI-FI', 'Mobiliado', 'Próximo à UFAL'] },
-  '2': { title: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', type: 'Casa', room: '3 quartos', rent: 850, image: 'house', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Casa compartilhada com quintal, ambientes arejados e espaços comuns mobiliados.', distance: '4,2 km da UFAL', amenities: ['WI-FI', 'Quintal', 'Mobiliado'] },
-  '3': { title: 'Quarto individual aconchegante', neighborhood: 'Farol', type: 'Quarto', room: '1 quarto', rent: 600, image: 'house', host: 'Ana Beatriz', hostId: 'ana-beatriz', hostRole: 'Estudante ofertadora', description: 'Quarto individual em moradia estudantil, com ambiente tranquilo e áreas compartilhadas.', distance: '3,1 km da UFAL', amenities: ['WI-FI', 'Quarto individual', 'Mobiliado'] },
-  '4': { title: 'Quarto em apartamento no Village', neighborhood: 'Village Campestre', type: 'Quarto', room: '2 quartos', rent: 500, image: 'apartment', host: 'Carolina Lima', hostId: 'carolina-lima', hostRole: 'Estudante ofertadora', description: 'Vaga em apartamento compartilhado, perto da universidade e com cozinha equipada.', distance: '2,5 km da UFAL', amenities: ['WI-FI', 'Compartilhado', 'Próximo à UFAL'] },
-  'apt-ufal': { title: 'Apartamento próximo à UFAL', neighborhood: 'Clima Bom', type: 'Apartamento', room: 'Quarto individual', rent: 600, image: 'apartment', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Apartamento próximo à UFAL, com quarto individual e estrutura para uma convivência confortável.', distance: 'Próximo à UFAL', amenities: ['WI-FI', 'Mobiliado', '2 moradores'] },
-  'casa-farol': { title: 'Casa compartilhada no Farol', neighborhood: 'Farol', type: 'Casa', room: 'Quarto individual', rent: 700, image: 'house', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Casa compartilhada no Farol, com ambientes mobiliados e acesso conveniente a serviços e transporte.', distance: 'Farol · Maceió/AL', amenities: ['WI-FI', 'Cozinha compartilhada', '2 moradores'] },
-  'kitnet-ponta-verde': { title: 'Kitnet mobiliada na Ponta Verde', neighborhood: 'Ponta Verde', type: 'Kitnet', room: 'Imóvel inteiro', rent: 950, image: 'kitnet', host: 'Lucas Souza', hostId: 'proprietario-lucas-souza', hostRole: 'Proprietário', description: 'Kitnet mobiliada em uma das regiões mais acessíveis de Maceió.', distance: 'Ponta Verde · Maceió/AL', amenities: ['WI-FI', 'Mobiliado', 'Imóvel inteiro'] },
-  'vaga-village': { title: 'Apartamento compartilhado – Village', neighborhood: 'Village Campestre', type: 'Apartamento', room: 'Quarto individual', rent: 500, image: 'apartment', host: 'Maria Letícia', hostId: 'aluno-ofertador-maria-leticia', hostRole: 'Aluno ofertador', description: 'Vaga em apartamento compartilhado, ideal para estudante que busca dividir as despesas e a rotina.', distance: 'Village Campestre · Maceió/AL', amenities: ['WI-FI', 'Compartilhado', '2 moradores'] },
-  'vaga-farol': { title: 'Casa compartilhada no Farol', neighborhood: 'Farol', type: 'Casa', room: 'Quarto individual', rent: 700, image: 'house', host: 'Maria Letícia', hostId: 'aluno-ofertador-maria-leticia', hostRole: 'Aluno ofertador', description: 'Vaga em casa compartilhada, com quarto individual e espaços comuns mobiliados.', distance: 'Farol · Maceió/AL', amenities: ['WI-FI', 'Cozinha compartilhada', '2 moradores'] },
-};
-*/
+
 const propertyData = {};
 
-/* Abas de protótipo preservadas: Convivência e Contrato dependem de dados ainda não disponíveis na API. */
 const tabs = ['Descrição', 'Características', 'Regras'];
-/* Exemplo visual ocultado; mantido para referência.
-const featureRows = [
-  ['Tipo de moradia', 'República'], ['Quartos', '4 quartos'], ['Banheiros', '2'],
-  ['Mobiliado', 'Sim'], ['Lavanderia', 'Sim'], ['Varanda', 'Não'],
-  ['Garagem', 'Não'], ['Tipo de ambiente', 'Compartilhado'],
-];
-*/
+
 const featureRows = [];
-/* Exemplo visual ocultado; mantido para referência.
-const rules = ['Respeitar horários de silêncio', 'Manter os espaços compartilhados limpos', 'Visitas com aviso prévio', 'Não é permitido fumar'];
-*/
+
 const rules = [];
 
 function SectionHeading({ children }) {
@@ -259,7 +238,6 @@ export function PropertyDetailPage() {
           <aside className="property-detail-left">
             <section className="detail-gallery-card" aria-label="Fotos do imóvel">
               <div className={`detail-gallery-photo detail-photo-${property.image}`}>{property.photoUrl ? <img className="detail-listing-photo" src={property.photoUrl} alt={property.title} /> : <PropertyPhoto type={property.image} />}</div>
-              {/* Miniaturas de exemplo ocultadas; serão exibidas quando a API fornecer uma galeria. */}
             </section>
             <section className="detail-price-card"><SectionHeading>Valor e condições</SectionHeading><div className="detail-price-info"><LineIcon name="money" /><span>Valor do aluguel<strong>R$ {property.rent.toLocaleString('pt-BR')}/mês</strong></span></div></section>
             <section className="detail-location-section"><h2><span><LineIcon name="pin" size={21} /></span>Localização</h2><div className="detail-map"><MapView properties={[{ id: property.hostId, name: property.title, neighborhood: property.neighborhood, price: property.rent }]} /><button type="button" className="detail-map-button"><LineIcon name="map" />Ver mapa</button></div></section>
@@ -270,8 +248,6 @@ export function PropertyDetailPage() {
             <section className="detail-information-card"><nav className="detail-tabs" aria-label="Seções do anúncio">{tabs.map((tab) => <a key={tab} href={`#detail-${tab.toLowerCase()}`} className={activeTab === tab ? 'active' : ''} onClick={() => setActiveTab(tab)}>{tab}</a>)}</nav>
               <section id="detail-descrição" className="detail-info-section"><SectionHeading>Descrição</SectionHeading><div className="detail-description-text"><p>{property.description}</p></div></section>
               <section id="detail-características" className="detail-info-section"><SectionHeading>Características do imóvel</SectionHeading><div className="detail-feature-grid">{featureRows.map(([label, value], index) => <div className="detail-feature" key={label}><span className="detail-feature-icon"><LineIcon name={['homeGroup', 'homeGroup', 'home', 'home', 'calendar', 'home', 'home', 'users'][index]} size={16} /></span><span>{label}<small>{index === 1 ? `${property.rooms || value.split(' ')[0]} quartos` : index === 2 ? property.bathrooms || value : value}</small></span></div>)}</div></section>
-              {/* Protótipo de convivência ocultado e preservado no histórico do projeto. */}
-              {/* Protótipo de contrato ocultado e preservado no histórico do projeto. */}
               <section id="detail-regras" className="detail-info-section"><SectionHeading>Regras da casa</SectionHeading><div className="detail-rules">{(property.rules?.length ? property.rules : rules).map((rule) => <span key={rule}>{rule}</span>)}</div></section>
             </section>
           </div>

@@ -7,56 +7,16 @@ import { Logo } from '../components/Logo.jsx';
 import { AdminReportsPage } from './AdminReportsPage.jsx';
 import './AdminPanelPage.css';
 
-/* Navegação do protótipo preservada para referência.
-const navigation = [
-  { path: '/admin', label: 'Visão geral', icon: '⌂' },
-  { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
-  { path: '/admin/anuncios', label: 'Anúncios', icon: '□' },
-  { path: '/admin/denuncias', label: 'Denúncias', icon: '⚑' },
-  { path: '/admin/recomendacoes', label: 'Recomendações', icon: '◷' },
-  { path: '/admin/verificacoes', label: 'Verificações', icon: '☑' },
-  { path: '/admin/registros', label: 'Registros', icon: '☷' },
-  { path: '/admin/configuracoes', label: 'Configurações', icon: '⚙' },
-];
-*/
 const navigation = [
   { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
   { path: '/admin/anuncios', label: 'Anúncios', icon: '□' },
   { path: '/admin/denuncias', label: 'Denúncias', icon: '⚑' },
 ];
 
-/* Exemplo visual ocultado; mantido para referência.
-const demoVerificationUsers = [
-  { id: 'vnk-1038', name: 'Bianca Martins', email: 'bianca.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '12 nov 2026', initials: 'BM' },
-  { id: 'vnk-1029', name: 'Lucas Nascimento', email: 'lucas.n@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '11 nov 2026', initials: 'LN' },
-  { id: 'vnk-1036', name: 'João Pedro Reis', email: 'joao.p@aluno.ifal.edu.br', profile: 'Aluno-organizador', institution: 'IFAL', status: 'Em análise', date: '10 nov 2026', initials: 'JR' },
-  { id: 'usr-0541', name: 'Mariana Costa', email: 'mariana.costa@email.com', profile: 'Ofertante de imóvel', institution: '—', status: 'Não se aplica', date: '09 nov 2026', initials: 'MC' },
-  { id: 'vnk-1032', name: 'Ana Martins', email: 'ana.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '08 nov 2026', initials: 'AM' },
-  { id: 'vnk-1024', name: 'Caio Ribeiro', email: 'caio.r@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '07 nov 2026', initials: 'CR' },
-];
-*/
 const demoVerificationUsers = [];
 
-/* Exemplo visual ocultado; mantido para referência.
-const initialRecommendations = [
-  { id: 'REC-0185', person: 'Pedro Souza', author: 'Marina Alves', profile: 'Aluno-anfitrião · UFAL', status: 'Em conferência', message: 'Pedro cuida dos espaços comuns e mantém uma comunicação clara durante a nossa convivência.' },
-  { id: 'REC-0182', person: 'Lucas Nascimento', author: 'Ana Clara', profile: 'Aluno-anfitrião · UFAL', status: 'Publicada', message: 'Uma convivência muito boa e responsável.' },
-  { id: 'REC-0179', person: 'Mariana Costa', author: 'Luiza Barbosa', profile: 'Ofertante de imóvel', status: 'Conferir vínculo', message: 'Moramos juntas e tivemos uma boa experiência.' },
-  { id: 'REC-0175', person: 'João Nascimento', author: 'Caio Ribeiro', profile: 'Aluno-organizador · IFAL', status: 'Publicada', message: 'Organizado, atencioso e respeitoso com a casa.' },
-];
-*/
 const initialRecommendations = [];
 
-/* Exemplo visual ocultado; mantido para referência.
-const initialRecords = [
-  { date: '13 nov 2026', time: '10:24', owner: 'Carla Mendes', initials: 'CM', action: 'Vínculo universitário aprovado', area: 'Verificações', reference: 'VNK-1038', result: 'Concluído' },
-  { date: '13 nov 2026', time: '10:11', owner: 'Rafael Lima', initials: 'RL', action: 'Recomendação confirmada', area: 'Recomendações', reference: 'REC-0185', result: 'Concluído' },
-  { date: '13 nov 2026', time: '09:58', owner: 'Sistema Moraê', initials: '+', action: 'E-mail institucional confirmado', area: 'Usuários', reference: 'VNK-1044', result: 'Automático' },
-  { date: '12 nov 2026', time: '17:48', owner: 'Carla Mendes', initials: 'CM', action: 'Ajuste solicitado ao anunciante', area: 'Anúncios', reference: 'IMO-0318', result: 'Aguardando' },
-  { date: '12 nov 2026', time: '16:10', owner: 'Rafael Lima', initials: 'RL', action: 'Consentimento de exibição confirmado', area: 'Recomendações', reference: 'REC-0182', result: 'Concluído' },
-  { date: '12 nov 2026', time: '15:42', owner: 'Rafael Lima', initials: 'RL', action: 'Domínio institucional atualizado', area: 'Verificações', reference: 'UFAL', result: 'Concluído' },
-];
-*/
 const initialRecords = [];
 
 const pageInfo = {
