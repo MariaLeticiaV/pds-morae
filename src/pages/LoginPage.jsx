@@ -147,10 +147,29 @@ export function LoginPage() {
       const returnTo = location.state?.from;
 
       if (identifier.includes('@')) {
-        const result = await loginUser({
-          email: identifier,
-          password,
-        });
+        let result;
+        try {
+          result = await loginUser({
+            email: identifier,
+            password,
+          });
+        } catch (userError) {
+          // O e-mail pode ser da conta ligada a um administrador, que entra
+          // com a senha de administrador. Se também falhar, vale o erro original.
+          if (userError.status !== 401) throw userError;
+          try {
+            await loginAdministrator({ login: identifier, password });
+          } catch {
+            throw userError;
+          }
+          navigate(
+            typeof returnTo === 'string' && returnTo.startsWith('/admin/')
+              ? returnTo
+              : '/admin',
+            { replace: true },
+          );
+          return;
+        }
 
         const currentUser = getDemoUser();
         const role = currentUser?.role || 'estudante';

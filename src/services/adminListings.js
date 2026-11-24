@@ -13,6 +13,14 @@ export function getAdminListing(listingId, options = {}) {
   return adminRequest(`/admin/listings/${encodeURIComponent(listingId)}`, options);
 }
 
+export function moderateAdminListing(listingId, status) {
+  return adminRequest(`/admin/listings/${encodeURIComponent(listingId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+}
+
 async function adminRequest(path, options = {}) {
   const session = getAdministratorSession();
   if (!session) {
