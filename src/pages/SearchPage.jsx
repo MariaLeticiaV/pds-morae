@@ -6,9 +6,10 @@ import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListingStatuses } from '../utils/demoListings.js';
 import { MapView } from '../components/MapView/MapView.jsx';
+import { searchListings } from '../services/listings.js';
 import './SearchPage.css';
 
-const properties = [
+const DEMO_PROPERTIES = [
   { id: 1, listingId: 'apt-ufal', name: 'Apartamento com vista para o mar', neighborhood: 'Clima Bom', price: 900, type: 'Apartamento', rooms: 2, baths: 1, distance: '1,8 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'sea' },
   { id: 2, listingId: 'casa-farol', name: 'Casa compartilhada com quintal', neighborhood: 'Benedito Bentes', price: 850, type: 'Casa', rooms: 3, baths: 2, distance: '4,2 km da UFAL', tags: ['WI-FI', 'Próximo à UFAL', 'Mobiliado'], host: 'Proprietário', scene: 'house' },
   { id: 3, listingId: 'vaga-farol', name: 'Quarto individual aconchegante', neighborhood: 'Farol', price: 600, type: 'Quarto', rooms: 1, baths: 1, distance: '3,1 km da UFAL', tags: ['WI-FI', 'Quarto individual', 'Mobiliado'], host: 'Estudante', profileId: 'ana-beatriz', profileName: 'Ana Beatriz', scene: 'room' },
@@ -57,7 +58,7 @@ function PropertyCard({ property, favorite, onFavorite }) {
   return (
     <article className="listing-card" role="link" tabIndex={0} aria-label={`Ver detalhes de ${property.name}`} onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }} onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
       <div className="listing-image-wrap">
-        <PropertyIllustration scene={property.scene} />
+        {property.imageUrl ? <img className="listing-photo-image" src={property.imageUrl} alt={`Foto de ${property.name}`} loading="lazy" /> : <PropertyIllustration scene={property.scene} />}
         <span className="listing-photo-count">1 / 6</span>
         <button className={`favorite-button${favorite ? ' is-favorite' : ''}`} onClick={() => onFavorite(property.id)} aria-label={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} aria-pressed={favorite}>
           <Icon name="heart" size={20} fill={favorite ? 'currentColor' : 'none'} />
@@ -100,7 +101,7 @@ export function SearchPage() {
   const [favorites, setFavorites] = useState(() => {
     try {
       const savedFavorites = JSON.parse(localStorage.getItem('morae.favorites') || '[]');
-      return Array.isArray(savedFavorites) ? savedFavorites.filter(Number.isInteger) : [];
+      return Array.isArray(savedFavorites) ? savedFavorites.filter((id) => Number.isInteger(id) || typeof id === 'string') : [];
     } catch (error) {
       console.error('Não foi possível carregar os imóveis favoritos.', error);
       return [];
@@ -109,10 +110,29 @@ export function SearchPage() {
   const showFavorites = searchParams.get('favoritos') === '1';
   const [notification, setNotification] = useState('');
   const [viewMap, setViewMap] = useState(false);
+  const [apiProperties, setApiProperties] = useState(null);
+  const [loadingListings, setLoadingListings] = useState(true);
+  const [listingsError, setListingsError] = useState('');
   const [listingStatuses] = useState(() => getDemoListingStatuses());
   const demoUser = getDemoUser();
   const displayName = demoUser?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+
+  useEffect(() => {
+    let active = true;
+    setLoadingListings(true);
+    setListingsError('');
+    searchListings(location).then((result) => {
+      if (active) setApiProperties(result);
+    }).catch((error) => {
+      if (!active) return;
+      setApiProperties(null);
+      setListingsError(error.message);
+    }).finally(() => {
+      if (active) setLoadingListings(false);
+    });
+    return () => { active = false; };
+  }, [location]);
 
   useEffect(() => {
     try {
@@ -122,16 +142,18 @@ export function SearchPage() {
     }
   }, [favorites]);
 
-  const filteredProperties = useMemo(() => properties.filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
+  const availableProperties = apiProperties ?? DEMO_PROPERTIES;
+  const filteredProperties = useMemo(() => availableProperties.filter((property) => (listingStatuses[property.listingId] ?? 'active') === 'active').filter((property) => {
     const term = location.trim().toLocaleLowerCase('pt-BR');
-    const matchesPlace = showFavorites || !term || property.neighborhood.toLocaleLowerCase('pt-BR').includes(term) || property.distance.toLocaleLowerCase('pt-BR').includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
+    const searchableLocation = `${property.neighborhood} ${property.city || ''} ${property.state || ''} ${property.distance || ''}`.toLocaleLowerCase('pt-BR');
+    const matchesPlace = showFavorites || !term || searchableLocation.includes(term) || (term.includes('ufal') && true) || term.includes('maceió') || term.includes('maceio');
     const matchesType = showFavorites || type === 'Todos' || type === 'Qualquer tipo' || property.type === type || (type === 'República' && property.type === 'Quarto');
     const matchesBudget = showFavorites || !budget || property.price <= Number(budget);
     const matchesRooms = showFavorites || rooms === 'Qualquer' || property.rooms >= Number(rooms);
     const matchesAmenities = showFavorites || ((!wifiOnly || property.tags.includes('WI-FI')) && (!furnishedOnly || property.tags.includes('Mobiliado')));
     const matchesFavorite = !showFavorites || favorites.includes(property.id);
     return matchesPlace && matchesType && matchesBudget && matchesRooms && matchesAmenities && matchesFavorite;
-  }), [location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses]);
+  }), [availableProperties, location, type, budget, rooms, wifiOnly, furnishedOnly, showFavorites, favorites, listingStatuses]);
 
   function toggleFavorite(id) {
     setFavorites((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
@@ -196,6 +218,8 @@ export function SearchPage() {
           <div className={`results-layout${showFavorites ? ' favorites-results-layout' : ''}`}>
             <section className={`listing-section${showFavorites ? ' favorites-listing-section' : ''}`}>
               <div className="section-heading"><h2><Icon name={showFavorites ? 'heart' : 'home'} size={26} fill={showFavorites ? 'currentColor' : 'none'} />{showFavorites ? 'Sua lista de favoritos' : 'Imóveis em destaque'}</h2><span className="result-count">{filteredProperties.length} {filteredProperties.length === 1 ? 'opção' : 'opções'}</span><button className="see-all" onClick={showFavorites ? exploreProperties : () => { setShowFavorites(false); setLocation(''); setQuery(''); setType('Todos'); setBudget(''); }}>{showFavorites ? 'Explorar imóveis' : 'Ver todos'} <Icon name="arrow" size={19} /></button></div>
+              {loadingListings && <p className="listings-status" role="status">Carregando anúncios…</p>}
+              {listingsError && <p className="listings-status listings-demo-notice" role="status">{listingsError} Exibindo anúncios de demonstração.</p>}
               {showFavorites && <p className="favorites-help">Os anúncios que você favoritar ficam guardados aqui para consultar depois.</p>}
               {filteredProperties.length ? <div className="listing-grid">{filteredProperties.map((property) => <PropertyCard key={property.id} property={property} favorite={favorites.includes(property.id)} onFavorite={toggleFavorite} />)}</div> : showFavorites ? <div className="favorites-empty"><span><Icon name="heart" size={28} /></span><h3>Seus favoritos começam aqui</h3><p>Toque no coração de um anúncio para salvá-lo nesta lista.</p><button type="button" onClick={exploreProperties}>Explorar imóveis <Icon name="arrow" size={17} /></button></div> : <div className="empty-results"><span>⌕</span><h3>Nenhum imóvel encontrado</h3><p>Tente ampliar a localização ou ajustar os filtros para ver mais opções.</p><button onClick={exploreProperties}>Limpar busca</button></div>}
             </section>

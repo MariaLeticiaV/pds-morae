@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { MapView } from '../components/MapView/MapView.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing } from '../utils/demoListings.js';
+import { getListing } from '../services/listings.js';
 import { OwnerSidebar, OwnerTopbar, PropertyPhoto } from './OwnerDashboardPage.jsx';
 import './PropertyDetailPage.css';
 
@@ -45,9 +46,51 @@ export function PropertyDetailPage() {
   const [photo, setPhoto] = useState(0);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [apiProperty, setApiProperty] = useState(null);
+  const [loadingApiProperty, setLoadingApiProperty] = useState(false);
+  const [apiPropertyError, setApiPropertyError] = useState('');
   const displayName = user?.name || 'Aluno';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+  useEffect(() => {
+    if (propertyData[id]) {
+      setApiProperty(null);
+      setApiPropertyError('');
+      setLoadingApiProperty(false);
+      return undefined;
+    }
+
+    let active = true;
+    setLoadingApiProperty(true);
+    setApiPropertyError('');
+    getListing(id).then((listing) => {
+      if (!active) return;
+      setApiProperty({
+        id: listing.id,
+        title: listing.title,
+        neighborhood: listing.neighborhood,
+        type: listing.type,
+        room: `${listing.rooms} ${listing.rooms === 1 ? 'quarto' : 'quartos'}`,
+        rooms: listing.rooms,
+        bathrooms: listing.bathrooms,
+        rent: listing.rent,
+        image: 'apartment',
+        imageUrl: listing.imageUrl,
+        host: listing.host,
+        hostId: listing.hostId,
+        hostRole: listing.hostRole,
+        description: listing.description,
+        distance: listing.distance,
+        amenities: listing.amenities,
+      });
+    }).catch((error) => {
+      if (active) setApiPropertyError(error.message);
+    }).finally(() => {
+      if (active) setLoadingApiProperty(false);
+    });
+    return () => { active = false; };
+  }, [id]);
   const property = useMemo(() => {
+    if (apiProperty?.id === id) return apiProperty;
     const source = propertyData[id];
     if (!source) return null;
     const listing = getDemoListing(id);
@@ -64,9 +107,9 @@ export function PropertyDetailPage() {
       bathrooms: listing.bathrooms || '2',
       rules: listing.rules ? listing.rules.split(/[\n,;]/).map((rule) => rule.trim()).filter(Boolean) : rules,
     } : source;
-  }, [id]);
+  }, [id, apiProperty]);
 
-  if (!property) return <section className="property-detail-empty"><h1>Anúncio não encontrado</h1><Link to="/buscar">Voltar para buscar imóveis</Link></section>;
+  if (!property) return <section className="property-detail-empty"><h1>{loadingApiProperty ? 'Carregando anúncio…' : 'Anúncio não encontrado'}</h1>{apiPropertyError && <p>{apiPropertyError}</p>}<Link to="/buscar">Voltar para buscar imóveis</Link></section>;
 
   const messageParams = new URLSearchParams({ contato: property.hostId, nome: property.host, papel: property.hostRole, imovel: property.title });
   const backPath = role === 'ofertante' ? '/ofertante/vagas' : isOwner ? '/proprietario/imoveis' : '/buscar';
