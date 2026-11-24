@@ -1,0 +1,624 @@
+.rent-payment-page {
+  min-height: 100vh;
+  color: #285747;
+  background: #f7f8f5;
+  font-family: "Montserrat Alternates", sans-serif;
+}
+
+.rent-payment-header {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 0 clamp(20px, 5vw, 72px);
+  border-bottom: 1px solid #e3eeea;
+  background: #fff;
+}
+
+.rent-payment-brand {
+  color: #087f80;
+  font:
+    800 29px/1 "Poppins",
+    sans-serif;
+  letter-spacing: -2px;
+}
+
+.rent-payment-brand span {
+  color: #ee8bcc;
+}
+.rent-payment-header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.rent-payment-header nav a,
+.rent-payment-footer a {
+  color: #4b8177;
+  font-size: 12px;
+  font-weight: 700;
+}
+.rent-payment-header nav a:hover,
+.rent-payment-footer a:hover {
+  color: #007f80;
+}
+
+.rent-payment-main {
+  width: min(1110px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 34px 0 52px;
+}
+
+.rent-payment-hero {
+  position: relative;
+  display: flex;
+  min-height: 142px;
+  align-items: center;
+  gap: 18px;
+  overflow: hidden;
+  padding: 26px clamp(22px, 4vw, 42px);
+  border-radius: 20px;
+  background: #e8f7f0;
+}
+
+.rent-payment-icon {
+  z-index: 1;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  place-items: center;
+  border-radius: 50%;
+  color: #078889;
+  background: #c6e9df;
+  font:
+    700 28px "Poppins",
+    sans-serif;
+}
+
+.rent-payment-hero > div {
+  z-index: 1;
+}
+.rent-payment-eyebrow {
+  margin: 0 0 4px;
+  color: #6b9f91;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+}
+.rent-payment-hero h1 {
+  margin: 0;
+  color: #087f80;
+  font:
+    700 clamp(22px, 3vw, 30px)/1.2 "Poppins",
+    sans-serif;
+}
+.rent-payment-hero p:last-child {
+  margin: 7px 0 0;
+  color: #588579;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.rent-payment-hero-orbit {
+  position: absolute;
+  top: -70px;
+  right: 2%;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: #f8d9ef;
+}
+.rent-payment-hero-orbit::after {
+  position: absolute;
+  top: 50px;
+  left: 80px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: #c9ebcf;
+  content: "";
+}
+
+.rent-payment-notice,
+.rent-payment-error {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  border: 1px solid #b9dfd4;
+  border-radius: 11px;
+  color: #286d5c;
+  background: #f0fbf5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.rent-payment-error {
+  border-color: #efc3c4;
+  color: #9c3e4b;
+  background: #fff4f3;
+}
+.rent-payment-loading {
+  padding: 55px 20px;
+  color: #638b80;
+  text-align: center;
+  font-size: 13px;
+}
+
+.rent-payment-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 16px;
+  padding: 15px 19px;
+  border: 1px solid #d6e8e2;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.rent-payment-result > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.rent-payment-result strong {
+  color: #286454;
+  font-size: 13px;
+}
+.rent-payment-result p {
+  margin: 4px 0 0;
+  color: #70958b;
+  font-size: 11px;
+}
+.rent-payment-result > span:last-child {
+  color: #8a9e97;
+  font-size: 10px;
+}
+.rent-payment-result-dot,
+.rent-payment-connection-indicator {
+  display: block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: #e3a34b;
+}
+.rent-payment-result-dot.paid {
+  background: #55a96c;
+}
+.rent-payment-result-dot.rejected,
+.rent-payment-result-dot.cancelled {
+  background: #d26c70;
+}
+.rent-payment-result-dot.refunded {
+  background: #8b78b7;
+}
+
+.rent-payment-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(270px, 0.75fr);
+  gap: 16px;
+  margin-top: 18px;
+}
+.rent-payment-card {
+  padding: 22px;
+  border: 1px solid #deebe7;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 7px 22px #28574708;
+}
+.rent-payment-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 19px;
+}
+.rent-payment-section-heading > span {
+  display: grid;
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+  place-items: center;
+  border-radius: 50%;
+  color: #078889;
+  background: #e1f4ed;
+  font-size: 10px;
+  font-weight: 800;
+}
+.rent-payment-section-heading h2 {
+  margin: 0;
+  color: #147c78;
+  font:
+    600 17px "Poppins",
+    sans-serif;
+}
+.rent-payment-section-heading p {
+  margin: 4px 0 0;
+  color: #78968e;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.rent-payment-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+  color: #477d72;
+  font-size: 10px;
+  font-weight: 700;
+}
+.rent-payment-field input,
+.rent-payment-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cde2dc;
+  border-radius: 9px;
+  outline: none;
+  color: #315d53;
+  background: #fff;
+  font:
+    11px "Montserrat Alternates",
+    sans-serif;
+}
+.rent-payment-field input:focus,
+.rent-payment-field select:focus {
+  border-color: #078889;
+  box-shadow: 0 0 0 3px #0788891a;
+}
+.rent-checkout-card form {
+  display: grid;
+  gap: 14px;
+}
+.rent-payment-breakdown {
+  display: grid;
+  gap: 10px;
+  margin: 3px 0;
+  padding: 15px 0 0;
+  border-top: 1px solid #e5efeb;
+}
+.rent-payment-breakdown > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #6c8c82;
+  font-size: 11px;
+}
+.rent-payment-breakdown strong {
+  color: #437569;
+  font-size: 11px;
+}
+.rent-payment-breakdown .rent-payment-total {
+  padding-top: 11px;
+  border-top: 1px dashed #d5e5df;
+  color: #286957;
+  font-size: 12px;
+  font-weight: 800;
+}
+.rent-payment-breakdown .rent-payment-total strong {
+  color: #087f80;
+  font:
+    700 18px "Poppins",
+    sans-serif;
+}
+.rent-payment-inline-warning {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #8b6432;
+  background: #fff8e9;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.rent-payment-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.rent-payment-methods span {
+  padding: 5px 10px;
+  border: 1px solid #c8e5dd;
+  border-radius: 999px;
+  color: #498274;
+  background: #f6fcf9;
+  font-size: 9px;
+  font-weight: 700;
+}
+.rent-payment-primary,
+.rent-payment-secondary {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #078889;
+  font:
+    700 11px "Montserrat Alternates",
+    sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.rent-payment-primary:hover:not(:disabled),
+.rent-payment-secondary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #006f73;
+}
+.rent-payment-primary:disabled,
+.rent-payment-secondary:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+.rent-payment-secure-note {
+  margin: -4px 0 0;
+  color: #91a8a0;
+  font-size: 9px;
+  line-height: 1.55;
+}
+
+.rent-connection-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.rent-payment-connection {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 17px;
+  padding: 12px;
+  border: 1px solid #f0e2c7;
+  border-radius: 10px;
+  background: #fffcf5;
+}
+.rent-payment-connection.is-connected {
+  border-color: #d3e8d8;
+  background: #f4fbf5;
+}
+.rent-payment-connection-indicator {
+  margin-top: 3px;
+  background: #dba644;
+}
+.is-connected .rent-payment-connection-indicator {
+  background: #55a96c;
+}
+.rent-payment-connection strong {
+  color: #4f766b;
+  font-size: 11px;
+}
+.rent-payment-connection p {
+  margin: 4px 0 0;
+  color: #87a199;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.rent-payment-secondary {
+  width: 100%;
+  color: #087f80;
+  border: 1px solid #8cc9c1;
+  background: #f6fffb;
+}
+.rent-payment-secondary:hover:not(:disabled) {
+  color: #fff;
+}
+.rent-connection-card > small {
+  margin-top: 13px;
+  color: #91a8a0;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.rent-contract-create,
+.rent-contract-list {
+  margin-top: 16px;
+}
+.rent-contract-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+.rent-contract-form .rent-payment-primary {
+  align-self: end;
+}
+.rent-field-optional {
+  color: #9aaca5;
+  font-weight: 500;
+}
+.rent-contract-legal-note {
+  margin: 16px 0 0;
+  color: #91a8a0;
+  font-size: 9px;
+  line-height: 1.6;
+}
+.rent-payment-empty {
+  padding: 22px 18px;
+  border: 1px dashed #cfe3dc;
+  border-radius: 11px;
+  color: #5f8378;
+  background: #fbfefc;
+}
+.rent-payment-empty strong {
+  display: block;
+  font-size: 12px;
+}
+.rent-payment-empty p {
+  margin: 6px 0 0;
+  color: #89a39a;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.rent-contract-list-items {
+  display: grid;
+  gap: 9px;
+}
+.rent-contract-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #e1ede8;
+  border-radius: 11px;
+}
+.rent-contract-item-main {
+  min-width: 0;
+}
+.rent-contract-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.rent-contract-title-row h3 {
+  margin: 0;
+  color: #386e61;
+  font:
+    600 12px "Poppins",
+    sans-serif;
+}
+.rent-contract-item-main > p {
+  margin: 4px 0 8px;
+  color: #89a39a;
+  font-size: 9px;
+}
+.rent-contract-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  color: #75958a;
+  font-size: 9px;
+}
+.rent-contract-status {
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #8b6a36;
+  background: #fff4d8;
+  font-size: 8px;
+  font-weight: 800;
+}
+.rent-contract-status.active {
+  color: #328448;
+  background: #e2f5e5;
+}
+.rent-contract-status.rejected,
+.rent-contract-status.terminated {
+  color: #a75964;
+  background: #ffeded;
+}
+.rent-contract-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+.rent-contract-actions button,
+.rent-contract-terminate {
+  min-height: 31px;
+  padding: 0 11px;
+  border: 1px solid #9bcfc4;
+  border-radius: 8px;
+  color: #087f80;
+  background: #fff;
+  font:
+    700 9px "Montserrat Alternates",
+    sans-serif;
+  cursor: pointer;
+}
+.rent-contract-actions button:first-child {
+  color: #fff;
+  background: #078889;
+}
+.rent-contract-actions button.is-muted {
+  border-color: #e5d7d6;
+  color: #9b7777;
+  background: #fff;
+}
+.rent-contract-actions button:disabled,
+.rent-contract-terminate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rent-contract-waiting {
+  max-width: 190px;
+  color: #a17d40;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.rent-payment-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px clamp(20px, 5vw, 72px);
+  border-top: 1px solid #e3eeea;
+  color: #93a8a1;
+  background: #fff;
+  font-size: 9px;
+}
+
+@media (max-width: 760px) {
+  .rent-payment-main {
+    width: min(100% - 28px, 560px);
+    padding-top: 20px;
+  }
+  .rent-payment-header {
+    min-height: 62px;
+    padding: 0 15px;
+  }
+  .rent-payment-header nav {
+    gap: 12px;
+  }
+  .rent-payment-header nav a {
+    font-size: 10px;
+  }
+  .rent-payment-layout {
+    grid-template-columns: 1fr;
+  }
+  .rent-contract-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .rent-payment-hero {
+    min-height: 130px;
+    gap: 12px;
+    padding: 20px 16px;
+  }
+  .rent-payment-icon {
+    width: 45px;
+    height: 45px;
+    flex-basis: 45px;
+    font-size: 23px;
+  }
+  .rent-payment-hero p:last-child {
+    max-width: 250px;
+    font-size: 10px;
+  }
+  .rent-payment-card {
+    padding: 17px 14px;
+  }
+  .rent-contract-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .rent-contract-actions {
+    width: 100%;
+  }
+  .rent-contract-actions button {
+    flex: 1;
+  }
+  .rent-payment-result {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .rent-payment-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

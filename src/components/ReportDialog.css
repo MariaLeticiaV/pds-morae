@@ -1,0 +1,15 @@
+.report-dialog-overlay { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(25, 55, 59, .48); }
+.report-dialog { position: relative; width: min(100%, 430px); padding: 25px; border: 1px solid #dceaea; border-radius: 17px; color: #386e72; background: #fff; box-shadow: 0 20px 70px rgba(20, 66, 70, .2); }
+.report-dialog-close { position: absolute; top: 10px; right: 12px; width: 30px; height: 30px; border: 0; border-radius: 50%; color: #648b8e; background: #f1f8f8; font-size: 21px; cursor: pointer; }
+.report-dialog-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; color: #a65c83; background: #f9eaf2; font-size: 19px; font-weight: 700; }
+.report-dialog-icon.success { color: #0c8b78; background: #e2f6ee; }
+.report-dialog h2 { margin: 14px 0 6px; color: #27777a; font-size: 18px; }
+.report-dialog > p { margin: 0 0 15px; color: #6d8d90; font-size: 12px; line-height: 1.6; }
+.report-dialog form { display: grid; gap: 12px; }
+.report-dialog form label { display: grid; gap: 6px; color: #4a777b; font-size: 11px; font-weight: 700; }
+.report-dialog select, .report-dialog textarea { width: 100%; padding: 10px; border: 1px solid #d8e8e8; border-radius: 8px; outline-color: #078e90; color: #3c7074; background: #fff; font-family: inherit; font-size: 11px; line-height: 1.5; }
+.report-dialog textarea { resize: vertical; }
+.report-dialog form small { color: #86a3a5; font-size: 9px; font-weight: 400; }
+.report-dialog-submit { display: inline-flex; min-height: 38px; align-items: center; justify-content: center; margin-top: 4px; padding: 0 15px; border: 0; border-radius: 9px; color: #fff; background: #008f90; font-size: 11px; font-weight: 700; text-decoration: none; cursor: pointer; }
+.report-dialog-submit:disabled { opacity: .5; cursor: not-allowed; }
+.report-dialog-error { margin: 0; color: #a34444; font-size: 10px; }

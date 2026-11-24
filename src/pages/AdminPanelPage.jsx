@@ -1,50 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, NavLink, useLocation } from 'react-router-dom';
 import { getAdministratorSession, logoutAdministrator } from '../services/adminAuth.js';
-import { getAdminListing, listAdminListings } from '../services/adminListings.js';
+import { getAdminListing, listAdminListings, moderateAdminListing } from '../services/adminListings.js';
 import { changeAdminUserStatus, getAdminUser, listAdminUsers } from '../services/adminUsers.js';
 import { Logo } from '../components/Logo.jsx';
+import { AdminReportsPage } from './AdminReportsPage.jsx';
 import './AdminPanelPage.css';
 
 const navigation = [
-  { path: '/admin', label: 'Visão geral', icon: '⌂' },
   { path: '/admin/usuarios', label: 'Usuários', icon: '○' },
   { path: '/admin/anuncios', label: 'Anúncios', icon: '□' },
-  { path: '/admin/recomendacoes', label: 'Recomendações', icon: '◷' },
-  { path: '/admin/verificacoes', label: 'Verificações', icon: '☑' },
-  { path: '/admin/registros', label: 'Registros', icon: '☷' },
-  { path: '/admin/configuracoes', label: 'Configurações', icon: '⚙' },
+  { path: '/admin/denuncias', label: 'Denúncias', icon: '⚑' },
 ];
 
-const demoVerificationUsers = [
-  { id: 'vnk-1038', name: 'Bianca Martins', email: 'bianca.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '12 nov 2026', initials: 'BM' },
-  { id: 'vnk-1029', name: 'Lucas Nascimento', email: 'lucas.n@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '11 nov 2026', initials: 'LN' },
-  { id: 'vnk-1036', name: 'João Pedro Reis', email: 'joao.p@aluno.ifal.edu.br', profile: 'Aluno-organizador', institution: 'IFAL', status: 'Em análise', date: '10 nov 2026', initials: 'JR' },
-  { id: 'usr-0541', name: 'Mariana Costa', email: 'mariana.costa@email.com', profile: 'Ofertante de imóvel', institution: '—', status: 'Não se aplica', date: '09 nov 2026', initials: 'MC' },
-  { id: 'vnk-1032', name: 'Ana Martins', email: 'ana.m@ufal.br', profile: 'Aluna buscadora', institution: 'UFAL', status: 'Em análise', date: '08 nov 2026', initials: 'AM' },
-  { id: 'vnk-1024', name: 'Caio Ribeiro', email: 'caio.r@ufal.br', profile: 'Aluno-anfitrião', institution: 'UFAL', status: 'Verificado', date: '07 nov 2026', initials: 'CR' },
-];
+const demoVerificationUsers = [];
 
-const initialRecommendations = [
-  { id: 'REC-0185', person: 'Pedro Souza', author: 'Marina Alves', profile: 'Aluno-anfitrião · UFAL', status: 'Em conferência', message: 'Pedro cuida dos espaços comuns e mantém uma comunicação clara durante a nossa convivência.' },
-  { id: 'REC-0182', person: 'Lucas Nascimento', author: 'Ana Clara', profile: 'Aluno-anfitrião · UFAL', status: 'Publicada', message: 'Uma convivência muito boa e responsável.' },
-  { id: 'REC-0179', person: 'Mariana Costa', author: 'Luiza Barbosa', profile: 'Ofertante de imóvel', status: 'Conferir vínculo', message: 'Moramos juntas e tivemos uma boa experiência.' },
-  { id: 'REC-0175', person: 'João Nascimento', author: 'Caio Ribeiro', profile: 'Aluno-organizador · IFAL', status: 'Publicada', message: 'Organizado, atencioso e respeitoso com a casa.' },
-];
+const initialRecommendations = [];
 
-const initialRecords = [
-  { date: '13 nov 2026', time: '10:24', owner: 'Carla Mendes', initials: 'CM', action: 'Vínculo universitário aprovado', area: 'Verificações', reference: 'VNK-1038', result: 'Concluído' },
-  { date: '13 nov 2026', time: '10:11', owner: 'Rafael Lima', initials: 'RL', action: 'Recomendação confirmada', area: 'Recomendações', reference: 'REC-0185', result: 'Concluído' },
-  { date: '13 nov 2026', time: '09:58', owner: 'Sistema Moraê', initials: '+', action: 'E-mail institucional confirmado', area: 'Usuários', reference: 'VNK-1044', result: 'Automático' },
-  { date: '12 nov 2026', time: '17:48', owner: 'Carla Mendes', initials: 'CM', action: 'Ajuste solicitado ao anunciante', area: 'Anúncios', reference: 'IMO-0318', result: 'Aguardando' },
-  { date: '12 nov 2026', time: '16:10', owner: 'Rafael Lima', initials: 'RL', action: 'Consentimento de exibição confirmado', area: 'Recomendações', reference: 'REC-0182', result: 'Concluído' },
-  { date: '12 nov 2026', time: '15:42', owner: 'Rafael Lima', initials: 'RL', action: 'Domínio institucional atualizado', area: 'Verificações', reference: 'UFAL', result: 'Concluído' },
-];
+const initialRecords = [];
 
 const pageInfo = {
   '': ['Visão geral', 'Acompanhe as revisões e mantenha a comunidade Moraê segura.'],
   usuarios: ['Usuários e vínculos', 'Confira o vínculo acadêmico e acompanhe as contas cadastradas.'],
-  anuncios: ['Anúncios cadastrados', 'Consulte os imóveis e vagas publicados na plataforma.'],
+  anuncios: ['Anúncios cadastrados', 'Aprove ou rejeite os imóveis e vagas enviados à plataforma.'],
+  denuncias: ['Denúncias', 'Analise ocorrências reportadas pela comunidade e registre o encaminhamento.'],
   recomendacoes: ['Recomendações', 'Acompanhe recomendações de convivência e os selos exibidos nos perfis.'],
   verificacoes: ['Verificações de vínculo', 'Revise solicitações de vínculo acadêmico enviadas por estudantes.'],
   registros: ['Registros de atividade', 'Consulte ações da equipe e eventos do sistema em um histórico único.'],
@@ -92,15 +71,17 @@ export function AdminPanelPage() {
   const [adsLoading, setAdsLoading] = useState(false);
   const [adsError, setAdsError] = useState('');
   const [adsRefresh, setAdsRefresh] = useState(0);
+  const [reportsRefresh, setReportsRefresh] = useState(0);
   const [adPage, setAdPage] = useState(1);
   const [adDetail, setAdDetail] = useState(null);
   const [adDetailLoading, setAdDetailLoading] = useState(false);
   const [adDetailError, setAdDetailError] = useState('');
+  const [adModerating, setAdModerating] = useState(false);
   const [recommendations, setRecommendations] = useState(initialRecommendations);
   const [notice, setNotice] = useState('');
   const [search, setSearch] = useState('');
   const [selectedAd, setSelectedAd] = useState('');
-  const [selectedRecommendation, setSelectedRecommendation] = useState(initialRecommendations[0].id);
+  const [selectedRecommendation, setSelectedRecommendation] = useState(initialRecommendations[0]?.id ?? '');
   const [userStatus, setUserStatus] = useState('Todos');
   const [adStatus, setAdStatus] = useState('');
   const [recommendationStatus, setRecommendationStatus] = useState('Status');
@@ -115,7 +96,7 @@ export function AdminPanelPage() {
     `${item.id} ${item.person} ${item.author}`.toLocaleLowerCase('pt-BR').includes(searchValue) &&
     (recommendationStatus === 'Status' || item.status === recommendationStatus)
   ));
-  const activeRecommendation = recommendations.find((item) => item.id === selectedRecommendation) || recommendations[0];
+  const activeRecommendation = recommendations.find((item) => item.id === selectedRecommendation) || null;
   const reviewerName = session?.login.replace(/[._-]/g, ' ').replace(/\b\w/g, (letter) => letter.toLocaleUpperCase('pt-BR')) || '';
   const initials = reviewerName.split(' ').map((part) => part[0]).slice(0, 2).join('');
 
@@ -133,8 +114,13 @@ export function AdminPanelPage() {
         limit: 25,
         signal: controller.signal,
       }).then((result) => {
-        setUsers(result.items);
-        setTotalUsers(result.total);
+        const adminUserId = session.userId.trim().toLocaleLowerCase('pt-BR');
+        const visibleUsers = result.items.filter((user) => (
+          String(user.id).trim().toLocaleLowerCase('pt-BR') !== adminUserId
+        ));
+        const excludedCount = result.items.length - visibleUsers.length;
+        setUsers(visibleUsers);
+        setTotalUsers(Math.max(0, result.total - excludedCount));
       }).catch((error) => {
         if (error.name !== 'AbortError') setUsersError(error.message);
       }).finally(() => {
@@ -246,6 +232,27 @@ export function AdminPanelPage() {
     }
   }
 
+  async function moderateAd(status) {
+    if (!adDetail || adModerating) return;
+    if (status === 'REJECTED' && !window.confirm(`Rejeitar o anúncio "${adDetail.title}"? Ele não aparecerá na busca.`)) return;
+
+    setAdModerating(true);
+    try {
+      const updated = await moderateAdminListing(adDetail.listingId, status);
+      setAdDetail(updated);
+      setAds((current) => current.map((ad) => (
+        ad.listingId === updated.listingId ? { ...ad, status: updated.status } : ad
+      )));
+      showNotice(status === 'APPROVED'
+        ? `Anúncio "${updated.title}" aprovado: ele já aparece na busca.`
+        : `Anúncio "${updated.title}" rejeitado.`);
+    } catch (error) {
+      showNotice(error.message || 'Não foi possível moderar o anúncio.');
+    } finally {
+      setAdModerating(false);
+    }
+  }
+
   function updateRecommendationStatus(status) {
     setRecommendations((current) => current.map((item) => item.id === activeRecommendation.id ? { ...item, status } : item));
     showNotice(`Recomendação ${activeRecommendation.id}: ${status.toLocaleLowerCase('pt-BR')}. A alteração está nesta sessão do navegador.`);
@@ -274,7 +281,7 @@ export function AdminPanelPage() {
         </Link>
         <span className="admin-nav-caption">ESPAÇO DE TRABALHO</span>
         <nav className="admin-navigation" aria-label="Administração">
-          {navigation.slice(0, 6).map((item) => (
+          {navigation.filter((item) => item.path !== '/admin/configuracoes').map((item) => (
             <NavLink
               end={item.path === '/admin'}
               key={item.path}
@@ -291,7 +298,7 @@ export function AdminPanelPage() {
           <span>⚙</span>Configurações
         </NavLink>
         <div className="admin-sidebar-bottom">
-          <div className="admin-trust-card"><strong><span>✓</span>{pageKey === 'usuarios' ? ' Contas protegidas' : ' Protótipo de equipe'}</strong><p>{pageKey === 'usuarios' ? 'Alterações de contas exigem permissão administrativa.' : 'As revisões demonstradas não são persistidas pela API.'}</p></div>
+          <div className="admin-trust-card"><strong><span>✓</span>{pageKey === 'usuarios' ? ' Contas protegidas' : pageKey === 'denuncias' ? ' Moderação protegida' : ' Protótipo de equipe'}</strong><p>{pageKey === 'usuarios' ? 'Alterações de contas exigem permissão administrativa.' : pageKey === 'denuncias' ? 'Acesso às denúncias exige a permissão VIEW_REPORTS.' : 'As revisões demonstradas não são persistidas pela API.'}</p></div>
           <div className="admin-sidebar-user"><Avatar>{initials}</Avatar><span><strong>{reviewerName}</strong><small>Administradora</small></span></div>
         </div>
       </aside>
@@ -310,18 +317,21 @@ export function AdminPanelPage() {
             <div><h1>{title}</h1><p>{subtitle}</p></div>
             {pageKey === '' && <button className="admin-primary-button" onClick={() => showNotice('O backend ainda não oferece uma operação para criar comunicados.')} type="button">＋ Novo comunicado</button>}
             {pageKey === 'anuncios' && <button className="admin-outline-button" onClick={() => setAdsRefresh((current) => current + 1)} type="button">Atualizar lista</button>}
+            {pageKey === 'denuncias' && <button className="admin-outline-button" onClick={() => setReportsRefresh((current) => current + 1)} type="button">Atualizar lista</button>}
             {pageKey === 'usuarios' && userId && <Link className="admin-outline-button" to="/admin/usuarios">‹ Voltar à lista</Link>}
           </div>
 
           {pageKey === 'usuarios'
             ? <div className="admin-prototype-banner" role="note"><strong>Gerenciamento de contas:</strong> os dados e alterações desta seção são consultados e salvos no banco de dados.</div>
             : pageKey === 'anuncios'
-              ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> listagem e consulta obtidas diretamente do banco de dados.</div>
-            : <div className="admin-prototype-banner" role="note"><strong>Protótipo:</strong> as demais áreas administrativas ainda exibem dados demonstrativos.</div>}
+              ? <div className="admin-prototype-banner" role="note"><strong>Anúncios:</strong> anúncios novos ficam pendentes até serem aprovados aqui; só os aprovados aparecem na busca.</div>
+            : pageKey === 'denuncias'
+              ? <div className="admin-prototype-banner" role="note"><strong>Moderação:</strong> denúncias e atualizações são persistidas; anotações ficam visíveis apenas à equipe autorizada.</div>
+            : null}
 
           {notice && <div className="admin-notice" role="status">{notice}<button onClick={() => setNotice('')} type="button" aria-label="Fechar aviso">×</button></div>}
 
-          {pageKey === '' && <Overview showNotice={showNotice} />}
+          {pageKey === '' && <p className="admin-empty">O resumo administrativo ainda não possui dados integrados.</p>}
           {pageKey === 'usuarios' && !userId && (
             <UsersPage
               users={users}
@@ -360,27 +370,25 @@ export function AdminPanelPage() {
               detailLoading={adDetailLoading}
               detailError={adDetailError}
               onSelect={setSelectedAd}
+              moderating={adModerating}
+              onModerate={moderateAd}
               search={search}
               onSearch={(value) => { setSearch(value); setAdPage(1); }}
             />
           )}
-          {pageKey === 'recomendacoes' && (
-            <RecommendationsPage
-              items={filteredRecommendations}
-              active={activeRecommendation}
-              onSelect={setSelectedRecommendation}
-              onAction={updateRecommendationStatus}
+          {pageKey === 'denuncias' && (
+            <AdminReportsPage
               search={search}
-              onSearch={setSearch}
-              status={recommendationStatus}
-              onStatus={setRecommendationStatus}
+              refresh={reportsRefresh}
+              onNotice={showNotice}
             />
           )}
-          {pageKey === 'verificacoes' && <VerificationsPage users={demoVerificationUsers} search={search} onSearch={setSearch} />}
-          {pageKey === 'registros' && <RecordsPage onExport={exportRecords} search={search} onSearch={setSearch} />}
-          {pageKey === 'configuracoes' && <SettingsPage settings={settings} setSettings={setSettings} onSave={() => showNotice('Preferências salvas nesta sessão do navegador.')} />}
-          {!['', 'usuarios', 'anuncios', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
-            <Overview showNotice={showNotice} />
+          {pageKey === 'recomendacoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'verificacoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'registros' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {pageKey === 'configuracoes' && <p className="admin-empty">Esta área ainda não possui dados integrados.</p>}
+          {!['', 'usuarios', 'anuncios', 'denuncias', 'recomendacoes', 'verificacoes', 'registros', 'configuracoes'].includes(pageKey) && (
+            <p className="admin-empty">Esta área ainda não possui dados integrados.</p>
           )}
         </div>
       </div>
@@ -388,6 +396,7 @@ export function AdminPanelPage() {
   );
 }
 
+/* Protótipo ocultado; mantido para referência.
 function Overview({ showNotice }) {
   return (
     <>
@@ -431,6 +440,8 @@ function Overview({ showNotice }) {
     </>
   );
 }
+
+*/
 
 function ActivityItem({ title, detail, time }) {
   return <div className="admin-activity-item"><span /><div><strong>{title}</strong><small>{detail}</small></div><time>{time}</time></div>;
@@ -538,6 +549,8 @@ function AdsPage({
   detailLoading,
   detailError,
   onSelect,
+  moderating,
+  onModerate,
   search,
   onSearch,
 }) {
@@ -556,6 +569,8 @@ function AdsPage({
             <option value="IN_REVIEW">Em análise</option>
             <option value="APPROVED">Aprovado</option>
             <option value="REJECTED">Rejeitado</option>
+            <option value="ARCHIVED">Arquivado</option>
+            <option value="REMOVED">Removido</option>
           </select>
         </div>
         {loading && <p className="admin-empty" role="status">Carregando anúncios...</p>}
@@ -604,6 +619,7 @@ function AdsPage({
           <>
             <div className="admin-panel-heading"><h2>{activeAd.title}</h2><Badge tone={listingStatusTone(activeAd.status)}>{listingStatusLabel(activeAd.status)}</Badge></div>
             <p className="admin-panel-subtitle">ID: {activeAd.listingId}</p>
+            <ListingModeration listing={activeAd} moderating={moderating} onModerate={onModerate} />
             {activeAd.media?.length > 0 && (
               <div className="admin-listing-gallery">
                 {activeAd.media.map((image) => (
@@ -656,14 +672,40 @@ function minimumStayLabel(value) {
   return ({ NO_MINIMUM: 'Sem permanência mínima', THREE_MONTHS: '3 meses', SIX_MONTHS: '6 meses', TWELVE_MONTHS: '12 meses' })[value] || value;
 }
 
+function ListingModeration({ listing, moderating, onModerate }) {
+  const awaitingReview = listing.status === 'PENDING' || listing.status === 'IN_REVIEW';
+  const message = {
+    PENDING: 'Aguardando moderação: o anúncio só aparece na busca depois de aprovado.',
+    IN_REVIEW: 'Em análise: o anúncio só aparece na busca depois de aprovado.',
+    APPROVED: 'Publicado na busca. Para retirá-lo do ar, use a área de Denúncias.',
+    REJECTED: 'Rejeitado: fora da busca. Você pode reavaliar e aprovar.',
+    ARCHIVED: 'Arquivado pelo anunciante.',
+    REMOVED: 'Removido após denúncia.',
+  }[listing.status];
+
+  return (
+    <div className="admin-listing-moderation">
+      {message && <p>{message}</p>}
+      {(awaitingReview || listing.status === 'REJECTED') && (
+        <div className="admin-listing-moderation-actions">
+          <button className="admin-primary-button" disabled={moderating} onClick={() => onModerate('APPROVED')} type="button">Aprovar anúncio</button>
+          {awaitingReview && <button className="admin-outline-button" disabled={moderating} onClick={() => onModerate('REJECTED')} type="button">Rejeitar anúncio</button>}
+        </div>
+      )}
+      {moderating && <p role="status">Salvando decisão...</p>}
+    </div>
+  );
+}
+
 function listingStatusLabel(value) {
-  return ({ PENDING: 'Pendente', IN_REVIEW: 'Em análise', APPROVED: 'Aprovado', REJECTED: 'Rejeitado' })[value] || value;
+  return ({ PENDING: 'Pendente', IN_REVIEW: 'Em análise', APPROVED: 'Aprovado', REJECTED: 'Rejeitado', ARCHIVED: 'Arquivado', REMOVED: 'Removido' })[value] || value;
 }
 
 function listingStatusTone(value) {
   return ({ APPROVED: 'green', REJECTED: 'pink', PENDING: 'purple', IN_REVIEW: 'teal' })[value] || 'neutral';
 }
 
+/* Protótipo ocultado; mantido para referência.
 function RecommendationsPage({ items, active, onSelect, onAction, search, onSearch, status, onStatus }) {
   return (
     <>
@@ -693,6 +735,9 @@ function RecommendationsPage({ items, active, onSelect, onAction, search, onSear
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function VerificationsPage({ users, search, onSearch }) {
   const [stage, setStage] = useState('Etapa');
   const requests = users.filter((user) => (
@@ -732,6 +777,9 @@ function VerificationsPage({ users, search, onSearch }) {
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function RecordsPage({ onExport, search, onSearch }) {
   const filteredRecords = initialRecords.filter((record) => `${record.date} ${record.owner} ${record.action} ${record.area} ${record.reference}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')));
   return (
@@ -755,6 +803,9 @@ function RecordsPage({ onExport, search, onSearch }) {
   );
 }
 
+*/
+
+/* Protótipo ocultado; mantido para referência.
 function SettingsPage({ settings, setSettings, onSave }) {
   function toggle(key) {
     setSettings((current) => ({ ...current, [key]: !current[key] }));
@@ -777,6 +828,8 @@ function SettingsPage({ settings, setSettings, onSave }) {
     </div>
   );
 }
+
+*/
 
 function SettingRow({ title, description, enabled, onToggle, button, onClick }) {
   return <div className="admin-setting-row"><div><strong>{title}</strong>{description && <small>{description}</small>}</div>{button ? <button className="admin-outline-button" onClick={onClick} type="button">{button}</button> : <button aria-checked={enabled} aria-label={title} className={`admin-toggle${enabled ? ' on' : ''}`} onClick={onToggle} role="switch" type="button"><span /></button>}</div>;

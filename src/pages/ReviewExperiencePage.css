@@ -1,0 +1,52 @@
+.review-experience-shell { display:flex; min-height:calc(100vh - 128px); background:#f7fbfa; color:#264846; font-family:'Poppins',sans-serif; }
+.review-experience-main { min-width:0; flex:1; }
+.review-experience-header { display:flex; min-height:58px; align-items:center; justify-content:space-between; padding:0 clamp(18px,4vw,48px); border-bottom:1px solid #e1ece9; background:#fff; }
+.review-experience-header a { color:#078889; font-size:12px; text-decoration:none; }
+.review-experience-header span { color:#78a09d; font-size:11px; }
+.review-experience-content { width:min(100%,920px); margin:0 auto; padding:30px 22px 54px; }
+.review-experience-hero { display:flex; align-items:center; gap:17px; margin-bottom:22px; padding:23px; border-radius:17px; background:linear-gradient(115deg,#e1f7ee,#eff9f7 65%,#fbeaf3); }
+.review-experience-icon { display:grid; width:53px; height:53px; flex:0 0 53px; place-items:center; border-radius:16px; color:#fff; background:#07908e; }
+.review-experience-hero p { margin:0 0 4px; color:#d14f8e; font-size:11px; font-weight:600; }
+.review-experience-hero h1 { margin:0; color:#087f80; font-size:25px; }
+.review-experience-hero div > span { display:block; margin-top:5px; color:#678987; font-size:12px; }
+.review-state-card,.review-form-card,.review-contract-list { padding:23px; border:1px solid #dcebe7; border-radius:15px; background:#fff; box-shadow:0 4px 16px #173a340b; }
+.review-state-card { display:grid; justify-items:start; gap:10px; }
+.review-state-card h2,.review-contract-list h2 { margin:0; color:#087f80; font-size:17px; }
+.review-state-card p,.review-contract-list > p { margin:0; color:#6b8886; font-size:12px; line-height:1.6; }
+.review-state-card a,.review-success a { color:#d7dfdc; font-size:12px; font-weight:600; }
+.review-success > span { display:grid; width:38px; height:38px; place-items:center; border-radius:50%; color:#fff; background:#27a878; font-size:22px; }
+.review-success button,.review-back-button { padding:0; border:0; color:#087f80; background:transparent; font:600 12px 'Poppins',sans-serif; cursor:pointer; }
+.review-contract-list { display:grid; gap:11px; }
+.review-contract-list article { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px; border:1px solid #e0ece9; border-radius:10px; }
+.review-contract-list article div { display:grid; gap:4px; }
+.review-contract-list article strong { color:#315d5b; font-size:13px; }
+.review-contract-list article span { color:#78918f; font-size:11px; }
+.review-contract-list article a { display:flex; align-items:center; gap:6px; color:#078889; font-size:11px; font-weight:600; text-decoration:none; }
+.review-form-card { display:grid; gap:16px; }
+.review-back-button { justify-self:start; }
+.review-property-summary { display:flex; align-items:center; gap:12px; padding:14px; border-radius:11px; background:#eff9f5; }
+.review-property-summary > span { display:grid; width:40px; height:40px; flex:0 0 40px; place-items:center; border-radius:50%; color:#078889; background:#d8f1e7; }
+.review-property-summary h2 { margin:0; color:#087f80; font-size:15px; }
+.review-property-summary p,.review-property-summary small { display:block; margin:4px 0 0; color:#70908e; font-size:11px; }
+.review-form-card form { display:grid; gap:16px; }
+.review-criteria { display:grid; gap:0; margin:0; padding:0; border:0; }
+.review-criteria legend { margin-bottom:5px; color:#315d5b; font-size:14px; font-weight:600; }
+.review-criterion { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:12px 0; border-bottom:1px solid #edf2f0; }
+.review-criterion > div:first-child { display:grid; gap:3px; }
+.review-criterion strong { color:#365c5a; font-size:12px; }
+.review-criterion small { color:#829997; font-size:10px; }
+.review-rating-buttons { display:flex; flex:0 0 auto; gap:3px; }
+.review-rating-buttons button { padding:2px; border:0; color:#d7dfdc; background:transparent; font-size:25px; line-height:1; cursor:pointer; }
+.review-rating-buttons button.selected { color:#edaa35; }
+.review-rating-buttons button:focus-visible { outline:2px solid #078889; outline-offset:2px; }
+.review-comment-field { display:grid; gap:7px; color:#315d5b; font-size:12px; font-weight:600; }
+.review-comment-field textarea { width:100%; box-sizing:border-box; resize:vertical; padding:12px; border:1px solid #cfdfdb; border-radius:9px; color:#365c5a; background:#fff; font:400 12px/1.5 'Poppins',sans-serif; }
+.review-comment-field textarea:focus { border-color:#078889; outline:2px solid #07888930; }
+.review-comment-field small { justify-self:end; color:#809795; font-size:10px; font-weight:400; }
+.review-rules { padding:12px 14px; border-radius:9px; color:#6c7774; background:#fff8e9; font-size:10px; line-height:1.55; }
+.review-rules strong { color:#8d6a25; }
+.review-rules ul { display:grid; gap:4px; margin:6px 0 0; padding-left:17px; }
+.review-form-error { margin:0; color:#ad3d50; font-size:12px; }
+.review-primary-action { display:inline-flex; min-height:40px; align-items:center; justify-content:center; padding:0 18px; border:0; border-radius:8px; color:#fff; background:#078889; font:600 12px 'Poppins',sans-serif; text-decoration:none; cursor:pointer; }
+.review-primary-action:disabled { opacity:.5; cursor:not-allowed; }
+@media(max-width:700px) { .review-experience-shell { min-height:calc(100vh - 75px); }.review-experience-content { padding:18px 12px 35px; }.review-experience-header { min-height:51px; padding:0 14px; }.review-experience-hero { gap:12px; padding:17px; }.review-experience-icon { width:43px; height:43px; flex-basis:43px; }.review-experience-hero h1 { font-size:20px; }.review-experience-hero div > span { font-size:10px; }.review-form-card,.review-contract-list,.review-state-card { padding:16px; }.review-criterion { align-items:flex-start; flex-direction:column; gap:8px; }.review-contract-list article { align-items:flex-start; flex-direction:column; }.review-contract-list article a { min-height:30px; } }

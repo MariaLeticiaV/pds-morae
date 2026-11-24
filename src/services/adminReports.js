@@ -1,0 +1,60 @@
+import { getAdministratorSession } from './adminAuth.js';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+export function listAdminReports({ search, status, page, limit, signal }) {
+  const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (search) query.set('search', search);
+  if (status) query.set('status', status);
+  return adminRequest(`/admin/reports?${query}`, { signal });
+}
+
+export function updateAdminReport(reportId, payload) {
+  return adminRequest(`/admin/reports/${encodeURIComponent(reportId)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function removeReportedProfile(reportId) {
+  return adminRequest(`/admin/reports/${encodeURIComponent(reportId)}/remove-profile`, {
+    method: 'POST',
+  });
+}
+
+export function removeReportedListing(reportId) {
+  return adminRequest(`/admin/reports/${encodeURIComponent(reportId)}/remove-listing`, {
+    method: 'POST',
+  });
+}
+
+async function adminRequest(path, options = {}) {
+  const session = getAdministratorSession();
+  if (!session) throw new Error('Sua sessão administrativa expirou. Entre novamente.');
+
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(`Não foi possível conectar à API em ${API_URL}.`);
+    }
+    throw error;
+  }
+
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = Array.isArray(body?.message)
+      ? body.message.join(' ')
+      : body?.message;
+    throw new Error(message || 'Não foi possível consultar as denúncias.');
+  }
+  return body;
+}

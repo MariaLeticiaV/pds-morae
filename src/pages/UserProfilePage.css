@@ -12,8 +12,10 @@
 .profile-small-avatar { display: grid; width: 33px; height: 33px; place-items: center; border: 2px solid #e6ecea; border-radius: 50%; color: #fff; background: #93a7a6; font-size: 14px; }
 .profile-top-chevron { width: 7px; height: 7px; margin: -3px 2px 0 1px; border-right: 1.7px solid #728781; border-bottom: 1.7px solid #728781; transform: rotate(45deg); }
 .profile-page-content { display: flex; width: 100%; max-width: 1450px; flex-direction: column; gap: 12px; margin: 0 auto; padding: 16px clamp(16px, 2.5vw, 36px) 32px; }
+.profile-load-state { padding: 24px; border: 1px solid #d9f1eb; border-radius: 15px; color: #4e6464; background: #fff; font-size: 12px; text-align: center; }
 .profile-hero { position: relative; display: flex; min-height: 160px; align-items: center; gap: 24px; overflow: hidden; padding: 20px clamp(20px, 3vw, 40px); border: 1px solid #d9f1eb; border-radius: 18px; background: linear-gradient(112deg, #fff 0%, #fbfffd 68%, #fdfaff 100%); }
 .profile-large-avatar { position: relative; z-index: 1; display: grid; width: 112px; height: 112px; flex: 0 0 112px; place-items: center; border: 5px solid #f5fbf9; border-radius: 50%; color: #fff; background: linear-gradient(135deg, #d58c71, #a95e70 48%, #edc29e); box-shadow: 0 3px 11px #345e5924; font-family: 'Poppins', sans-serif; font-size: 29px; font-weight: 800; }
+.profile-large-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .profile-large-avatar.avatar-carolina { background: linear-gradient(135deg, #613e31, #a2674a 52%, #d8ad8a); }
 .profile-large-avatar i { position: absolute; right: 1px; bottom: 4px; width: 17px; height: 17px; border: 3px solid #fff; border-radius: 50%; background: #32bd71; }
 .profile-hero-info { position: relative; z-index: 1; min-width: 0; }
@@ -27,6 +29,8 @@
 .profile-hero-actions a { border-color: #008b8c; color: #fff; background: #008b8c; }
 .profile-hero-actions a:hover { background: #007477; }
 .profile-hero-actions button:hover { background: #d2f2e9; }
+.profile-hero-actions .profile-report-button { border-color:#eed4e1; color:#a85c7c; background:#fff7fa; }
+.profile-hero-actions .profile-report-button:hover { background:#fcebf3; }
 .profile-hero-blob { position: absolute; pointer-events: none; }
 .profile-blob-green { top: -79px; right: 4%; width: 162px; height: 162px; border-radius: 50%; background: #c9efc0; opacity: .75; }
 .profile-blob-pink { right: -32px; bottom: -83px; width: 130px; height: 170px; border-radius: 70% 0 0 0; background: #f5c7ec; transform: rotate(20deg); }
@@ -46,6 +50,10 @@
 .academic-detail small, .profile-preference-grid small { color: #347e79; font-size: 9px; }
 .academic-detail strong, .profile-preference-grid strong { color: #4f6c6d; font-size: 10px; font-weight: 500; }
 .profile-preferences, .profile-habits, .profile-reviews { scroll-margin-top: 16px; }
+.profile-review-summary { margin-left:auto; color:#73918e; font-size:10px; font-weight:500; }
+.profile-review-load { color:#6b8886; font-size:11px; }
+.review-card .review-author { display:block; margin-top:4px; color:#78918f; font-size:9px; }
+.no-reviews > a { margin-top:9px; color:#078889; font-size:10px; font-weight:700; }
 .profile-preference-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .profile-preference-grid > div { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 3px 11px; }
 .profile-preference-grid > div + div { border-left: 1px solid #edf0ef; }
@@ -98,6 +106,18 @@
 .compatibility-list li { display: flex; align-items: center; gap: 9px; color: #4c626b; font-size: 10px; line-height: 1.4; }
 .compatibility-list li .profile-icon-badge { width: 27px; height: 27px; flex-basis: 27px; font-size: 12px; }
 .difference-list li .profile-icon-badge { color: #d66c76; background: #fff0ed; }
+.compatibility-level { display: block; margin-bottom: 3px; font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.compatibility-summary.level-medium { color: #6b4f0e; background: #fff4cc; }
+.compatibility-summary.level-low { color: #8a2f3c; background: #fde8eb; }
+.compatibility-breakdown { margin-top: 4px; }
+.compatibility-breakdown h3 { margin: 0 0 8px; color: #078889; font-family: 'Poppins', sans-serif; font-size: 12px; }
+.compatibility-breakdown ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.compatibility-breakdown li { display: grid; grid-template-columns: minmax(0, 130px) 1fr 34px; align-items: center; gap: 10px; color: #4c626b; font-size: 10px; }
+.compatibility-breakdown small { color: #4c706c; font-size: 9px; font-weight: 700; text-align: right; }
+.compatibility-bar { display: block; height: 7px; overflow: hidden; border-radius: 999px; background: #e1f3ef; }
+.compatibility-bar i { display: block; height: 100%; border-radius: inherit; background: #078889; }
+.compatibility-list li.is-critical { color: #8a2f3c; }
+.compatibility-critical-tag { flex: none; padding: 2px 7px; border-radius: 999px; color: #fff; background: #c4485a; font-size: 8px; text-transform: uppercase; }
 .compatibility-note { margin: 18px 0 0; padding: 13px 15px; border-radius: 12px; color: #604a18; background: #fff4cc; font-size: 10px; line-height: 1.55; }
 @media (max-width: 820px) {
   .profile-preference-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -139,4 +159,5 @@
   .compatibility-summary { margin: 15px 0; font-size: 10px; }
   .compatibility-list ul { padding-left: 4px; }
   .compatibility-list li { font-size: 9px; }
+  .compatibility-breakdown li { grid-template-columns: minmax(0, 100px) 1fr 30px; gap: 7px; font-size: 9px; }
 }
