@@ -141,8 +141,7 @@ export function MyProfilePage() {
   const [message, setMessage] = useState('');
   const [activeTab, setActiveTab] = useState(() => window.location.hash.slice(1) || 'informacoes');
   const photoInput = useRef(null);
-  // Nome, e-mail e telefone vêm da API quando há sessão; os demais campos
-  // ainda não existem no backend e continuam salvos só neste navegador.
+  // Com sessão, conta e respostas do cadastro são carregadas da API.
   const isAuthenticated = Boolean(getAccessToken() && getUserSession());
   const [account, setAccount] = useState(null);
   const [apiProfile, setApiProfile] = useState(null);
@@ -159,7 +158,20 @@ export function MyProfilePage() {
       .then((data) => {
         if (cancelled) return;
         setAccount(data);
-        const merge = (current) => ({ ...current, name: data.name, email: data.email, phone: data.phone ?? '', photo: data.photoUrl ?? '' });
+        const savedAnswers = profileFromSignup({
+          ...demoUser,
+          name: data.name,
+          role: data.role || demoUser?.role,
+          profile: data.profileData,
+        });
+        const merge = (current) => ({
+          ...current,
+          ...savedAnswers,
+          name: data.name,
+          email: data.email,
+          phone: data.phone ?? '',
+          photo: data.photoUrl ?? '',
+        });
         setProfile(merge);
         setDraft(merge);
       })

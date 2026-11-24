@@ -990,6 +990,8 @@ function mapMyAccount(body) {
     photoUrl: resolveMediaUrl(body.photoUrl) || null,
     emailVerified: body.emailVerified,
     status: body.status,
+    role: body.role,
+    profileData: body.profileData && typeof body.profileData === 'object' ? body.profileData : {},
   };
 }
 
@@ -1095,6 +1097,12 @@ function withResolvedPhoto(view) {
 
 export async function getMyProfile() {
   return withResolvedPhoto(await authenticatedRequest('/users/me/profile'));
+}
+
+// O endpoint de estudante mantém as respostas estruturadas usadas na comparação
+// de compatibilidade. Também serve como fallback para versões da API sem /users/me/profile.
+export async function getMyStudentProfile() {
+  return authenticatedRequest('/students/me');
 }
 
 export async function getUserProfile(userId) {
