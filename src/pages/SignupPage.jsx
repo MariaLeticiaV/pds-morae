@@ -103,6 +103,15 @@ function isValidCellphone(value) {
   return digits(value).length === 11;
 }
 
+function isValidPassword(value) {
+  const password = String(value ?? '');
+  return password.length >= 8
+    && /[a-z]/.test(password)
+    && /[A-Z]/.test(password)
+    && /\d/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
+}
+
 function isAtLeast18(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value ?? ''))) return false;
   const birthDate = new Date(`${value}T00:00:00`);
@@ -123,26 +132,16 @@ function adultBirthDateLimit() {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function SignupDataValidation({ answers }) {
-  const checks = [
-    ['CPF', answers.cpf, isValidCpf(answers.cpf)],
-    ['E-mail', answers.email, isValidEmail(answers.email)],
-    ['Celular', answers.phone, isValidCellphone(answers.phone)],
-    ['Data de nascimento (mínimo 18 anos)', answers.birthDate, isAtLeast18(answers.birthDate)],
-  ];
-  return (
-    <aside className="signup-live-validation" aria-live="polite">
-      <strong>Informe CPF, e-mail, celular e data de nascimento válidos.</strong>
-      <ul>
-        {checks.map(([label, value, valid]) => (
-          <li className={!value ? 'pending' : valid ? 'valid' : 'invalid'} key={label}>
-            <span aria-hidden="true">{!value ? '•' : valid ? '✓' : '!'}</span>
-            {label}: {!value ? 'aguardando preenchimento' : valid ? 'válido' : 'verifique o valor informado'}
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
+function cepValidationHint(value, message) {
+  const length = digits(value).length;
+  if (!length) return '';
+  if (length < 8) return 'Informe os 8 números do CEP.';
+  return message || 'Buscando endereço pelo CEP…';
+}
+
+function validationHint(value, valid, validMessage, invalidMessage) {
+  if (!value) return '';
+  return valid ? validMessage : invalidMessage;
 }
 
 // Persist only scalar answers and simple arrays. Never send passwords or File objects
@@ -179,6 +178,7 @@ function Field({
   required = false,
   placeholder = '',
   hint = '',
+  hintState = '',
   value,
   onChange,
   ...props
@@ -200,7 +200,11 @@ function Field({
         {...props}
       />
 
-      {hint && <small className="signup-field-hint">{hint}</small>}
+      {hint && (
+        <small className={`signup-field-hint ${hintState}`} aria-live="polite" role="status">
+          {hint}
+        </small>
+      )}
     </label>
   );
 }
@@ -382,7 +386,7 @@ export function SignupPage() {
   });
 
   const [completed, setCompleted] = useState(false);
-  const [passwordError, setPasswordError] = useState('');
+  const [cpfServerError, setCpfServerError] = useState('');
   const [stepError, setStepError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cepLookupMessage, setCepLookupMessage] = useState('');
@@ -392,7 +396,10 @@ export function SignupPage() {
   useEffect(() => {
     const isOwnerAddress = profileId === 'proprietario' && activeStep === 1;
     const isOwnerProperty = profileId === 'proprietario' && activeStep === 2;
-    const cepField = isOwnerAddress ? 'zip' : isOwnerProperty ? 'propertyZip' : null;
+    const isHostListing = profileId === 'ofertante' && activeStep === 3;
+    const cepField = isOwnerAddress
+      ? 'zip'
+      : (isOwnerProperty || isHostListing) ? 'propertyZip' : null;
     if (!cepField) return undefined;
 
     const cep = digits(answers[cepField]);
@@ -410,7 +417,7 @@ export function SignupPage() {
       })
       .then((result) => {
         if (result.erro) throw new Error('CEP não encontrado. Preencha o endereço manualmente.');
-        setAnswers((current) => isOwnerAddress
+        setAnswers((current) => (isOwnerAddress
           ? {
             ...current,
             address: result.logradouro || current.address || '',
@@ -418,13 +425,21 @@ export function SignupPage() {
             city: result.localidade || current.city || '',
             state: result.estado || current.state || '',
           }
-          : {
-            ...current,
-            propertyStreet: result.logradouro || current.propertyStreet || '',
-            propertyNeighborhood: result.bairro || current.propertyNeighborhood || '',
-            propertyCity: result.localidade || current.propertyCity || '',
-            propertyState: result.estado || current.propertyState || '',
-          });
+          : isHostListing
+            ? {
+              ...current,
+              propertyAddress: [result.logradouro, result.bairro, result.localidade, result.estado]
+                .filter(Boolean).join(', '),
+              neighborhood: result.bairro || current.neighborhood || '',
+              listingState: result.estado || current.listingState || '',
+            }
+            : {
+              ...current,
+              propertyStreet: result.logradouro || current.propertyStreet || '',
+              propertyNeighborhood: result.bairro || current.propertyNeighborhood || '',
+              propertyCity: result.localidade || current.propertyCity || '',
+              propertyState: result.estado || current.propertyState || '',
+            }));
         setCepLookupMessage('Endereço preenchido pelo CEP. Confira e complete o número.');
       })
       .catch((error) => {
@@ -445,9 +460,7 @@ export function SignupPage() {
           : signupInputMasks[name]?.(value) ?? value,
     }));
 
-    if (name === 'password' || name === 'confirmPassword') {
-      setPasswordError('');
-    }
+    if (name === 'cpf') setCpfServerError('');
 
     setStepError('');
   }
@@ -478,7 +491,7 @@ export function SignupPage() {
     });
 
     setCompleted(false);
-    setPasswordError('');
+    setCpfServerError('');
     setStepError('');
     setIsSubmitting(false);
   }
@@ -493,9 +506,9 @@ export function SignupPage() {
         && isValidEmail(answers.email)
         && isValidCellphone(answers.phone)
         && isAtLeast18(answers.birthDate)
-        && Boolean(answers.gender);
+        && Boolean(answers.gender)
+        && isValidPassword(answers.password);
       if (!validRegistrationData) {
-        setStepError('Informe CPF, e-mail, celular e data de nascimento válidos. É necessário ter pelo menos 18 anos e selecionar o gênero.');
         return;
       }
     }
@@ -504,9 +517,6 @@ export function SignupPage() {
       activeStep === 1 &&
       answers.password !== answers.confirmPassword
     ) {
-      setPasswordError(
-        'As senhas não coincidem. Confira os campos e tente novamente.',
-      );
       return;
     }
 
@@ -533,7 +543,6 @@ export function SignupPage() {
       }
     }
 
-    setPasswordError('');
     setStepError('');
 
     if (activeStep < activeProfile.steps.length) {
@@ -646,9 +655,12 @@ export function SignupPage() {
         );
 
         const message = error.message || 'Não foi possível concluir o cadastro. Confira os dados e tente novamente.';
-        setStepError(/cpf/i.test(message) && /(já|ja|existe|cadastrad|duplic|used|already)/i.test(message)
-          ? 'Este CPF já está cadastrado. Confira o número ou entre na sua conta.'
-          : message);
+        if (/cpf/i.test(message) && /(já|ja|existe|cadastrad|duplic|used|already)/i.test(message)) {
+          setCpfServerError('Este CPF já está cadastrado. Confira o número ou entre na sua conta.');
+          setActiveStep(1);
+        } else {
+          setStepError(message);
+        }
       } finally {
         setIsSubmitting(false);
       }
@@ -681,6 +693,8 @@ export function SignupPage() {
             placeholder="seuemail@exemplo.com"
             value={answers.email}
             onChange={updateAnswer}
+            hint={validationHint(answers.email, isValidEmail(answers.email), 'E-mail válido.', 'Informe um e-mail válido.')}
+            hintState={isValidEmail(answers.email) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -690,9 +704,13 @@ export function SignupPage() {
             required
             minLength={8}
             autoComplete="new-password"
-            placeholder="Mínimo de 8 caracteres"
+            placeholder="Use maiúsculas, minúsculas, números e símbolo"
             value={answers.password}
             onChange={updateAnswer}
+            hint={answers.password ? (isValidPassword(answers.password)
+              ? 'Senha segura.'
+              : 'Use pelo menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.') : ''}
+            hintState={isValidPassword(answers.password) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -705,13 +723,9 @@ export function SignupPage() {
             placeholder="Digite a senha novamente"
             value={answers.confirmPassword}
             onChange={updateAnswer}
+            hint={answers.confirmPassword ? (answers.confirmPassword === answers.password ? 'As senhas coincidem.' : 'As senhas não coincidem.') : ''}
+            hintState={answers.confirmPassword === answers.password ? 'valid' : 'invalid'}
           />
-
-          {passwordError && (
-            <p className="signup-password-error" role="alert">
-              {passwordError}
-            </p>
-          )}
 
           <Field
             label="CPF"
@@ -721,6 +735,8 @@ export function SignupPage() {
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
+            hint={cpfServerError || validationHint(answers.cpf, isValidCpf(answers.cpf), 'CPF válido.', 'CPF inválido. Confira os números.')}
+            hintState={cpfServerError ? 'invalid' : isValidCpf(answers.cpf) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -733,6 +749,8 @@ export function SignupPage() {
             autoComplete="tel"
             value={answers.phone}
             onChange={updateAnswer}
+            hint={validationHint(answers.phone, isValidCellphone(answers.phone), 'Celular válido.', 'Informe DDD e número com 11 dígitos.')}
+            hintState={isValidCellphone(answers.phone) ? 'valid' : 'invalid'}
           />
 
           <SelectField
@@ -752,6 +770,8 @@ export function SignupPage() {
             max={adultBirthDateLimit()}
             value={answers.birthDate}
             onChange={updateAnswer}
+            hint={validationHint(answers.birthDate, isAtLeast18(answers.birthDate), 'Idade válida.', 'É necessário ter pelo menos 18 anos.')}
+            hintState={isAtLeast18(answers.birthDate) ? 'valid' : 'invalid'}
           />
 
           <SelectField
@@ -841,8 +861,6 @@ export function SignupPage() {
           />
         </div>
 
-        <SignupDataValidation answers={answers} />
-
         <p className="signup-privacy">
           Seus dados estão seguros. Usaremos essas informações apenas para
           cadastro e validação na plataforma.
@@ -871,6 +889,8 @@ export function SignupPage() {
             autoComplete="email"
             value={answers.email}
             onChange={updateAnswer}
+            hint={validationHint(answers.email, isValidEmail(answers.email), 'E-mail válido.', 'Informe um e-mail válido.')}
+            hintState={isValidEmail(answers.email) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -880,9 +900,13 @@ export function SignupPage() {
             required
             minLength={8}
             autoComplete="new-password"
-            placeholder="Mínimo de 8 caracteres"
+            placeholder="Use maiúsculas, minúsculas, números e símbolo"
             value={answers.password}
             onChange={updateAnswer}
+            hint={answers.password ? (isValidPassword(answers.password)
+              ? 'Senha segura.'
+              : 'Use pelo menos 8 caracteres, com maiúscula, minúscula, número e caractere especial.') : ''}
+            hintState={isValidPassword(answers.password) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -895,13 +919,9 @@ export function SignupPage() {
             placeholder="Digite a senha novamente"
             value={answers.confirmPassword}
             onChange={updateAnswer}
+            hint={answers.confirmPassword ? (answers.confirmPassword === answers.password ? 'As senhas coincidem.' : 'As senhas não coincidem.') : ''}
+            hintState={answers.confirmPassword === answers.password ? 'valid' : 'invalid'}
           />
-
-          {passwordError && (
-            <p className="signup-password-error" role="alert">
-              {passwordError}
-            </p>
-          )}
 
           <Field
             label="CPF"
@@ -911,6 +931,8 @@ export function SignupPage() {
             placeholder="000.000.000-00"
             value={answers.cpf}
             onChange={updateAnswer}
+            hint={cpfServerError || validationHint(answers.cpf, isValidCpf(answers.cpf), 'CPF válido.', 'CPF inválido. Confira os números.')}
+            hintState={cpfServerError ? 'invalid' : isValidCpf(answers.cpf) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -923,6 +945,8 @@ export function SignupPage() {
             autoComplete="tel"
             value={answers.phone}
             onChange={updateAnswer}
+            hint={validationHint(answers.phone, isValidCellphone(answers.phone), 'Celular válido.', 'Informe DDD e número com 11 dígitos.')}
+            hintState={isValidCellphone(answers.phone) ? 'valid' : 'invalid'}
           />
 
           <Field
@@ -933,6 +957,8 @@ export function SignupPage() {
             max={adultBirthDateLimit()}
             value={answers.birthDate}
             onChange={updateAnswer}
+            hint={validationHint(answers.birthDate, isAtLeast18(answers.birthDate), 'Idade válida.', 'É necessário ter pelo menos 18 anos.')}
+            hintState={isAtLeast18(answers.birthDate) ? 'valid' : 'invalid'}
           />
 
           <SelectField
@@ -953,6 +979,8 @@ export function SignupPage() {
             placeholder="00000-000"
             value={answers.zip}
             onChange={updateAnswer}
+            hint={cepValidationHint(answers.zip, cepLookupMessage)}
+            hintState={cepLookupMessage.includes('não') || cepLookupMessage.includes('Não') || cepLookupMessage.includes('Falha') ? 'invalid' : 'info'}
           />
 
           <Field
@@ -989,9 +1017,6 @@ export function SignupPage() {
             onChange={updateAnswer}
           />
         </div>
-
-        <SignupDataValidation answers={answers} />
-        {cepLookupMessage && <p className="signup-cep-message" role="status">{cepLookupMessage}</p>}
 
         <p className="signup-privacy">
           Seus dados estão seguros. Usaremos essas informações apenas para
@@ -1212,6 +1237,19 @@ export function SignupPage() {
           />
 
           <Field
+            label="CEP do imóvel"
+            name="propertyZip"
+            required
+            inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="00000-000"
+            value={answers.propertyZip}
+            onChange={updateAnswer}
+            hint={cepValidationHint(answers.propertyZip, cepLookupMessage)}
+            hintState={cepLookupMessage.includes('não') || cepLookupMessage.includes('Não') || cepLookupMessage.includes('Falha') ? 'invalid' : 'info'}
+          />
+
+          <Field
             label="Endereço"
             name="propertyAddress"
             required
@@ -1338,6 +1376,8 @@ export function SignupPage() {
             autoComplete="postal-code"            placeholder="00000-000"
             value={answers.propertyZip}
             onChange={updateAnswer}
+            hint={cepValidationHint(answers.propertyZip, cepLookupMessage)}
+            hintState={cepLookupMessage.includes('não') || cepLookupMessage.includes('Não') || cepLookupMessage.includes('Falha') ? 'invalid' : 'info'}
           />
 
           <SelectField
@@ -1488,7 +1528,6 @@ export function SignupPage() {
             onChange={updateAnswer}
           />
         </div>
-        {cepLookupMessage && <p className="signup-cep-message" role="status">{cepLookupMessage}</p>}
       </>
     );
   }

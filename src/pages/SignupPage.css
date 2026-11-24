@@ -41,6 +41,9 @@
 .signup-field input:not([type='checkbox']):not([type='file']), .signup-field select, .signup-field textarea { width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid #9bd1d1; border-radius: 8px; outline-color: #008b8c; color: #23463b; background: #fff; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; font-weight: 500; }
 .signup-field input::placeholder, .signup-field textarea::placeholder { color: #909a97; }
 .signup-field-hint { color:#617b75; font-size:10px; font-weight:400; line-height:1.4; }
+.signup-field-hint.valid { color:#247b4b; }
+.signup-field-hint.invalid { color:#b4235a; }
+.signup-field-hint.info { color:#087f80; }
 .signup-field textarea { min-height: 82px; resize: vertical; }
 .signup-field-wide, .signup-check-group, .signup-upload { grid-column: 1 / -1; }
 .signup-check-group { min-width: 0; margin: 0; padding: 0; border: 0; }
@@ -52,14 +55,6 @@
 .signup-upload-control input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .signup-upload-control small { overflow: hidden; font-size: 11px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .signup-privacy { margin: 18px 0 0; padding: 11px 14px; border-radius: 8px; color: #247c78; background: #e8f8f6; font-size: 11px; line-height: 1.5; }
-.signup-live-validation { margin-top: 14px; padding: 12px 14px; border: 1px solid #b7dcda; border-radius: 9px; color: #315b53; background: #f3fbf9; text-align: left; font-size: 11px; }
-.signup-live-validation strong { display: block; margin-bottom: 7px; color: #087f80; }
-.signup-live-validation ul { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; padding: 0; list-style: none; }
-.signup-live-validation li { display: inline-flex; align-items: center; gap: 5px; }
-.signup-live-validation .valid { color: #247b4b; }
-.signup-live-validation .invalid { color: #b4235a; }
-.signup-live-validation .pending { color: #687774; }
-.signup-cep-message { margin: 8px 0 0; color: #087f80; font-size: 11px; line-height: 1.5; }
 .signup-section-title { margin: 22px 0 12px; color: #078889; font-family: 'Poppins', sans-serif; font-size: 15px; }
 .signup-stage-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 24px; }
 .signup-continue, .signup-secondary-button { display: inline-flex; min-width: 150px; min-height: 43px; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; border: 0; border-radius: 999px; color: #fff; background: #008b8c; font-family: 'Montserrat Alternates', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .18s; }
