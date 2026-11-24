@@ -154,13 +154,9 @@ export function AdminPanelPage() {
         limit: 25,
         signal: controller.signal,
       }).then((result) => {
-        const adminIdentity = [session.id, session.email, session.login]
-          .filter(Boolean)
-          .map((value) => String(value).trim().toLocaleLowerCase('pt-BR'));
+        const adminUserId = session.userId.trim().toLocaleLowerCase('pt-BR');
         const visibleUsers = result.items.filter((user) => (
-          ![user.id, user.email, user.login, user.username]
-            .filter(Boolean)
-            .some((value) => adminIdentity.includes(String(value).trim().toLocaleLowerCase('pt-BR')))
+          String(user.id).trim().toLocaleLowerCase('pt-BR') !== adminUserId
         ));
         const excludedCount = result.items.length - visibleUsers.length;
         setUsers(visibleUsers);
