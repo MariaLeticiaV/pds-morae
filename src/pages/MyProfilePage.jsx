@@ -4,7 +4,7 @@ import { OwnerSidebar } from './OwnerDashboardPage.jsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LineIcon as Icon } from '../components/LineIcon.jsx';
 import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
-import { getAccessToken, getMyAccount, getMyProfile, updateMyAccount, updateMyProfile } from '../services/api.js';
+import { getAccessToken, getMyAccount, getMyProfile, removeMyPhoto, updateMyAccount, updateMyProfile, uploadMyPhoto, validateImageFile } from '../services/api.js';
 import { formatBudget, optionLabels, parseBudget, toCode, toLabel } from '../services/profileOptions.js';
 import { getUserSession, saveUserSession } from '../services/userAuth.js';
 import './MyProfilePage.css';
@@ -147,6 +147,7 @@ export function MyProfilePage() {
   const [account, setAccount] = useState(null);
   const [apiProfile, setApiProfile] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const isStudentAccount = apiProfile
     ? Boolean(apiProfile.student)
     : ['estudante', 'ofertante'].includes(demoUser?.role);
@@ -158,7 +159,7 @@ export function MyProfilePage() {
       .then((data) => {
         if (cancelled) return;
         setAccount(data);
-        const merge = (current) => ({ ...current, name: data.name, email: data.email, phone: data.phone ?? '', ...(data.photoUrl ? { photo: data.photoUrl } : {}) });
+        const merge = (current) => ({ ...current, name: data.name, email: data.email, phone: data.phone ?? '', photo: data.photoUrl ?? '' });
         setProfile(merge);
         setDraft(merge);
       })
@@ -259,9 +260,37 @@ export function MyProfilePage() {
       : 'Perfil atualizado com sucesso.');
     window.setTimeout(() => setMessage(''), emailChanged ? 8000 : 3500);
   }
+  function flash(text) {
+    setMessage(text);
+    window.setTimeout(() => setMessage(''), 3500);
+  }
+  // Com sessão, a foto vai para o servidor (PUT /users/me/photo) e vale em
+  // qualquer dispositivo; sem sessão, continua só neste navegador.
+  async function changeAccountPhoto(action, successMessage) {
+    setPhotoBusy(true);
+    try {
+      const updated = await action();
+      setAccount(updated);
+      const withPhoto = (current) => ({ ...current, photo: updated.photoUrl ?? '' });
+      setProfile(withPhoto);
+      setDraft(withPhoto);
+      flash(successMessage);
+    } catch (error) {
+      flash(error.message || 'Não foi possível atualizar a foto de perfil.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
   function choosePhoto(event) {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
+    if (isAuthenticated) {
+      const problem = validateImageFile(file);
+      if (problem) { flash(problem); return; }
+      changeAccountPhoto(() => uploadMyPhoto(file), 'Foto de perfil atualizada.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const nextProfile = { ...profile, photo: String(reader.result) };
@@ -289,9 +318,10 @@ export function MyProfilePage() {
           {message && <p className="my-profile-toast" role="status">{message}</p>}
           <section className="my-profile-hero">
             <div className="my-avatar-area">
-              <button type="button" className="my-avatar" onClick={() => editing && photoInput.current?.click()} aria-label="Alterar foto de perfil" disabled={!editing}>{profile.photo ? <img src={profile.photo} alt="Foto de perfil" /> : <span>{initials}</span>}</button>
-              {editing && <button type="button" className="my-camera-button" onClick={() => photoInput.current?.click()} aria-label="Enviar foto"><Icon name="camera" size={17} /></button>}
-              <input ref={photoInput} className="my-photo-input" type="file" accept="image/*" onChange={choosePhoto} />
+              <button type="button" className="my-avatar" onClick={() => editing && photoInput.current?.click()} aria-label="Alterar foto de perfil" disabled={!editing || photoBusy}>{profile.photo ? <img src={profile.photo} alt="Foto de perfil" /> : <span>{initials}</span>}</button>
+              {editing && <button type="button" className="my-camera-button" onClick={() => photoInput.current?.click()} aria-label="Enviar foto" disabled={photoBusy}><Icon name="camera" size={17} /></button>}
+              {editing && isAuthenticated && profile.photo && <button type="button" className="my-remove-photo" onClick={() => changeAccountPhoto(removeMyPhoto, 'Foto de perfil removida.')} disabled={photoBusy}>Remover foto</button>}
+              <input ref={photoInput} className="my-photo-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={choosePhoto} />
             </div>
             <div className="my-profile-identity"><h2>{profile.name}</h2><p><Icon name={isStudentAccount ? 'school' : 'homeGroup'} size={17} /> {roleLabel}{isStudentAccount && profile.university ? ` · ${profile.university}` : ''}</p>{isStudentAccount && <div className="my-profile-tags">{[profile.period, profile.course, profile.university, roleLabel === 'Aluno ofertador' ? 'Oferece vaga' : 'Moradia Estudantil'].filter(Boolean).map((tag) => <span key={tag}>{tag}</span>)}</div>}</div>
             <span className="my-hero-orbit my-orbit-green" /><span className="my-hero-orbit my-orbit-pink" />
