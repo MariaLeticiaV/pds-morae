@@ -6,6 +6,7 @@ import { publishProperty } from '../services/api.js';
 import { getUserSession } from '../services/userAuth.js';
 import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListing, saveDemoListing } from '../utils/demoListings.js';
+import { maskCep } from '../utils/masks.js';
 import './AnnouncePropertyPage.css';
 
 const steps = [
@@ -46,6 +47,9 @@ export function AnnouncePropertyPage() {
   const [submittedListing, setSubmittedListing] = useState(null);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const formRef = useRef(null);
+  const cepLookupController = useRef(null);
+  const resolvedCepRef = useRef('');
+  const [cepLookupMessage, setCepLookupMessage] = useState('');
 
   useEffect(() => {
     const previews = photos.map((file) => ({ file, url: URL.createObjectURL(file) }));
@@ -69,6 +73,62 @@ export function AnnouncePropertyPage() {
     formRef.current.querySelectorAll('input[name="amenities"]').forEach((checkbox) => { checkbox.checked = selectedAmenities.has(checkbox.value); });
     setStatus('Edite as informações já cadastradas e salve as alterações.');
   }, [editId]);
+
+  useEffect(() => () => cepLookupController.current?.abort(), []);
+
+  async function lookupAddressByCep(value) {
+    const cep = String(value ?? '').replace(/\D/g, '');
+    if (cep.length !== 8) {
+      setCepLookupMessage(cep ? 'Informe os 8 números do CEP.' : '');
+      return;
+    }
+    if (resolvedCepRef.current === cep) return;
+
+    cepLookupController.current?.abort();
+    const controller = new AbortController();
+    cepLookupController.current = controller;
+    setCepLookupMessage('Buscando endereço pelo CEP…');
+
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal });
+      if (!response.ok) throw new Error('Não foi possível consultar o CEP. Tente novamente.');
+      const result = await response.json();
+      if (controller !== cepLookupController.current) return;
+      if (result.erro) throw new Error('CEP não encontrado. Confira os números.');
+
+      const form = formRef.current;
+      const fields = {
+        street: result.logradouro,
+        neighborhood: result.bairro,
+        city: result.localidade,
+        state: result.uf,
+      };
+      Object.entries(fields).forEach(([name, fieldValue]) => {
+        const field = form?.elements.namedItem(name);
+        if (field && fieldValue) field.value = fieldValue;
+      });
+      resolvedCepRef.current = cep;
+      setCepLookupMessage('Endereço preenchido pelo CEP. Confira e complete o número.');
+    } catch (error) {
+      if (error.name !== 'AbortError' && controller === cepLookupController.current) {
+        setCepLookupMessage(error instanceof TypeError
+          ? 'Não foi possível consultar o CEP. Verifique sua conexão e tente novamente.'
+          : error.message || 'Não foi possível buscar o CEP. Tente novamente.');
+      }
+    }
+  }
+
+  function handleCepChange(event) {
+    const formattedCep = maskCep(event.target.value);
+    event.target.value = formattedCep;
+    const digits = formattedCep.replace(/\D/g, '');
+    if (digits !== resolvedCepRef.current) resolvedCepRef.current = '';
+    if (digits.length === 8) lookupAddressByCep(digits);
+    else {
+      cepLookupController.current?.abort();
+      setCepLookupMessage(digits ? 'Informe os 8 números do CEP.' : '');
+    }
+  }
 
   function addPhotoFiles(files) {
     const selected = Array.from(files ?? []);
@@ -193,7 +253,10 @@ export function AnnouncePropertyPage() {
             <section className="announce-card" id="property-address">
               <SectionHeading title="Endereço do imóvel" description="Informe onde o imóvel está localizado." />
               <div className="announce-fields-grid address-fields">
-                <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="Digite o CEP" required /></FormField>
+                <div className="announce-cep-field">
+                  <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="Digite o CEP" maxLength={9} onChange={handleCepChange} onBlur={(event) => lookupAddressByCep(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); lookupAddressByCep(event.currentTarget.value); } }} required /></FormField>
+                  {cepLookupMessage && <p className="announce-cep-message" role="status" aria-live="polite">{cepLookupMessage}</p>}
+                </div>
                 <FormField label="Estado *"><select name="state" defaultValue="AL" autoComplete="address-level1" required><option value="AL">Alagoas</option></select></FormField>
                 <FormField label="Rua *" className="field-wide"><input name="street" autoComplete="street-address" placeholder="Ex.: Rua Exemplo" required /></FormField>
                 <FormField label="Número *"><input name="number" inputMode="numeric" placeholder="Ex.: 11243" required /></FormField>
