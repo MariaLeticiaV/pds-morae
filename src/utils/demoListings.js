@@ -7,7 +7,7 @@ function readListings() {
 
 export function getDemoListing(id) {
   if (!id) return null;
-  return { ...(mockListings[id] ?? {}), ...(readListings()[id] ?? {}) };
+  return readListings()[id] ?? null;
 }
 
 export function saveDemoListing(id, listing) {
