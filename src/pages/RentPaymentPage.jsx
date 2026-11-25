@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Logo } from "../components/Logo.jsx";
 import {
   acceptRentalContract,
   createRentCheckout,
@@ -57,8 +58,8 @@ export function RentPaymentPage() {
   });
   const [selectedContractId, setSelectedContractId] = useState("");
   const [period, setPeriod] = useState(currentMonth);
-  const [tenantEmail, setTenantEmail] = useState("");
-  const [listingId, setListingId] = useState("");
+  const [tenantEmail, setTenantEmail] = useState(() => searchParams.get("tenantEmail") ?? "");
+  const [listingId, setListingId] = useState(() => searchParams.get("listingId") ?? "");
   const [startsAt, setStartsAt] = useState(() =>
     new Date().toISOString().slice(0, 10),
   );
@@ -67,7 +68,11 @@ export function RentPaymentPage() {
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState("");
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(() =>
+    searchParams.get("interesse") === "aceito"
+      ? "Interesse aceito. Revise as condições da locação e envie o convite para o estudante confirmar o contrato."
+      : "",
+  );
   const [paymentResult, setPaymentResult] = useState(null);
   const [statusError, setStatusError] = useState("");
 
@@ -118,6 +123,13 @@ export function RentPaymentPage() {
     }
     loadPage();
   }, [loadPage, navigate]);
+
+  useEffect(() => {
+    if (loading) return;
+    const sectionId = window.location.hash.slice(1);
+    if (!['contratos', 'enviar-convite'].includes(sectionId)) return;
+    document.getElementById(sectionId)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }, [loading, connection.canManageContracts]);
 
   useEffect(() => {
     const connectionResult = searchParams.get("mercadopago");
@@ -265,7 +277,7 @@ export function RentPaymentPage() {
     <div className="rent-payment-page">
       <header className="rent-payment-header">
         <Link to="/" className="rent-payment-brand" aria-label="Moraê, início">
-          moraê<span>.</span>
+          <Logo />
         </Link>
         <nav aria-label="Navegação de pagamentos">
           <Link to="/ofertante/pagamentos">Histórico financeiro</Link>
@@ -484,8 +496,8 @@ export function RentPaymentPage() {
               )}
             </div>
 
-            {connection.canManageContracts && (
-              <section className="rent-payment-card rent-contract-create">
+              {connection.canManageContracts && (
+                <section className="rent-payment-card rent-contract-create" id="enviar-convite">
                 <div className="rent-payment-section-heading">
                   <span>03</span>
                   <div>
@@ -582,7 +594,7 @@ export function RentPaymentPage() {
               </section>
             )}
 
-            <section className="rent-payment-card rent-contract-list">
+            <section className="rent-payment-card rent-contract-list" id="contratos">
               <div className="rent-payment-section-heading">
                 <span>04</span>
                 <div>

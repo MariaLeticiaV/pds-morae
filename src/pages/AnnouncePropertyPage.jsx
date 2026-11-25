@@ -35,7 +35,10 @@ export function AnnouncePropertyPage() {
   const navigate = useNavigate();
   const editId = searchParams.get('editar');
   const isEditing = Boolean(editId);
-  const displayName = getDemoUser()?.name || 'Aluno';
+  const currentUser = getDemoUser();
+  const displayName = currentUser?.name || 'Aluno';
+  const listingsPath = currentUser?.role === 'ofertante' ? '/ofertante/vagas' : '/proprietario/imoveis';
+  const listingsLabel = currentUser?.role === 'ofertante' ? 'Ver minhas vagas' : 'Ver meus imóveis';
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   const [photos, setPhotos] = useState([]);
   const [status, setStatus] = useState('');
@@ -345,6 +348,7 @@ export function AnnouncePropertyPage() {
 
             <section className="announce-card announce-quick-actions">
               <SectionHeading title="Ações rápidas" />
+              <Link to={listingsPath} className="announce-listings-link"><strong>{listingsLabel}</strong><span>Confira o anúncio que acabou de cadastrar.</span><LineIcon name="homeGroup" size={20} /></Link>
               <button type="button" onClick={() => { setSubmittedListing(null); document.querySelector('.announce-main')?.scrollTo({ top: 0, behavior: 'smooth' }); }}><strong>Editar anúncio</strong><span>Altere informações, fotos ou valores.</span><LineIcon name="edit" size={20} /></button>
               <button type="button" onClick={startAnotherAnnouncement}><strong>Anunciar outro imóvel</strong><span>Comece um novo cadastro de imóvel.</span><LineIcon name="homeGroup" size={20} /></button>
             </section>

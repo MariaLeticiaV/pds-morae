@@ -159,6 +159,14 @@ function PropertyCard({
     room: savedListing.rooms ? `${savedListing.rooms} quartos` : property.room,
     rent: Number(savedListing.rent || property.rent),
   } : property;
+  const approvalLabels = {
+    PENDING: 'Aguardando análise',
+    IN_REVIEW: 'Em análise',
+    APPROVED: 'Publicado',
+    REJECTED: 'Não aprovado',
+    ARCHIVED: 'Arquivado',
+  };
+  const isArchived = listingStatus === 'archived' || displayedProperty.approvalStatus === 'ARCHIVED';
   const matchesQuery = !query || `${displayedProperty.title} ${displayedProperty.neighborhood} ${displayedProperty.type}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'));
   if (!matchesQuery) return null;
   const openProperty = () => navigate(`/imoveis/${displayedProperty.id}`);
@@ -171,11 +179,11 @@ function PropertyCard({
       <div className="owner-property-info">
         <div className="owner-property-title-row">
           <h3>{displayedProperty.title}</h3>
-          <span className={`owner-status ${listingStatus === 'archived' ? 'archived' : 'published'}`}>
-            {listingStatus === 'archived' ? 'Arquivado' : displayedProperty.status}
+          <span className={`owner-status ${isArchived ? 'archived' : 'published'}`}>
+            {isArchived ? 'Arquivado' : approvalLabels[displayedProperty.approvalStatus] || displayedProperty.status}
           </span>
         </div>
-        <p className="owner-property-location"><LineIcon name="pin" size={14} />{displayedProperty.neighborhood} · Maceió/AL</p>
+        <p className="owner-property-location"><LineIcon name="pin" size={14} />{displayedProperty.neighborhood} · {displayedProperty.city || 'Maceió'}/{displayedProperty.state || 'AL'}</p>
         <div className="owner-property-meta">
           <span><LineIcon name="home" size={14} />{displayedProperty.type}</span>
           <span><LineIcon name="homeGroup" size={14} />{displayedProperty.room}</span>
@@ -328,6 +336,7 @@ function OwnerHome({ query, displayName, statuses = {}, listings = properties, l
 }
 
 function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) {
+  const navigate = useNavigate();
   const isOfferer = role === 'ofertante';
   const authenticated = Boolean(getAccessToken());
   const roleProperties = isOfferer ? offererListings : properties;
@@ -420,6 +429,11 @@ function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) 
           ? { ...interest, status: nextStatus }
           : interest
       )));
+      if (nextStatus === 'ACCEPTED') {
+        const params = new URLSearchParams({ listingId: applicant.property, interesse: 'aceito' });
+        if (applicant.email) params.set('tenantEmail', applicant.email);
+        navigate({ pathname: '/pagamento-aluguel', search: `?${params.toString()}`, hash: '#enviar-convite' });
+      }
     } catch (error) {
       setStatusError(error.message || 'Não foi possível atualizar a manifestação.');
     } finally {
@@ -971,9 +985,11 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   const restoreListing = (property) => changeListingStatus(property, 'active');
   const deleteListing = (property) => changeListingStatus(property, 'deleted');
 
+  const listings = isOfferer ? [...offererListings, ...ownedListingsState.listings] : [...properties, ...ownedListingsState.listings];
+
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
-  else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><ContractDocumentsPanel /></div>;
+  else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><div className="owner-section-heading"><h2><LineIcon name="paperclip" size={22} />Enviar convite de contrato</h2><Link className="owner-primary-button" to="/pagamento-aluguel#enviar-convite">Criar convite</Link></div><ContractDocumentsPanel /></div>;
   else if (section === 'pagamentos') content = <PaymentHistoryPage query={query} />;
   else if ((isOfferer && section === 'vagas') || (!isOfferer && section === 'imoveis')) {
     content = <ListingsManager query={query} listings={roleListings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} loading={listingsLoading} error={listingsError} />;
