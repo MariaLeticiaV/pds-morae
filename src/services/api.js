@@ -268,6 +268,57 @@ export async function searchApprovedListings() {
   return body.map(mapListing);
 }
 
+export async function listMyListings() {
+  const body = await authenticatedRequest('/properties/mine');
+  if (!Array.isArray(body)) {
+    throw new Error('A resposta dos seus anúncios é inválida.');
+  }
+
+  return body.map((listing) => {
+    if (
+      !listing ||
+      typeof listing.listingId !== 'string' ||
+      typeof listing.propertyId !== 'string' ||
+      typeof listing.title !== 'string' ||
+      typeof listing.neighborhood !== 'string' ||
+      typeof listing.city !== 'string' ||
+      typeof listing.state !== 'string' ||
+      typeof listing.housingType !== 'string' ||
+      !Number.isInteger(listing.bedrooms) ||
+      !Number.isInteger(listing.bathrooms) ||
+      !Number.isInteger(listing.residents) ||
+      !Number.isFinite(listing.rent) ||
+      !Number.isInteger(listing.interestedCount) ||
+      !(listing.photoUrl === null || typeof listing.photoUrl === 'string') ||
+      !['APPROVED', 'ARCHIVED'].includes(listing.status)
+    ) {
+      throw new Error('A resposta contém um anúncio próprio inválido.');
+    }
+
+    return { ...listing, photoUrl: resolveMediaUrl(listing.photoUrl) };
+  });
+}
+
+export async function updateMyListingStatus(listingId, status) {
+  if (!['APPROVED', 'ARCHIVED'].includes(status)) {
+    throw new Error('A situação do anúncio é inválida.');
+  }
+  const body = await authenticatedRequest(
+    `/properties/${encodeURIComponent(listingId)}/status`,
+    { method: 'PATCH', body: { status } },
+  );
+  if (!body || body.listingId !== listingId || body.status !== status) {
+    throw new Error('A resposta da atualização do anúncio é inválida.');
+  }
+  return body;
+}
+
+export async function deleteMyListing(listingId) {
+  await authenticatedRequest(`/properties/${encodeURIComponent(listingId)}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function getApprovedListing(listingId) {
   if (typeof listingId !== 'string' || listingId.length === 0) {
     throw new Error('O identificador do anúncio é inválido.');
