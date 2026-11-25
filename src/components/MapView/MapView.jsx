@@ -28,6 +28,15 @@ function createPriceIcon(price) {
   });
 }
 
+function createGroupIcon(count) {
+  return L.divIcon({
+    className: 'morae-cluster-marker-wrapper',
+    html: `<span class="morae-cluster-marker">${count}<small> anúncios</small></span>`,
+    iconSize: [92, 38],
+    iconAnchor: [46, 38],
+  });
+}
+
 export function MapView({ properties = [], className = '' }) {
   const mappedProperties = useMemo(
     () => properties
@@ -35,13 +44,24 @@ export function MapView({ properties = [], className = '' }) {
         ...property,
         coordinates: property.latitude != null && property.longitude != null
           && Number.isFinite(Number(property.latitude)) && Number.isFinite(Number(property.longitude))
-          ? [property.latitude, property.longitude]
+          ? [Number(property.latitude), Number(property.longitude)]
           : propertyCoordinates[property.neighborhood]
             || cityCoordinates[`${property.city || 'Maceió'}-${property.state || 'AL'}`],
       }))
       .filter((property) => property.coordinates),
     [properties],
   );
+
+  const markerGroups = useMemo(() => {
+    const groups = new Map();
+    for (const property of mappedProperties) {
+      const key = property.coordinates.join(',');
+      const group = groups.get(key) ?? { coordinates: property.coordinates, properties: [] };
+      group.properties.push(property);
+      groups.set(key, group);
+    }
+    return [...groups.entries()].map(([key, group]) => ({ key, ...group }));
+  }, [mappedProperties]);
 
   return (
     <MapContainer
@@ -55,17 +75,23 @@ export function MapView({ properties = [], className = '' }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {mappedProperties.map((property) => (
+      {markerGroups.map((group) => (
         <Marker
-          key={property.id}
-          position={property.coordinates}
-          icon={createPriceIcon(property.price)}
+          key={group.key}
+          position={group.coordinates}
+          icon={group.properties.length > 1
+            ? createGroupIcon(group.properties.length)
+            : createPriceIcon(group.properties[0].price)}
         >
           <Popup>
             <div className="morae-map-popup">
-              <strong>{property.name}</strong>
-              <span>{property.neighborhood} · Maceió/AL</span>
-              <b>R$ {property.price}/mês</b>
+              {group.properties.map((property, index) => (
+                <div className="morae-map-popup-listing" key={property.id ?? property.listingId ?? index}>
+                  <strong>{property.name}</strong>
+                  <span>{property.neighborhood} · {property.city || 'Maceió'}/{property.state || 'AL'}</span>
+                  <b>R$ {property.price}/mês</b>
+                </div>
+              ))}
             </div>
           </Popup>
         </Marker>
