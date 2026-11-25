@@ -132,37 +132,6 @@ export async function loginUser({ email, password }) {
   return body;
 }
 
-export function getGoogleLoginUrl() {
-  return `${API_URL}/auth/google`;
-}
-
-export async function completeGoogleLogin(code) {
-  if (typeof code !== 'string' || code.length === 0 || code.length > 256) {
-    throw new Error('O código de autenticação do Google é inválido.');
-  }
-  const session = await request('/auth/google/exchange', {
-    method: 'POST',
-    body: { code },
-  });
-  if (
-    !session ||
-    typeof session.userId !== 'string' ||
-    typeof session.name !== 'string' ||
-    typeof session.email !== 'string' ||
-    typeof session.status !== 'string' ||
-    !['STUDENT_SEEKER', 'STUDENT_OFFERER', 'PROPERTY_OWNER', 'ADMINISTRATOR', 'OTHER'].includes(session.accountType) ||
-    typeof session.accessToken !== 'string' ||
-    session.accessToken.length === 0 ||
-    session.tokenType !== 'Bearer'
-  ) {
-    throw new Error('A resposta de autenticação do Google é inválida.');
-  }
-
-  localStorage.setItem(ACCESS_TOKEN_KEY, session.accessToken);
-  saveUserSession(session);
-  return session;
-}
-
 export function getAccessToken() {
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
