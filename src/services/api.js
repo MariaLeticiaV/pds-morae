@@ -290,7 +290,7 @@ export async function listMyListings() {
       !Number.isFinite(listing.rent) ||
       !Number.isInteger(listing.interestedCount) ||
       !(listing.photoUrl === null || typeof listing.photoUrl === 'string') ||
-      !['APPROVED', 'ARCHIVED'].includes(listing.status)
+      !['PENDING', 'IN_REVIEW', 'APPROVED', 'REJECTED', 'ARCHIVED'].includes(listing.status)
     ) {
       throw new Error('A resposta contém um anúncio próprio inválido.');
     }
