@@ -36,6 +36,7 @@
 .owner-property-list { display: flex; flex-direction: column; gap: 8px; }
 .owner-property-card { display: grid; grid-template-columns: minmax(165px, 235px) minmax(0, 1fr); gap: 11px; padding: 8px; border: 1px solid #99cfcd; border-radius: 15px; background: #fff; }
 .owner-property-photo { position: relative; min-height: 116px; overflow: hidden; border-radius: 11px; background: linear-gradient(165deg, #8ed8ee 0 39%, #f5ead5 40% 58%, #d5bf9f 59% 100%); }
+.owner-property-photo > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .owner-photo-window { position: absolute; top: 9%; left: 7%; width: 48%; height: 53%; border: 5px solid #fff; background: linear-gradient(#a1e4f7 0 55%, #258c9b 56% 62%, #73b58b 63%); box-shadow: 45px 0 0 -3px #f8f5ec; }
 .owner-photo-sofa { position: absolute; right: 10%; bottom: 13%; width: 42%; height: 26%; border-radius: 7px 7px 4px 4px; background: #426a72; box-shadow: inset 0 8px #638d93; }
 .owner-photo-table { position: absolute; right: 26%; bottom: 5%; width: 18%; height: 9%; border-radius: 50%; background: #a9825f; }

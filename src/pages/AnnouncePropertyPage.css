@@ -115,11 +115,11 @@
 .announce-detail-wide { grid-column: 1/-1; }
 .announce-quick-actions { position: sticky; top: 102px; grid-column: 2; grid-row: 1 / span 2; }
 .announce-quick-actions .announce-section-heading { margin-bottom: 12px; }
-.announce-quick-actions > button { position: relative; display: flex; width: 100%; min-height: 66px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 5px; margin-top: 10px; padding: 10px 43px 10px 12px; border: 1px solid #e7f5ef; border-radius: 10px; color: #018081; background: #fff; text-align: left; cursor: pointer; }
-.announce-quick-actions > button strong { font-size: 11px; }
-.announce-quick-actions > button span { color: #83a4a2; font-size: 9px; line-height: 1.45; }
-.announce-quick-actions > button svg { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); }
-.announce-quick-actions > button:hover { background: #f7fcfa; }
+.announce-quick-actions > button,.announce-quick-actions > a { position: relative; display: flex; width: 100%; min-height: 66px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 5px; margin-top: 10px; padding: 10px 43px 10px 12px; border: 1px solid #e7f5ef; border-radius: 10px; color: #018081; background: #fff; text-align: left; cursor: pointer; }
+.announce-quick-actions > button strong,.announce-quick-actions > a strong { font-size: 11px; }
+.announce-quick-actions > button span,.announce-quick-actions > a span { color: #83a4a2; font-size: 9px; line-height: 1.45; }
+.announce-quick-actions > button svg,.announce-quick-actions > a svg { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); }
+.announce-quick-actions > button:hover,.announce-quick-actions > a:hover { background: #f7fcfa; }
 @media(max-width:1050px) {
   .address-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .announce-submitted-content { grid-template-columns: minmax(0,1fr); }

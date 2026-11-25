@@ -268,6 +268,27 @@ export async function searchApprovedListings() {
   return body.map(mapListing);
 }
 
+const ownedListingStatuses = new Set([
+  'PENDING',
+  'IN_REVIEW',
+  'APPROVED',
+  'REJECTED',
+  'ARCHIVED',
+]);
+
+export async function getOwnedListings() {
+  const body = await authenticatedRequest('/properties/mine');
+  if (!Array.isArray(body)) {
+    throw new Error('A resposta dos seus imóveis é inválida.');
+  }
+  return body.map((listing) => {
+    if (!listing || !ownedListingStatuses.has(listing.status)) {
+      throw new Error('A resposta contém um imóvel com situação inválida.');
+    }
+    return { ...mapListing(listing), status: listing.status };
+  });
+}
+
 export async function getApprovedListing(listingId) {
   if (typeof listingId !== 'string' || listingId.length === 0) {
     throw new Error('O identificador do anúncio é inválido.');
