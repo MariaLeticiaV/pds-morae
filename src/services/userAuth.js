@@ -63,4 +63,6 @@ export function getUserSession() {
 export function logoutUser() {
   sessionStorage.removeItem(USER_SESSION_KEY);
   localStorage.removeItem('morae.demoUser');
+  // Sem isto, telas que só conferem o token continuariam agindo como logadas.
+  localStorage.removeItem('morae.accessToken');
 }
