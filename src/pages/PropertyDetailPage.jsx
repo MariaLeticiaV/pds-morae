@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
+import { TopbarAccount } from '../components/TopbarAccount.jsx';
 import { ReportDialog } from '../components/ReportDialog.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { MapView } from '../components/MapView/MapView.jsx';
@@ -16,6 +17,7 @@ import {
   submitInterest,
   withdrawInterest,
 } from '../services/api.js';
+import { getUserSession } from '../services/userAuth.js';
 import { OwnerSidebar, OwnerTopbar, PropertyPhoto } from './OwnerDashboardPage.jsx';
 import './PropertyDetailPage.css';
 
@@ -55,8 +57,7 @@ export function PropertyDetailPage() {
   const [message, setMessage] = useState('');
   const [chatSending, setChatSending] = useState(false);
   const [chatError, setChatError] = useState('');
-  const displayName = user?.name || 'Aluno';
-  const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+  const userSession = getAccessToken() ? getUserSession() : null;
   const isListingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id || '');
 
   useEffect(() => {
@@ -241,9 +242,11 @@ export function PropertyDetailPage() {
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" />
         </form>
         <div className="topbar-actions">
-          <button className="icon-button notification-button" type="button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><LineIcon name="bell" size={22} /><i /></button>
-          <span className="topbar-divider" />
-          <Link className="profile-menu" to="/perfil"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></Link>
+          {userSession && <>
+            <button className="icon-button notification-button" type="button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><LineIcon name="bell" size={22} /><i /></button>
+            <span className="topbar-divider" />
+          </>}
+          <TopbarAccount session={userSession} />
         </div>
         {notification && <div className="notification-popover"><button type="button" onClick={() => setNotification('')} aria-label="Fechar">×</button>{notification}</div>}
       </header>}

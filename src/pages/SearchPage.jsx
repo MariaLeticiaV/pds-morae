@@ -1,9 +1,8 @@
 import { DashboardSidebar } from '../components/DashboardSidebar.jsx';
-import { AccountMenu } from '../components/AccountMenu.jsx';
+import { TopbarAccount } from '../components/TopbarAccount.jsx';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
-import { getDemoUser } from '../utils/demoUser.js';
 import { getDemoListingStatuses } from '../utils/demoListings.js';
 import {
   addFavoriteListing,
@@ -128,10 +127,8 @@ export function SearchPage() {
   const [publishedListings, setPublishedListings] = useState([]);
   const [listingError, setListingError] = useState('');
   const [favoriteError, setFavoriteError] = useState('');
-  const isAuthenticated = Boolean(getAccessToken() && getUserSession());
-  const demoUser = getDemoUser();
-  const displayName = demoUser?.name || 'Aluno';
-  const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
+  const userSession = getAccessToken() ? getUserSession() : null;
+  const isAuthenticated = Boolean(userSession);
 
   useEffect(() => {
     let cancelled = false;
@@ -265,9 +262,11 @@ export function SearchPage() {
             {query && <button type="button" className="clear-search" onClick={() => { setQuery(''); setLocation(''); }} aria-label="Limpar busca"><Icon name="close" size={17} /></button>}
           </form>
           <div className="topbar-actions">
-            <button className="icon-button notification-button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><Icon name="bell" size={22} /><i /></button>
-            <span className="topbar-divider" />
-            <AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span className="account-menu-user-name">Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></AccountMenu>
+            {isAuthenticated && <>
+              <button className="icon-button notification-button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><Icon name="bell" size={22} /><i /></button>
+              <span className="topbar-divider" />
+            </>}
+            <TopbarAccount session={userSession} />
           </div>
           {notification && <div className="notification-popover"><button onClick={() => setNotification('')} aria-label="Fechar"><Icon name="close" size={15} /></button>{notification}</div>}
         </header>

@@ -2,12 +2,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Logo } from './Logo.jsx';
 import { LineIcon } from './LineIcon.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
+import { getUserSession } from '../services/userAuth.js';
 import { OwnerSidebar } from '../pages/OwnerDashboardPage.jsx';
 import './DashboardSidebar.css';
 
 const menuItems = [
-  { id: 'home', label: 'Início', to: '/', icon: 'home' },
-  { id: 'search', label: 'Buscar vagas', to: '/buscar', icon: 'search' },
+  { id: 'home', label: 'Início', to: '/', icon: 'home', public: true },
+  { id: 'search', label: 'Buscar vagas', to: '/buscar', icon: 'search', public: true },
   { id: 'messages', label: 'Minhas Mensagens', to: '/mensagens', icon: 'message' },
   { id: 'contracts', label: 'Contratos', to: '/pagamento-aluguel#contratos', icon: 'paperclip' },
   { id: 'favorites', label: 'Meus Favoritos', to: '/buscar?favoritos=1', icon: 'heart' },
@@ -33,12 +34,14 @@ export function DashboardSidebar({ active }) {
     return <OwnerSidebar pathname={pathname} role={role} />;
   }
   const currentItem = active ?? getActiveItem(pathname, search);
+  // Sem sessão, só os itens que um visitante consegue usar.
+  const visibleItems = getUserSession() ? menuItems : menuItems.filter((item) => item.public);
 
   return (
     <aside className="dashboard-sidebar">
       <Link className="dashboard-brand" to="/" aria-label="Moraê, voltar ao início"><Logo /></Link>
       <nav className="dashboard-nav" aria-label="Menu principal">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const selected = currentItem === item.id;
           return (
             <Link
