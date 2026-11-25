@@ -1,31 +1,29 @@
 .rent-payment-page {
   min-height: 100vh;
-  color: #285747;
-  background: #f7f8f5;
+  color: #23463b;
+  background: #f7f6f2;
   font-family: "Montserrat Alternates", sans-serif;
 }
 
 .rent-payment-header {
   display: flex;
-  min-height: 72px;
+  min-height: 85px;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 0 clamp(20px, 5vw, 72px);
-  border-bottom: 1px solid #e3eeea;
+  padding: 0 clamp(22px, 3vw, 48px);
+  border-bottom: 1px solid #edf0ef;
   background: #fff;
 }
 
 .rent-payment-brand {
-  color: #087f80;
-  font:
-    800 29px/1 "Poppins",
-    sans-serif;
-  letter-spacing: -2px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
 }
-
-.rent-payment-brand span {
-  color: #ee8bcc;
+.rent-payment-brand .logo-mark {
+  width: 88px;
+  height: 72px;
 }
 .rent-payment-header nav {
   display: flex;
@@ -34,9 +32,9 @@
 }
 .rent-payment-header nav a,
 .rent-payment-footer a {
-  color: #4b8177;
+  color: #008b8c;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 .rent-payment-header nav a:hover,
 .rent-payment-footer a:hover {
@@ -58,7 +56,7 @@
   overflow: hidden;
   padding: 26px clamp(22px, 4vw, 42px);
   border-radius: 20px;
-  background: #e8f7f0;
+  background: linear-gradient(110deg, #eaf8e5 0%, #f4fbf3 61%, #fff3f6 100%);
 }
 
 .rent-payment-icon {
@@ -69,8 +67,8 @@
   flex: 0 0 58px;
   place-items: center;
   border-radius: 50%;
-  color: #078889;
-  background: #c6e9df;
+  color: #008b8c;
+  background: #d5eee3;
   font:
     700 28px "Poppins",
     sans-serif;
@@ -88,9 +86,9 @@
 }
 .rent-payment-hero h1 {
   margin: 0;
-  color: #087f80;
+  color: #008b8c;
   font:
-    700 clamp(22px, 3vw, 30px)/1.2 "Poppins",
+    800 clamp(22px, 3vw, 30px)/1.2 "Poppins",
     sans-serif;
 }
 .rent-payment-hero p:last-child {
@@ -226,7 +224,7 @@
 }
 .rent-payment-section-heading h2 {
   margin: 0;
-  color: #147c78;
+  color: #008b8c;
   font:
     600 17px "Poppins",
     sans-serif;
@@ -335,7 +333,7 @@
   border: 0;
   border-radius: 10px;
   color: #fff;
-  background: #078889;
+  background: #008b8c;
   font:
     700 11px "Montserrat Alternates",
     sans-serif;
@@ -554,8 +552,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  padding: 18px clamp(20px, 5vw, 72px);
-  border-top: 1px solid #e3eeea;
+  padding: 18px clamp(22px, 3vw, 48px);
+  border-top: 1px solid #edf0ef;
   color: #93a8a1;
   background: #fff;
   font-size: 9px;

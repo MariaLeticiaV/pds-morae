@@ -298,6 +298,7 @@ function OwnerHome({ query, displayName, statuses = {} }) {
 }
 
 function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) {
+  const navigate = useNavigate();
   const isOfferer = role === 'ofertante';
   const authenticated = Boolean(getAccessToken());
   const roleProperties = isOfferer ? offererListings : properties;
@@ -390,6 +391,11 @@ function InterestedPage({ query, selectedProperty, setSelectedProperty, role }) 
           ? { ...interest, status: nextStatus }
           : interest
       )));
+      if (nextStatus === 'ACCEPTED') {
+        const params = new URLSearchParams({ listingId: applicant.property, interesse: 'aceito' });
+        if (applicant.email) params.set('tenantEmail', applicant.email);
+        navigate({ pathname: '/pagamento-aluguel', search: `?${params.toString()}`, hash: '#enviar-convite' });
+      }
     } catch (error) {
       setStatusError(error.message || 'Não foi possível atualizar a manifestação.');
     } finally {
@@ -886,7 +892,7 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
 
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
-  else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><ContractDocumentsPanel /></div>;
+  else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><div className="owner-section-heading"><h2><LineIcon name="paperclip" size={22} />Enviar convite de contrato</h2><Link className="owner-primary-button" to="/pagamento-aluguel#enviar-convite">Criar convite</Link></div><ContractDocumentsPanel /></div>;
   else if (section === 'pagamentos') content = <PaymentHistoryPage query={query} />;
   else if ((isOfferer && section === 'vagas') || (!isOfferer && section === 'imoveis')) {
     content = <ListingsManager query={query} listings={roleListings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} />;
