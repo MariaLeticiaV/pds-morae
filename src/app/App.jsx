@@ -1,4 +1,4 @@
-import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Logo } from '../components/Logo.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { PlaceholderPage } from '../pages/PlaceholderPage.jsx';
@@ -17,6 +17,19 @@ import { OwnerDashboardPage } from '../pages/OwnerDashboardPage.jsx';
 import { PropertyDetailPage } from '../pages/PropertyDetailPage.jsx';
 import { AdminPanelPage } from '../pages/AdminPanelPage.jsx';
 import { RentPaymentPage } from '../pages/RentPaymentPage.jsx';
+import { getUserSession } from '../services/userAuth.js';
+
+function RequireUserSession({ children }) {
+  const location = useLocation();
+  const session = getUserSession();
+
+  if (!session) {
+    const from = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to="/login" replace state={{ from }} />;
+  }
+
+  return children;
+}
 
 export default function App() {
   const { pathname } = useLocation();
@@ -66,7 +79,14 @@ export default function App() {
           <Route path="/cadastro" element={<SignupPage />} />
           <Route path="/mensagens" element={<MessagesPage />} />
           <Route path="/pagamento-aluguel" element={<RentPaymentPage />} />
-          <Route path="/anunciar" element={<AnnouncePropertyPage />} />
+          <Route
+            path="/anunciar"
+            element={(
+              <RequireUserSession>
+                <AnnouncePropertyPage />
+              </RequireUserSession>
+            )}
+          />
           <Route path="/proprietario/*" element={<OwnerDashboardPage />} />
           <Route path="/ofertante/*" element={<OwnerDashboardPage role="ofertante" />} />
           <Route path="/perfil" element={<MyProfilePage />} />
