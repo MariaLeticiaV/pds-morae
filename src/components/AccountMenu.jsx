@@ -49,7 +49,7 @@ export function AccountMenu({ className = '', children }) {
           <Link to="/perfil" role="menuitem" onClick={() => setOpen(false)}>
             Meu Perfil
           </Link>
-          <button type="button" role="menuitem" onClick={handleLogout}>
+          <button className="account-menu-logout" type="button" role="menuitem" onClick={handleLogout}>
             Sair da conta
           </button>
         </div>

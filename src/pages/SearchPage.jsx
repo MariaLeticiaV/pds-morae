@@ -267,7 +267,7 @@ export function SearchPage() {
           <div className="topbar-actions">
             <button className="icon-button notification-button" onClick={() => setNotification((current) => current ? '' : 'Você está em dia! Não há novas notificações.')} aria-label="Notificações"><Icon name="bell" size={22} /><i /></button>
             <span className="topbar-divider" />
-            <AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></AccountMenu>
+            <AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span className="account-menu-user-name">Olá, {displayName}</span><span className="chevron" aria-hidden="true" /></AccountMenu>
           </div>
           {notification && <div className="notification-popover"><button onClick={() => setNotification('')} aria-label="Fechar"><Icon name="close" size={15} /></button>{notification}</div>}
         </header>

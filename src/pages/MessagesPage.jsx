@@ -561,7 +561,7 @@ export function MessagesPage() {
       <main className="messages-main">
         <header className="dashboard-topbar messages-topbar">
           <label className="messages-global-search"><LineIcon name="search" size={21} /><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="messages-top-actions"><span className={`messages-connection is-${socketStatus}`} role="status"><i />{socketStatusLabels[socketStatus]}</span><span className="messages-divider" /><AccountMenu className="messages-profile-trigger"><span className="messages-user-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="messages-chevron" /></AccountMenu></div>
+          <div className="messages-top-actions"><span className={`messages-connection is-${socketStatus}`} role="status"><i />{socketStatusLabels[socketStatus]}</span><span className="messages-divider" /><AccountMenu className="messages-profile-trigger"><span className="messages-user-avatar">{avatarInitial}</span><span className="account-menu-user-name">Olá, {displayName}</span><span className="messages-chevron" /></AccountMenu></div>
         </header>
 
         <div className="messages-content">

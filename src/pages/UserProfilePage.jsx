@@ -262,7 +262,7 @@ export function UserProfilePage() {
       <main className="user-profile-main">
         <header className="dashboard-topbar profile-topbar">
           <label className="profile-search"><span aria-hidden="true">⌕</span><input placeholder="Buscar por cidade, bairro, universidade..." aria-label="Buscar por cidade, bairro ou universidade" /></label>
-          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><AccountMenu className="profile-greeting-link"><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span>Olá, {displayName}</span><span className="profile-top-chevron" /></AccountMenu></div>
+          <div className="profile-top-actions"><button type="button" aria-label="Notificações"><LineIcon name="bell" size={21} /></button><AccountMenu className="profile-greeting-link"><span className="profile-small-avatar">{displayName.charAt(0).toLocaleUpperCase('pt-BR')}</span><span className="account-menu-user-name">Olá, {displayName}</span><span className="profile-top-chevron" /></AccountMenu></div>
         </header>
         <div className="profile-page-content">
           {!profile ? <section className="profile-load-state" role={profileLoading ? 'status' : 'alert'}>{profileLoading ? 'Carregando perfil…' : profileError}</section> : <>

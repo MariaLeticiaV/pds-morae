@@ -131,7 +131,7 @@ export function OwnerTopbar({ query, setQuery, role }) {
   const avatarInitial = displayName.charAt(0).toLocaleUpperCase('pt-BR');
   return <header className="dashboard-topbar owner-topbar">
     <label className="owner-search"><LineIcon name="search" size={20} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={isOfferer ? 'Buscar por pessoa, vaga ou contrato...' : 'Buscar por imóvel, interessado ou contrato...'} aria-label={`Buscar no painel do ${isOfferer ? 'aluno ofertador' : 'proprietário'}`} /></label>
-    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span>Olá, {displayName}</span><span className="chevron" /></AccountMenu></div>
+    <div className="topbar-actions"><button className="icon-button" type="button" aria-label="Notificações" onClick={() => setNotice((open) => !open)}><LineIcon name="bell" size={21} />{!notice && <i />}</button><span className="topbar-divider" /><AccountMenu className="profile-menu"><span className="profile-avatar">{avatarInitial}</span><span className="account-menu-user-name">Olá, {displayName}</span><span className="chevron" /></AccountMenu></div>
     {notice && <div className="owner-notice"><strong>Olá, {displayName}!</strong><span>Você tem interessados aguardando resposta.</span></div>}
   </header>;
 }

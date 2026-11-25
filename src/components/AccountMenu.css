@@ -11,6 +11,12 @@
   font: inherit;
   cursor: pointer;
 }
+.account-menu-trigger .account-menu-user-name {
+  font-family: 'Montserrat Alternates', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
 .account-menu-dropdown {
   position: absolute;
   top: calc(100% + 9px);
@@ -33,11 +39,16 @@
   border-radius: 7px;
   color: #285747;
   background: transparent;
-  font-family: inherit;
+  font-family: 'Montserrat Alternates', sans-serif;
   font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
   text-align: left;
   text-decoration: none;
   cursor: pointer;
+}
+.account-menu-dropdown .account-menu-logout {
+  font: 500 12px/1.4 'Montserrat Alternates', sans-serif;
 }
 .account-menu-dropdown a:hover,
 .account-menu-dropdown button:hover,
