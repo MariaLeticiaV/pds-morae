@@ -51,6 +51,7 @@
 .owner-status { flex: 0 0 auto; padding: 4px 12px; border-radius: 999px; font-size: 8px; text-align: center; }
 .owner-status.published { color: #318943; background: #d5f1d5; }
 .owner-status.reviewing { color: #bd3a91; background: #f7d1ef; }
+.owner-status.rejected { color: #9d3d48; background: #ffe2e5; }
 .owner-property-location { display: flex; align-items: center; gap: 4px; margin: 5px 0; color: #74a6a4; font-size: 9px; }
 .owner-property-meta { display: flex; flex-wrap: wrap; gap: 5px 13px; color: #438f8e; font-size: 8px; }
 .owner-property-meta span, .owner-property-bottom > span { display: inline-flex; align-items: center; gap: 4px; }

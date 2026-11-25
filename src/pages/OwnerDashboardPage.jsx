@@ -60,6 +60,13 @@ function mapOwnedListing(listing) {
     ROOM: 'Quarto',
     REPUBLIC: 'República',
   };
+  const statusLabels = {
+    PENDING: 'Aguardando aprovação',
+    IN_REVIEW: 'Em análise',
+    APPROVED: 'Publicado',
+    REJECTED: 'Rejeitado',
+    ARCHIVED: 'Arquivado',
+  };
   return {
     id: listing.listingId,
     title: listing.title,
@@ -71,7 +78,9 @@ function mapOwnedListing(listing) {
     residents: listing.residents,
     rent: listing.rent,
     interested: listing.interestedCount,
-    status: listing.status === 'ARCHIVED' ? 'Arquivado' : 'Publicado',
+    status: statusLabels[listing.status] || 'Situação desconhecida',
+    apiStatus: listing.status,
+    approvalStatus: listing.status,
     listingStatus: listing.status === 'ARCHIVED' ? 'archived' : 'active',
     image: listing.housingType === 'HOUSE' ? 'house' : 'kitnet',
     photoUrl: listing.photoUrl,
@@ -166,9 +175,18 @@ function PropertyCard({
     REJECTED: 'Não aprovado',
     ARCHIVED: 'Arquivado',
   };
-  const isArchived = listingStatus === 'archived' || displayedProperty.approvalStatus === 'ARCHIVED';
   const matchesQuery = !query || `${displayedProperty.title} ${displayedProperty.neighborhood} ${displayedProperty.type}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'));
   if (!matchesQuery) return null;
+  const approvalStatus = displayedProperty.approvalStatus || displayedProperty.apiStatus;
+  const isArchived = listingStatus === 'archived' || approvalStatus === 'ARCHIVED';
+  const isApproved = approvalStatus === 'APPROVED' || (!approvalStatus && displayedProperty.status === 'Publicado');
+  const statusClass = isArchived
+    ? 'archived'
+    : approvalStatus === 'PENDING' || approvalStatus === 'IN_REVIEW'
+      ? 'reviewing'
+      : approvalStatus === 'REJECTED'
+        ? 'rejected'
+        : 'published';
   const openProperty = () => navigate(`/imoveis/${displayedProperty.id}`);
   return (
     <article className="owner-property-card" role="link" tabIndex={0}
@@ -179,8 +197,8 @@ function PropertyCard({
       <div className="owner-property-info">
         <div className="owner-property-title-row">
           <h3>{displayedProperty.title}</h3>
-          <span className={`owner-status ${isArchived ? 'archived' : 'published'}`}>
-            {isArchived ? 'Arquivado' : approvalLabels[displayedProperty.approvalStatus] || displayedProperty.status}
+          <span className={`owner-status ${statusClass}`}>
+            {isArchived ? 'Arquivado' : approvalLabels[approvalStatus] || displayedProperty.status}
           </span>
         </div>
         <p className="owner-property-location"><LineIcon name="pin" size={14} />{displayedProperty.neighborhood} · {displayedProperty.city || 'Maceió'}/{displayedProperty.state || 'AL'}</p>
@@ -194,15 +212,15 @@ function PropertyCard({
           {displayedProperty.interested != null && <span><LineIcon name="users" size={14} />{displayedProperty.interested} interessados</span>}
         </div>
         <div className="owner-property-actions">
-          {listingStatus === 'archived' ? (
+          {isArchived ? (
             <button type="button" onClick={() => onRestore?.(property)}>Reativar</button>
-          ) : (
+          ) : isApproved ? (
             <>
               <Link to={`/anunciar?editar=${property.id}`}><LineIcon name="edit" size={14} />Editar</Link>
               <button type="button" onClick={() => onArchive?.(property)}>Arquivar</button>
             </>
-          )}
-          <Link to={`${basePath}/interessados?imovel=${property.id}`}><LineIcon name="users" size={14} />Interessados</Link>
+          ) : null}
+          {isApproved && <Link to={`${basePath}/interessados?imovel=${property.id}`}><LineIcon name="users" size={14} />Interessados</Link>}
           <button className="danger" type="button" onClick={() => onDelete?.(property)}>Excluir</button>
         </div>
       </div>
@@ -984,8 +1002,6 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   const archiveListing = (property) => changeListingStatus(property, 'archived');
   const restoreListing = (property) => changeListingStatus(property, 'active');
   const deleteListing = (property) => changeListingStatus(property, 'deleted');
-
-  const listings = isOfferer ? [...offererListings, ...ownedListingsState.listings] : [...properties, ...ownedListingsState.listings];
 
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
