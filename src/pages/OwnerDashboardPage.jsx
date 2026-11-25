@@ -125,7 +125,8 @@ export function OwnerSidebar({ pathname, role }) {
           ? currentPathname === '/buscar' && searchParams.get('favoritos') === '1'
           : item.path === '/buscar'
             ? currentPathname === '/buscar' && searchParams.get('favoritos') !== '1'
-            : isActive;
+            // Páginas fora do painel (ex.: /pagamento-aluguel) informam qual item marcar.
+            : isActive || item.path === pathname;
         return `${selected ? 'selected' : ''}${item.path === '/anunciar' ? ' owner-announce-link' : ''}`;
       }}><LineIcon name={item.icon} />{item.label}</NavLink>)}
     </nav>
