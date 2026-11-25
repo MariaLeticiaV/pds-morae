@@ -1003,8 +1003,6 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   const restoreListing = (property) => changeListingStatus(property, 'active');
   const deleteListing = (property) => changeListingStatus(property, 'deleted');
 
-  const listings = isOfferer ? [...offererListings, ...ownedListingsState.listings] : [...properties, ...ownedListingsState.listings];
-
   let content;
   if (section === 'interessados') content = <InterestedPage query={query} selectedProperty={selectedProperty} setSelectedProperty={setSelectedProperty} role={role} />;
   else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><div className="owner-section-heading"><h2><LineIcon name="paperclip" size={22} />Enviar convite de contrato</h2><Link className="owner-primary-button" to="/pagamento-aluguel#enviar-convite">Criar convite</Link></div><ContractDocumentsPanel /></div>;
