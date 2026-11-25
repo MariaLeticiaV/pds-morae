@@ -1,42 +1,14 @@
 .rent-payment-page {
-  min-height: 100vh;
   color: #23463b;
   background: #f7f6f2;
   font-family: "Montserrat Alternates", sans-serif;
 }
 
-.rent-payment-header {
-  display: flex;
-  min-height: 85px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 0 clamp(22px, 3vw, 48px);
-  border-bottom: 1px solid #edf0ef;
-  background: #fff;
-}
-
-.rent-payment-brand {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-}
-.rent-payment-brand .logo-mark {
-  width: 88px;
-  height: 72px;
-}
-.rent-payment-header nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-.rent-payment-header nav a,
 .rent-payment-footer a {
   color: #008b8c;
   font-size: 12px;
   font-weight: 600;
 }
-.rent-payment-header nav a:hover,
 .rent-payment-footer a:hover {
   color: #007f80;
 }
@@ -563,16 +535,6 @@
   .rent-payment-main {
     width: min(100% - 28px, 560px);
     padding-top: 20px;
-  }
-  .rent-payment-header {
-    min-height: 62px;
-    padding: 0 15px;
-  }
-  .rent-payment-header nav {
-    gap: 12px;
-  }
-  .rent-payment-header nav a {
-    font-size: 10px;
   }
   .rent-payment-layout {
     grid-template-columns: 1fr;

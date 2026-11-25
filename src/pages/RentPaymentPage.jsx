@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Logo } from "../components/Logo.jsx";
+import { AccountMenu } from "../components/AccountMenu.jsx";
+import { DashboardSidebar } from "../components/DashboardSidebar.jsx";
+import { LineIcon } from "../components/LineIcon.jsx";
+import { getDemoUser } from "../utils/demoUser.js";
+import { OwnerSidebar, OwnerTopbar } from "./OwnerDashboardPage.jsx";
 import {
   acceptRentalContract,
   createRentCheckout,
@@ -14,6 +18,7 @@ import {
   startMercadoPagoConnection,
   terminateRentalContract,
 } from "../services/api.js";
+import "./UserProfilePage.css";
 import "./RentPaymentPage.css";
 
 const contractLabels = {
@@ -44,6 +49,66 @@ function currentMonth() {
 
 function monthOf(date) {
   return date.slice(0, 7);
+}
+
+// Contratos e pagamento ficam dentro do mesmo painel das outras telas logadas:
+// proprietário e ofertante veem o menu e o cabeçalho do painel deles (com
+// "Contratos" marcado); estudante vê o menu lateral e o cabeçalho de estudante.
+function PaymentShell({ children }) {
+  const user = getDemoUser();
+  const role = user?.role;
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+
+  if (role === "proprietario" || role === "ofertante") {
+    return (
+      <div className={`owner-dashboard${role === "ofertante" ? " offerer-dashboard" : ""}`}>
+        <OwnerSidebar pathname={`/${role}/contratos`} role={role} />
+        <main className="owner-main">
+          <OwnerTopbar query={query} setQuery={setQuery} role={role} />
+          <div className="owner-scroll-content">{children}</div>
+        </main>
+      </div>
+    );
+  }
+
+  const name = user?.name || "Estudante";
+  return (
+    <div className="user-profile-dashboard">
+      <DashboardSidebar active="contracts" />
+      <main className="user-profile-main">
+        <header className="dashboard-topbar profile-topbar">
+          <form
+            className="profile-search"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              navigate("/buscar");
+            }}
+          >
+            <LineIcon name="search" size={21} />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Buscar por cidade, bairro, universidade..."
+              aria-label="Buscar por cidade, bairro ou universidade"
+            />
+          </form>
+          <div className="profile-top-actions">
+            <button type="button" aria-label="Notificações">
+              <LineIcon name="bell" size={21} />
+            </button>
+            <AccountMenu className="profile-greeting-link">
+              <span className="profile-small-avatar">{name.charAt(0).toLocaleUpperCase("pt-BR")}</span>
+              <span className="account-menu-user-name">Olá, {name}</span>
+              <span className="profile-top-chevron" />
+            </AccountMenu>
+          </div>
+        </header>
+        {children}
+      </main>
+    </div>
+  );
 }
 
 export function RentPaymentPage() {
@@ -274,16 +339,8 @@ export function RentPaymentPage() {
   }
 
   return (
+    <PaymentShell>
     <div className="rent-payment-page">
-      <header className="rent-payment-header">
-        <Link to="/" className="rent-payment-brand" aria-label="Moraê, início">
-          <Logo />
-        </Link>
-        <nav aria-label="Navegação de pagamentos">
-          <Link to="/ofertante/pagamentos">Histórico financeiro</Link>
-          <Link to="/perfil">Minha conta</Link>
-        </nav>
-      </header>
 
       <div className="rent-payment-main">
         <section className="rent-payment-hero">
@@ -703,5 +760,6 @@ export function RentPaymentPage() {
         <Link to="/ofertante/pagamentos">Ver histórico financeiro</Link>
       </footer>
     </div>
+    </PaymentShell>
   );
 }
