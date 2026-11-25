@@ -1049,7 +1049,6 @@ function mapMyAccount(body) {
     emailVerified: body.emailVerified,
     status: body.status,
     role: body.role,
-    profileData: body.profileData && typeof body.profileData === 'object' ? body.profileData : {},
   };
 }
 

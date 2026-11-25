@@ -159,15 +159,8 @@ export function MyProfilePage() {
       .then((data) => {
         if (cancelled) return;
         setAccount(data);
-        const savedAnswers = profileFromSignup({
-          ...demoUser,
-          name: data.name,
-          role: data.role || demoUser?.role,
-          profile: data.profileData,
-        });
         const merge = (current) => ({
           ...current,
-          ...savedAnswers,
           name: data.name,
           email: data.email,
           phone: data.phone ?? '',
