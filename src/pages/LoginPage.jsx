@@ -19,6 +19,20 @@ import { getUserSession } from '../services/userAuth.js';
 import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
 import './LoginPage.css';
 
+function homeForAccountType(accountType) {
+  if (accountType === 'PROPERTY_OWNER') return '/proprietario';
+  if (accountType === 'STUDENT_OFFERER') return '/ofertante';
+  if (accountType === 'ADMINISTRATOR') return '/admin';
+  return '/buscar';
+}
+
+function internalReturnPath(location, accountType) {
+  const path = location.state?.from;
+  if (typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return null;
+  if (accountType === 'ADMINISTRATOR') return path.startsWith('/admin') ? path : null;
+  return path.startsWith('/admin') ? null : path;
+}
+
 function EyeIcon({ visible }) {
   return (
     <svg
@@ -106,12 +120,8 @@ export function LoginPage() {
           currentUser?.profile || {},
           { userId: session.userId },
         );
-        const destination =
-          role === 'proprietario'
-            ? '/proprietario'
-            : role === 'ofertante'
-              ? '/ofertante'
-              : '/buscar';
+        const destination = internalReturnPath(location, session.accountType)
+          || homeForAccountType(session.accountType);
         navigate(destination, { replace: true });
       } catch (error) {
         setFeedback(error.message || 'Não foi possível concluir o acesso com Google.');
@@ -120,7 +130,7 @@ export function LoginPage() {
     }
 
     finishGoogleLogin();
-  }, [navigate]);
+  }, [location, navigate]);
 
   const administratorSession = getAdministratorSession();
   const userSession = getUserSession();
@@ -130,7 +140,12 @@ export function LoginPage() {
   }
 
   if (userSession) {
-    return <Navigate to="/" replace />;
+    return (
+      <Navigate
+        to={internalReturnPath(location, userSession.accountType) || homeForAccountType(userSession.accountType)}
+        replace
+      />
+    );
   }
 
   async function handleSubmit(event) {
@@ -181,17 +196,10 @@ export function LoginPage() {
           { userId: result.userId },
         );
 
-        const defaultDestination =
-          role === 'proprietario'
-            ? '/proprietario'
-            : role === 'ofertante'
-              ? '/ofertante'
-              : '/buscar';
+        const defaultDestination = homeForAccountType(result.accountType);
 
         navigate(
-          typeof returnTo === 'string' && !returnTo.startsWith('/admin/')
-            ? returnTo
-            : defaultDestination,
+          internalReturnPath(location, result.accountType) || defaultDestination,
           { replace: true },
         );
 

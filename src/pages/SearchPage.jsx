@@ -154,6 +154,8 @@ export function SearchPage() {
             listingId: listing.listingId,
             name: listing.title,
             neighborhood: listing.location.neighborhood,
+            city: listing.location.city,
+            state: listing.location.state,
             price: listing.rent,
             type: typeLabels[listing.housingType] || listing.housingType,
             rooms: listing.bedrooms,
@@ -328,7 +330,7 @@ export function SearchPage() {
             </div>
             <div className="map-explorer-map"><MapView properties={filteredProperties} /></div>
           </div>
-          <p className="map-data-notice">As posições exibidas são aproximadas e representam os bairros dos anúncios. A localização exata dependerá dos dados cadastrados.</p>
+          <p className="map-data-notice">As posições por bairro são aproximadas. Quando a API não informa coordenadas para um bairro, o anúncio aparece no centro da cidade.</p>
         </section>
       )}
     </div>
