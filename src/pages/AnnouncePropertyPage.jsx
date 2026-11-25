@@ -253,6 +253,7 @@ export function AnnouncePropertyPage() {
             <section className="announce-card" id="property-address">
               <SectionHeading title="Endereço do imóvel" description="Informe onde o imóvel está localizado." />
               <div className="announce-fields-grid address-fields">
+                <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" maxLength={9} placeholder="00000-000" onChange={(event) => { event.currentTarget.value = maskCep(event.currentTarget.value); }} required /></FormField>
                 <div className="announce-cep-field">
                   <FormField label="CEP *"><input name="cep" inputMode="numeric" autoComplete="postal-code" placeholder="Digite o CEP" maxLength={9} onChange={handleCepChange} onBlur={(event) => lookupAddressByCep(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); lookupAddressByCep(event.currentTarget.value); } }} required /></FormField>
                   {cepLookupMessage && <p className="announce-cep-message" role="status" aria-live="polite">{cepLookupMessage}</p>}

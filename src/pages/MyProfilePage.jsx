@@ -7,6 +7,7 @@ import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
 import { getAccessToken, getMyAccount, getMyProfile, removeMyPhoto, updateMyAccount, updateMyProfile, uploadMyPhoto, validateImageFile } from '../services/api.js';
 import { formatBudget, optionLabels, parseBudget, toCode, toLabel } from '../services/profileOptions.js';
 import { getUserSession, saveUserSession } from '../services/userAuth.js';
+import { maskCellPhone, maskCpf } from '../utils/masks.js';
 import './MyProfilePage.css';
 
 
@@ -128,8 +129,8 @@ function profileChanges(before, draft, view) {
   return body;
 }
 
-function Field({ label, value, icon, editing, onChange, type = 'text', options }) {
-  return <label className="my-field"><span className="my-field-icon"><Icon name={icon} size={20} /></span><span className="my-field-copy"><span className="my-field-label">{label}</span>{editing ? options ? <select aria-label={label} value={value ?? ''} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select> : <input aria-label={label} type={type} value={value ?? ''} onChange={(event) => onChange(event.target.value)} /> : <span className="my-field-value">{type === 'date' && value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : value}</span>}</span></label>;
+function Field({ label, value, icon, editing, onChange, type = 'text', options, mask, inputMode }) {
+  return <label className="my-field"><span className="my-field-icon"><Icon name={icon} size={20} /></span><span className="my-field-copy"><span className="my-field-label">{label}</span>{editing ? options ? <select aria-label={label} value={value ?? ''} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option}>{option}</option>)}</select> : <input aria-label={label} type={type} inputMode={inputMode} value={mask ? mask(value ?? '') : value ?? ''} onChange={(event) => onChange(mask ? mask(event.target.value) : event.target.value)} /> : <span className="my-field-value">{type === 'date' && value ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR') : value}</span>}</span></label>;
 }
 
 export function MyProfilePage() {
@@ -351,9 +352,9 @@ export function MyProfilePage() {
             <section className="my-profile-card my-personal-card" id="informacoes"><h2>Informações Pessoais</h2><div className="my-fields-grid">
               <Field label="Nome Completo" icon="person" value={shown.name} editing={editing} onChange={(value) => update('name', value)} />
               <Field label="Gênero" icon="person" value={shown.gender} editing={editing} onChange={(value) => update('gender', value)} options={isAuthenticated ? ['', ...optionLabels('gender')] : ['Feminino', 'Masculino', 'Não binário', 'Prefiro não informar', 'Outro']} />
-              <Field label="CPF" icon="person" value={shown.cpf} editing={editing} onChange={(value) => update('cpf', value)} />
+              <Field label="CPF" icon="person" value={shown.cpf} editing={editing} onChange={(value) => update('cpf', value)} mask={maskCpf} inputMode="numeric" />
               <Field label="E-mail" icon="mail" value={shown.email} editing={editing} onChange={(value) => update('email', value)} type="email" />
-              <Field label="Telefone" icon="phone" value={shown.phone} editing={editing} onChange={(value) => update('phone', value)} type="tel" />
+              <Field label="Telefone" icon="phone" value={shown.phone} editing={editing} onChange={(value) => update('phone', value)} type="tel" mask={maskCellPhone} inputMode="tel" />
               <Field label="Data de Nascimento" icon="calendar" value={shown.birthDate} editing={editing} onChange={(value) => update('birthDate', value)} type="date" />
               {isStudentAccount && <>
                 <Field label="Curso" icon="school" value={shown.course} editing={editing} onChange={(value) => update('course', value)} />
