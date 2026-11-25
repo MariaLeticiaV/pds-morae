@@ -1,0 +1,123 @@
+/*
+ * Efeitos de interface do Moraê: transições suaves, resposta ao toque, entrada
+ * de modais, menus e listas. Carregado depois dos estilos das páginas.
+ * As regras genéricas usam :where() (especificidade zero), então qualquer
+ * estilo já definido numa página continua valendo; este arquivo só preenche
+ * o que faltava. Quem pede menos movimento no sistema fica sem animações (fim
+ * do arquivo). A transição entre páginas fica em hooks/usePageTransition.js.
+ */
+
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --motion-slow: 320ms;
+  --motion-ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Cores, bordas e sombras mudam com suavidade em tudo que é clicável. */
+:where(a, button, [role="button"], input, select, textarea, label, summary) {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    box-shadow var(--motion-base) var(--motion-ease),
+    opacity var(--motion-fast) ease,
+    transform var(--motion-base) var(--motion-ease);
+}
+
+/* Foco visível pelo teclado, sem aparecer ao clicar com o mouse. */
+:where(a, button, [role="button"], [role="link"], [tabindex]:not([tabindex="-1"]), summary, input, select, textarea):focus-visible {
+  outline: 2px solid #008b8c;
+  outline-offset: 2px;
+}
+
+/* Resposta ao toque: botões afundam levemente ao serem pressionados. */
+:where(button, [role="button"], .owner-primary-button, .signup-link, .search-button):active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(.97);
+  transition-duration: 60ms;
+}
+
+/* Cards clicáveis sobem um pouco no hover (só em telas com mouse). */
+@media (hover: hover) {
+  :where(a[class*="card"], button[class*="card"], [role="link"][class*="card"], .offerer-match-card, .audience-card, .owner-applicant-card) {
+    transition:
+      transform var(--motion-base) var(--motion-ease),
+      box-shadow var(--motion-base) var(--motion-ease),
+      border-color var(--motion-fast) ease,
+      background-color var(--motion-fast) ease;
+  }
+  :where(a[class*="card"], button[class*="card"], [role="link"][class*="card"], .offerer-match-card, .audience-card, .owner-applicant-card):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0, 90, 88, .12);
+  }
+
+  /* Itens do menu lateral deslizam de leve ao passar o mouse. */
+  :where(.dashboard-nav a:not(.selected)) svg {
+    transition: transform var(--motion-base) var(--motion-ease);
+  }
+  :where(.dashboard-nav a:not(.selected)):hover svg {
+    transform: translateX(2px);
+  }
+}
+
+/* Listas e grades de cards entram em cascata. */
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > * {
+  animation: motion-rise var(--motion-slow) var(--motion-ease) backwards;
+}
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > :nth-child(2) { animation-delay: 40ms; }
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > :nth-child(3) { animation-delay: 80ms; }
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > :nth-child(4) { animation-delay: 120ms; }
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > :nth-child(5) { animation-delay: 160ms; }
+:where(.listing-grid, .offerer-match-grid, .audience-grid, .owner-applicant-list) > :nth-child(n + 6) { animation-delay: 200ms; }
+
+/* Modais: o fundo escurece aos poucos e a janela surge com um leve zoom. */
+:where(.compatibility-overlay, .report-dialog-overlay, .payment-receipt-backdrop) {
+  animation: motion-fade var(--motion-base) ease backwards;
+}
+:where(.compatibility-modal, .report-dialog, .payment-receipt) {
+  animation: motion-pop var(--motion-slow) var(--motion-ease) backwards;
+}
+
+/* Menu da conta abre deslizando. */
+:where(.account-menu-dropdown) {
+  transform-origin: top right;
+  animation: motion-drop var(--motion-base) var(--motion-ease) backwards;
+}
+
+/* Avisos, erros e mensagens de carregamento aparecem suavemente. */
+:where([role="status"], [role="alert"]) {
+  animation: motion-fade var(--motion-base) ease backwards;
+}
+
+/* Fotos de imóveis clareiam ao carregar. */
+:where(.owner-property-photo-image, .property-card-photo img, .detail-gallery-card img) {
+  animation: motion-fade var(--motion-slow) ease backwards;
+}
+
+@keyframes motion-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes motion-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes motion-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes motion-drop {
+  from { opacity: 0; transform: translateY(-6px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Menos movimento: tudo aparece na hora, sem deslocamento nem zoom. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

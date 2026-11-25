@@ -17,6 +17,7 @@ import { OwnerDashboardPage } from '../pages/OwnerDashboardPage.jsx';
 import { PropertyDetailPage } from '../pages/PropertyDetailPage.jsx';
 import { AdminPanelPage } from '../pages/AdminPanelPage.jsx';
 import { RentPaymentPage } from '../pages/RentPaymentPage.jsx';
+import { usePageTransition } from '../hooks/usePageTransition.js';
 import { getUserSession } from '../services/userAuth.js';
 
 function RequireUserSession({ children }) {
@@ -33,6 +34,7 @@ function RequireUserSession({ children }) {
 
 export default function App() {
   const { pathname } = useLocation();
+  usePageTransition(pathname);
   const isSearchPage = pathname === '/buscar';
   const isLoginPage = pathname === '/login';
   const isPasswordRecoveryPage = pathname === '/recuperar-senha';
