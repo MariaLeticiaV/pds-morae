@@ -1,0 +1,11 @@
+.topbar-guest { display: flex; align-items: center; gap: 14px; font-family: 'Montserrat Alternates', sans-serif; font-size: 13px; font-weight: 700; white-space: nowrap; }
+.topbar-guest a { text-decoration: none; }
+.topbar-guest-login { color: #008b8c; }
+.topbar-guest-login:hover { color: #006f73; }
+.topbar-guest-signup { padding: 11px 18px; border-radius: 999px; color: #fff; background: #008b8c; }
+.topbar-guest-signup:hover { color: #fff; background: #006f73; }
+
+@media (max-width: 560px) {
+  .topbar-guest { gap: 9px; font-size: 11px; }
+  .topbar-guest-signup { padding: 9px 12px; }
+}
