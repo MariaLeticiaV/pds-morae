@@ -17,14 +17,9 @@ import {
 } from '../services/adminAuth.js';
 import { getUserSession } from '../services/userAuth.js';
 import { getDemoUser, saveDemoUser } from '../utils/demoUser.js';
+import { homeForAccountType } from '../utils/accountHome.js';
 import './LoginPage.css';
 
-function homeForAccountType(accountType) {
-  if (accountType === 'PROPERTY_OWNER') return '/proprietario';
-  if (accountType === 'STUDENT_OFFERER') return '/ofertante';
-  if (accountType === 'ADMINISTRATOR') return '/admin';
-  return '/buscar';
-}
 
 function internalReturnPath(location, accountType) {
   const path = location.state?.from;

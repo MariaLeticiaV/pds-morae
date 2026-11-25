@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { logoutUser } from '../services/userAuth.js';
 import './AccountMenu.css';
 
-export function AccountMenu({ className = '', children }) {
+// items: links extras exibidos antes de "Meu Perfil", ex.: [{ to: '/mensagens', label: 'Minhas mensagens' }].
+export function AccountMenu({ className = '', children, items = [], label }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
@@ -40,12 +41,18 @@ export function AccountMenu({ className = '', children }) {
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={label}
         onClick={() => setOpen((current) => !current)}
       >
         {children}
       </button>
       {open && (
         <div className="account-menu-dropdown" role="menu">
+          {items.map((item) => (
+            <Link key={item.to} to={item.to} role="menuitem" onClick={() => setOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
           <Link to="/perfil" role="menuitem" onClick={() => setOpen(false)}>
             Meu Perfil
           </Link>

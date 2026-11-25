@@ -1,5 +1,5 @@
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { Logo } from '../components/Logo.jsx';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { SiteHeader } from '../components/SiteHeader.jsx';
 import { HomePage } from '../pages/HomePage.jsx';
 import { PlaceholderPage } from '../pages/PlaceholderPage.jsx';
 import { SearchPage } from '../pages/SearchPage.jsx';
@@ -53,19 +53,7 @@ export default function App() {
 
   return (
     <div className={`app-shell${isSearchPage || isUserProfilePage || isMessagesPage || isAnnouncePage || isOwnerPage || isOffererPage || isPropertyDetailPage || isReviewPage ? ' dashboard-app' : ''}${isMessagesPage ? ' messages-app' : ''}${isAnnouncePage ? ' announce-app' : ''}${isAuthPage ? ' auth-app' : ''}${isSignupPage ? ' signup-app' : ''}${isAdminPage ? ' admin-app' : ''}`}>
-      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && !isRentPaymentPage && !isReviewPage && <header className="site-header">
-        <Link className="brand" to="/" aria-label="Moraê, página inicial">
-          <Logo />
-        </Link>
-        <nav className="main-nav" aria-label="Navegação principal">
-          <Link className={pathname === '/' ? 'active' : ''} to="/">Início</Link>
-          <a href="/#como-funciona">Como funciona</a>
-          <Link to="/buscar">Buscar vagas</Link>
-          <Link to="/anunciar">Anunciar imóvel</Link>
-          <Link to="/login" className="login-link">Entrar</Link>
-          <Link to="/cadastro" className="signup-link">Cadastrar-se</Link>
-        </nav>
-      </header>}
+      {!isSearchPage && !isUserProfilePage && !isMessagesPage && !isAnnouncePage && !isOwnerPage && !isOffererPage && !isPropertyDetailPage && !isAdminPage && !isRentPaymentPage && !isReviewPage && <SiteHeader />}
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />

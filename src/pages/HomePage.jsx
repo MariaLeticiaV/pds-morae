@@ -1,8 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { LineIcon } from '../components/LineIcon.jsx';
+import { getUserSession } from '../services/userAuth.js';
 
 export function HomePage() {
   const navigate = useNavigate();
+  // Com login, os cartões levam às ações; sem login, ao cadastro de cada perfil.
+  const isLoggedIn = Boolean(getUserSession());
   const [campus, setCampus] = useState('UFAL - A.C. Simões');
   const [housingType, setHousingType] = useState('República');
   const [budget, setBudget] = useState('850');
@@ -51,7 +55,7 @@ export function HomePage() {
                 <option value="">Sem limite definido</option>
               </select>
             </label>
-            <button className="search-button" type="submit"><span aria-hidden="true">⌕</span> Procurar vagas</button>
+            <button className="search-button" type="submit"><LineIcon name="search" size={18} /> Procurar vagas</button>
           </form>
         </div>
         <span className="hero-orbit orbit-one" aria-hidden="true" />
@@ -73,19 +77,19 @@ export function HomePage() {
         <h2 id="audience-title">Como você deseja usar a Moraê?</h2>
         <div className="audience-grid">
           <article className="audience-card student-card">
-            <div className="card-heading"><span className="card-icon" aria-hidden="true">🎓</span><h3>Quero buscar minha vaga</h3></div>
+            <div className="card-heading"><span className="card-icon" aria-hidden="true"><LineIcon name="graduation" size={24} /></span><h3>Quero buscar minha vaga</h3></div>
             <p>Encontre quarto individual, vaga em república ou apartamento compartilhado perto da universidade.</p>
-            <Link to="/cadastro?perfil=estudante">Criar perfil de buscador <span aria-hidden="true">→</span></Link>
+            {isLoggedIn ? <Link to="/buscar">Buscar vagas <span aria-hidden="true">→</span></Link> : <Link to="/cadastro?perfil=estudante">Criar perfil de buscador <span aria-hidden="true">→</span></Link>}
           </article>
           <article className="audience-card host-card">
-            <div className="card-heading"><span className="card-icon" aria-hidden="true">🏡</span><h3>Ofertar vaga em casa</h3></div>
+            <div className="card-heading"><span className="card-icon" aria-hidden="true"><LineIcon name="homeGroup" size={24} /></span><h3>Ofertar vaga em casa</h3></div>
             <p>Já tem uma república ou apê alugado? Encontre um novo colega de quarto compatível com sua rotina.</p>
-            <Link to="/cadastro?perfil=ofertante">Anunciar minha vaga <span aria-hidden="true">→</span></Link>
+            <Link to={isLoggedIn ? '/anunciar' : '/cadastro?perfil=ofertante'}>Anunciar minha vaga <span aria-hidden="true">→</span></Link>
           </article>
           <article className="audience-card owner-card">
-            <div className="card-heading"><span className="card-icon" aria-hidden="true">🔑</span><h3>Sou proprietário</h3></div>
+            <div className="card-heading"><span className="card-icon" aria-hidden="true"><LineIcon name="home" size={24} /></span><h3>Sou proprietário</h3></div>
             <p>Anuncie seu imóvel para estudantes com mais praticidade e encontre pessoas interessadas em Maceió.</p>
-            <Link to="/cadastro?perfil=proprietario">Anunciar imóvel inteiro <span aria-hidden="true">→</span></Link>
+            <Link to={isLoggedIn ? '/anunciar' : '/cadastro?perfil=proprietario'}>Anunciar imóvel inteiro <span aria-hidden="true">→</span></Link>
           </article>
         </div>
       </section>
