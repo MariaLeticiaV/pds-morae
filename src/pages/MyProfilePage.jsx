@@ -70,6 +70,7 @@ function profileFromApi(view) {
   const answers = student?.compatibilityAnswers;
   return {
     name: view.name,
+    cpf: view.cpf ?? view.private?.cpf ?? '',
     email: view.private?.email ?? '',
     phone: view.private?.phone ?? '',
     gender: toLabel('gender', view.private?.gender),
