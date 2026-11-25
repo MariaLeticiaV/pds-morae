@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Link,
   Navigate,
@@ -6,11 +6,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import {
-  completeGoogleLogin,
-  getGoogleLoginUrl,
-  loginUser,
-} from '../services/api.js';
+import { loginUser } from '../services/api.js';
 import {
   getAdministratorSession,
   loginAdministrator,
@@ -67,65 +63,12 @@ export function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [feedback, setFeedback] = useState(() =>
-    (() => {
-      if (searchParams.get('cadastro') === 'sucesso') {
-        return 'Cadastro recebido. Confirme seu e-mail pelo link enviado antes de entrar.';
-      }
-
-      const oauthMessages = {
-        cancelled: 'O acesso com Google foi cancelado.',
-        register: 'Não encontramos uma conta Moraê com este e-mail. Cadastre-se primeiro.',
-        inactive: 'Esta conta Moraê não está ativa. Entre em contato com o suporte.',
-        linked: 'Esta conta Moraê já está vinculada a outra conta Google.',
-        unavailable: 'O acesso com Google está temporariamente indisponível. Tente novamente mais tarde.',
-        failed: 'Não foi possível confirmar sua conta Google. Tente novamente.',
-      };
-      return oauthMessages[searchParams.get('oauth')] || '';
-    })(),
-  );
-  const [feedbackType, setFeedbackType] = useState(() =>
-    searchParams.get('oauth') && searchParams.get('oauth') !== 'cancelled'
-      ? 'error'
+    searchParams.get('cadastro') === 'sucesso'
+      ? 'Cadastro recebido. Confirme seu e-mail pelo link enviado antes de entrar.'
       : '',
   );
+  const [feedbackType, setFeedbackType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGoogleRedirecting, setIsGoogleRedirecting] = useState(false);
-  const googleCodeProcessing = useRef(false);
-
-  useEffect(() => {
-    const fragment = new URLSearchParams(window.location.hash.slice(1));
-    if (fragment.get('oauth') !== 'google') return;
-    const code = fragment.get('code');
-    if (googleCodeProcessing.current) return;
-    googleCodeProcessing.current = true;
-    window.history.replaceState(
-      null,
-      '',
-      `${window.location.pathname}${window.location.search}`,
-    );
-
-    async function finishGoogleLogin() {
-      try {
-        const session = await completeGoogleLogin(code);
-        const currentUser = getDemoUser();
-        const role = currentUser?.role || 'estudante';
-        saveDemoUser(
-          session.name || currentUser?.name || session.email,
-          role,
-          currentUser?.profile || {},
-          { userId: session.userId },
-        );
-        const destination = internalReturnPath(location, session.accountType)
-          || homeForAccountType(session.accountType);
-        navigate(destination, { replace: true });
-      } catch (error) {
-        setFeedback(error.message || 'Não foi possível concluir o acesso com Google.');
-        setFeedbackType('error');
-      }
-    }
-
-    finishGoogleLogin();
-  }, [location, navigate]);
 
   const administratorSession = getAdministratorSession();
   const userSession = getUserSession();
@@ -285,45 +228,6 @@ export function LoginPage() {
               {isSubmitting ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
-
-          <div className="login-divider">
-            <span />
-            ou
-            <span />
-          </div>
-
-          <div className="social-login">
-            <button
-              type="button"
-              disabled={isGoogleRedirecting}
-              onClick={() => {
-                setFeedback('');
-                setFeedbackType('');
-                setIsGoogleRedirecting(true);
-                window.location.assign(getGoogleLoginUrl());
-              }}
-            >
-              <span className="google-mark" aria-hidden="true">
-                G
-              </span>
-              {isGoogleRedirecting ? 'Conectando ao Google…' : 'Entrar com o Google'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setFeedback(
-                  'O acesso via SIGAA depende da integração oficial de SSO da UFAL. Não informe sua senha SIGAA nesta página.',
-                );
-                setFeedbackType('info');
-              }}
-            >
-              <span className="sigaa-mark" aria-hidden="true">
-                S
-              </span>
-              Entrar com o SIGAA
-            </button>
-          </div>
 
           {feedback && (
             <p
