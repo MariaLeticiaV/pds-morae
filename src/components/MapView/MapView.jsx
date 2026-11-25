@@ -13,6 +13,12 @@ const propertyCoordinates = {
   'Village Campestre': [-9.5740, -35.7550],
 };
 
+// The public listings endpoint currently provides city/neighborhood, not the
+// full address or coordinates. Keep unknown neighborhoods visible at city level.
+const cityCoordinates = {
+  'Maceió-AL': [-9.6498, -35.7089],
+};
+
 function createPriceIcon(price) {
   return L.divIcon({
     className: 'morae-price-marker-wrapper',
@@ -27,9 +33,11 @@ export function MapView({ properties = [], className = '' }) {
     () => properties
       .map((property) => ({
         ...property,
-        coordinates: property.latitude && property.longitude
+        coordinates: property.latitude != null && property.longitude != null
+          && Number.isFinite(Number(property.latitude)) && Number.isFinite(Number(property.longitude))
           ? [property.latitude, property.longitude]
-          : propertyCoordinates[property.neighborhood],
+          : propertyCoordinates[property.neighborhood]
+            || cityCoordinates[`${property.city || 'Maceió'}-${property.state || 'AL'}`],
       }))
       .filter((property) => property.coordinates),
     [properties],
