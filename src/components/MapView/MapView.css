@@ -12,6 +12,34 @@
   border: 0;
 }
 
+.morae-cluster-marker-wrapper {
+  background: transparent;
+  border: 0;
+}
+
+.morae-cluster-marker {
+  display: inline-flex;
+  height: 36px;
+  min-width: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 10px;
+  border: 2px solid #fff;
+  border-radius: 20px;
+  color: #fff;
+  background: #008b8c;
+  box-shadow: 0 2px 8px #173e3b66;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.morae-cluster-marker small {
+  font-size: 9px;
+  font-weight: 600;
+}
+
 .morae-price-marker {
   display: inline-flex;
   min-width: 70px;
@@ -40,3 +68,9 @@
 
 .morae-map-popup span { color: #78918b; font-size: 10px; }
 .morae-map-popup b { color: #008b8c; font-size: 12px; }
+
+.morae-map-popup-listing + .morae-map-popup-listing {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dce8e4;
+}

@@ -4,19 +4,21 @@ import { AccountMenu } from '../components/AccountMenu.jsx';
 import { LineIcon } from '../components/LineIcon.jsx';
 import { Logo } from '../components/Logo.jsx';
 import { getDemoUser } from '../utils/demoUser.js';
-import { getDemoListing, getDemoListingStatuses, setDemoListingStatus } from '../utils/demoListings.js';
+import { getDemoListing } from '../utils/demoListings.js';
 import {
   getAccessToken,
-  getOwnedListings,
+  deleteMyListing,
   downloadContractDocument,
   getContractDocuments,
   getRentalContracts,
   getPaymentTransactionStatus,
   getPaymentTransactions,
   getReceivedInterests,
+  listMyListings,
   listCompatibleStudents,
   uploadContractDocument,
   updateInterestStatus,
+  updateMyListingStatus,
 } from '../services/api.js';
 import { filterPaymentTransactions, summarizePaymentTransactions } from '../services/paymentHistory.js';
 import './OwnerDashboardPage.css';
@@ -50,6 +52,31 @@ const offererApplicants = [
 ];
 */
 const offererApplicants = [];
+
+function mapOwnedListing(listing) {
+  const typeLabels = {
+    APARTMENT: 'Apartamento',
+    HOUSE: 'Casa',
+    ROOM: 'Quarto',
+    REPUBLIC: 'República',
+  };
+  return {
+    id: listing.listingId,
+    title: listing.title,
+    neighborhood: listing.neighborhood,
+    city: listing.city,
+    state: listing.state,
+    type: typeLabels[listing.housingType] || listing.housingType,
+    room: `${listing.bedrooms} ${listing.bedrooms === 1 ? 'quarto' : 'quartos'}`,
+    residents: listing.residents,
+    rent: listing.rent,
+    interested: listing.interestedCount,
+    status: listing.status === 'ARCHIVED' ? 'Arquivado' : 'Publicado',
+    listingStatus: listing.status === 'ARCHIVED' ? 'archived' : 'active',
+    image: listing.housingType === 'HOUSE' ? 'house' : 'kitnet',
+    photoUrl: listing.photoUrl,
+  };
+}
 
 const ownerSections = [
   { path: '/proprietario', label: 'Início', icon: 'home', end: true },
@@ -109,32 +136,8 @@ export function OwnerTopbar({ query, setQuery, role }) {
   </header>;
 }
 
-export function PropertyPhoto({ type, src, alt = 'Foto do imóvel' }) {
-  return <div className={`owner-property-photo owner-photo-${type}`} aria-label={src ? alt : 'Imagem ilustrativa do imóvel'}>{src ? <img src={src} alt={alt} /> : <><span className="owner-photo-window" /><span className="owner-photo-sofa" /><span className="owner-photo-table" /><span className="owner-photo-plant" /></>}</div>;
-}
-
-function mapOwnedListingToCard(listing) {
-  const housingTypes = {
-    APARTMENT: 'Apartamento',
-    HOUSE: 'Casa',
-    ROOM: 'Quarto',
-    REPUBLIC: 'República',
-  };
-  return {
-    id: listing.listingId,
-    propertyId: listing.propertyId,
-    title: listing.title,
-    neighborhood: listing.location.neighborhood,
-    city: listing.location.city,
-    state: listing.location.state,
-    type: housingTypes[listing.housingType] || 'Imóvel',
-    room: `${listing.bedrooms} ${listing.bedrooms === 1 ? 'quarto' : 'quartos'}`,
-    rent: listing.rent,
-    image: 'apartment',
-    imageUrl: listing.media[0]?.url,
-    approvalStatus: listing.status,
-    status: listing.status === 'APPROVED' ? 'Publicado' : 'Em análise',
-  };
+export function PropertyPhoto({ type, src }) {
+  return <div className={`owner-property-photo owner-photo-${type}`} aria-label={src ? 'Foto do imóvel' : 'Imagem ilustrativa do imóvel'}>{src ? <img className="owner-property-photo-image" src={src} alt="" /> : <><span className="owner-photo-window" /><span className="owner-photo-sofa" /><span className="owner-photo-table" /><span className="owner-photo-plant" /></>}</div>;
 }
 
 function PropertyCard({
@@ -172,7 +175,7 @@ function PropertyCard({
       aria-label={`Ver detalhes de ${displayedProperty.title}`}
       onClick={(event) => { if (!event.target.closest('a, button')) openProperty(); }}
       onKeyDown={(event) => { if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); openProperty(); } }}>
-      <PropertyPhoto type={displayedProperty.image} src={displayedProperty.imageUrl} alt={`Foto de ${displayedProperty.title}`} />
+      <PropertyPhoto type={displayedProperty.image} src={displayedProperty.photoUrl} />
       <div className="owner-property-info">
         <div className="owner-property-title-row">
           <h3>{displayedProperty.title}</h3>
@@ -184,11 +187,11 @@ function PropertyCard({
         <div className="owner-property-meta">
           <span><LineIcon name="home" size={14} />{displayedProperty.type}</span>
           <span><LineIcon name="homeGroup" size={14} />{displayedProperty.room}</span>
-          {displayedProperty.residents > 0 && <span><LineIcon name="users" size={14} />{displayedProperty.residents} moradores</span>}
+          {displayedProperty.residents != null && <span><LineIcon name="users" size={14} />{displayedProperty.residents} moradores</span>}
         </div>
         <div className="owner-property-bottom">
           <strong>{displayedProperty.rent.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}<small>/mês</small></strong>
-          {Number.isFinite(displayedProperty.interested) && <span><LineIcon name="users" size={14} />{displayedProperty.interested} interessados</span>}
+          {displayedProperty.interested != null && <span><LineIcon name="users" size={14} />{displayedProperty.interested} interessados</span>}
         </div>
         <div className="owner-property-actions">
           {listingStatus === 'archived' ? (
@@ -247,11 +250,11 @@ function useCompatibleProfiles() {
   return state;
 }
 
-function OffererHome({ query, displayName, statuses = {}, listings = [] }) {
+function OffererHome({ query, displayName, statuses = {}, listings = offererListings, listingsLoading = false, listingsError = '' }) {
   const compatible = useCompatibleProfiles();
   const normalizedQuery = query?.toLocaleLowerCase('pt-BR');
   const profiles = compatible.profiles.filter((person) => !normalizedQuery || `${person.name} ${person.tags.join(' ')}`.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
-  const listing = listings.find((item) => (statuses[item.id] ?? (item.approvalStatus === 'ARCHIVED' ? 'archived' : 'active')) === 'active');
+  const listing = listings.find((item) => (statuses[item.id] ?? item.listingStatus ?? 'active') === 'active');
   const emptyMessage = compatible.status === 'loading'
     ? 'Calculando quem combina com você…'
     : compatible.status === 'error'
@@ -260,15 +263,14 @@ function OffererHome({ query, displayName, statuses = {}, listings = [] }) {
   return <div className="owner-content offerer-content">
     <section className="owner-welcome"><span className="owner-welcome-icon"><LineIcon name="person" size={30} /></span><div><h1>Olá, {displayName || 'Ofertador'}!</h1><p>Aqui você pode encontrar pessoas compatíveis, anunciar sua vaga e acompanhar todo o processo.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
     <section className="offerer-matches"><h2><LineIcon name="users" size={22} />Pessoas que podem ser compatíveis com você</h2><p>Com base nas suas respostas do questionário de convivência</p>{profiles.length ? <div className="offerer-match-grid">{profiles.map((person) => <article className="offerer-match-card" key={`${person.name}-${person.id}`}><span className="owner-applicant-avatar">{person.initials}</span><h3>{person.name}</h3>{person.score !== undefined && <strong className={`offerer-match-score level-${(person.level || 'medium').toLowerCase()}`} title={person.hasCriticalDifference ? 'Há uma diferença importante de hábitos' : undefined}>{person.score}% compatível{person.hasCriticalDifference ? ' · atenção' : ''}</strong>}<p>{person.subtitle}</p>{person.tags.length > 0 && <div>{person.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}<Link to={`/usuarios/${person.id}`}>Ver perfil <LineIcon name="arrow" size={14} /></Link></article>)}</div> : <p className="owner-empty" role={compatible.status === 'loading' ? 'status' : undefined}>{emptyMessage}</p>}</section>
-    <section className="offerer-vacancies-preview"><div className="offerer-subheading"><div><h2><LineIcon name="homeGroup" size={22} />Suas vagas anunciadas</h2><p>Gerencie suas vagas e acompanhe as interações.</p></div><Link to="/ofertante/vagas">Ver todas</Link></div>{listing ? <PropertyCard property={listing} query={query} basePath="/ofertante" /> : <p className="owner-empty">Você não possui vagas ativas. Acesse Minhas vagas para consultar os anúncios arquivados.</p>}</section>
+    <section className="offerer-vacancies-preview"><div className="offerer-subheading"><div><h2><LineIcon name="homeGroup" size={22} />Suas vagas anunciadas</h2><p>Gerencie suas vagas e acompanhe as interações.</p></div><Link to="/ofertante/vagas">Ver todas</Link></div>{listingsError ? <p className="owner-empty" role="alert">{listingsError}</p> : listingsLoading ? <p className="owner-empty" role="status">Carregando suas vagas…</p> : listing ? <PropertyCard property={listing} query={query} basePath="/ofertante" listingStatus={listing.listingStatus} /> : <p className="owner-empty">Você não possui vagas ativas. Acesse Minhas vagas para consultar os anúncios arquivados.</p>}</section>
   </div>;
 }
 
-function ListingsManager({ query, listings, statuses, basePath, isOfferer, onArchive, onDelete, onRestore, loading = false, loadError = '', onRetry }) {
+function ListingsManager({ query, listings, statuses, basePath, isOfferer, onArchive, onDelete, onRestore, loading = false, error = '' }) {
   const [filter, setFilter] = useState('active');
-  const statusFor = (item) => statuses[item.id] ?? (item.approvalStatus === 'ARCHIVED' ? 'archived' : 'active');
-  const activeListings = listings.filter((item) => statusFor(item) === 'active');
-  const archivedListings = listings.filter((item) => statusFor(item) === 'archived');
+  const activeListings = listings.filter((item) => (statuses[item.id] ?? item.listingStatus ?? 'active') === 'active');
+  const archivedListings = listings.filter((item) => (statuses[item.id] ?? item.listingStatus) === 'archived');
   const visibleListings = filter === 'active' ? activeListings : archivedListings;
   const filtered = visibleListings.filter((item) => !query || `${item.title} ${item.neighborhood}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
 
@@ -282,6 +284,7 @@ function ListingsManager({ query, listings, statuses, basePath, isOfferer, onArc
         </div>
         <i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" />
       </section>
+      {error && <p className="owner-empty" role="alert">{error}</p>}
       <div className="listing-management-toolbar">
         <div className="listing-management-tabs" role="tablist" aria-label="Situação dos anúncios">
           <button type="button" role="tab" aria-selected={filter === 'active'} className={filter === 'active' ? 'active' : ''} onClick={() => setFilter('active')}>
@@ -294,9 +297,7 @@ function ListingsManager({ query, listings, statuses, basePath, isOfferer, onArc
         <Link className="owner-primary-button" to="/anunciar"><span aria-hidden="true">＋</span>{isOfferer ? 'Anunciar nova vaga' : 'Anunciar imóvel'}</Link>
       </div>
       <section className="owner-property-list" aria-label={filter === 'active' ? 'Anúncios ativos' : 'Anúncios arquivados'}>
-        {loading ? <p className="owner-empty" role="status">Carregando seus anúncios…</p>
-          : loadError ? <p className="owner-empty" role="alert">{loadError} <button type="button" onClick={onRetry}>Tentar novamente</button></p>
-            : filtered.length ? filtered.map((property) => (
+        {loading ? <p className="owner-empty" role="status">Carregando seus anúncios…</p> : filtered.length ? filtered.map((property) => (
           <PropertyCard
             key={property.id}
             property={property}
@@ -317,10 +318,10 @@ function ListingsManager({ query, listings, statuses, basePath, isOfferer, onArc
   );
 }
 
-function OwnerHome({ query, displayName, statuses = {}, properties: ownerProperties = [] }) {
-  const visibleProperties = ownerProperties.filter((property) => (statuses[property.id] ?? (property.approvalStatus === 'ARCHIVED' ? 'archived' : 'active')) === 'active').filter((property) => !query || `${property.title} ${property.neighborhood}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
+function OwnerHome({ query, displayName, statuses = {}, listings = properties, listingsLoading = false, listingsError = '' }) {
+  const visibleProperties = listings.filter((property) => (statuses[property.id] ?? property.listingStatus ?? 'active') === 'active').filter((property) => !query || `${property.title} ${property.neighborhood}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));
   const stats = [
-    { label: 'Imóveis anunciados', value: ownerProperties.length, icon: 'home', to: '/proprietario/imoveis' },
+    { label: 'Imóveis anunciados', value: listings.length, icon: 'home', to: '/proprietario/imoveis' },
     { label: 'Interessados', value: applicants.length, icon: 'users', to: '/proprietario/interessados' },
     { label: 'Contratos ativos', value: 0, icon: 'paperclip', to: '/proprietario/contratos' },
     { label: 'Pagamentos pendentes', value: 0, icon: 'money', to: '/proprietario/pagamentos', pink: true },
@@ -329,7 +330,8 @@ function OwnerHome({ query, displayName, statuses = {}, properties: ownerPropert
     <section className="owner-welcome"><span className="owner-welcome-icon"><LineIcon name="homeGroup" size={29} /></span><div><h1>Olá, {displayName || 'Proprietário'}!</h1><p>Acompanhe seus imóveis, interessados e recebimentos em um só lugar.</p></div><i className="owner-orbit owner-pink" /><i className="owner-orbit owner-green" /></section>
     <section className="owner-stats" aria-label="Resumo da conta">{stats.map((stat) => <Link className={`owner-stat${stat.pink ? ' pink' : ''}`} to={stat.to} key={stat.label}><span><LineIcon name={stat.icon} size={19} /></span><strong>{stat.label}</strong><b>{stat.value}<LineIcon name="arrow" size={16} /></b></Link>)}</section>
     <div className="owner-section-heading"><h2><LineIcon name="home" size={24} />Meus imóveis</h2><Link className="owner-primary-button" to="/anunciar"><span aria-hidden="true">＋</span>Anunciar imóvel</Link></div>
-    <section className="owner-property-list" aria-label="Imóveis anunciados">{visibleProperties.length ? visibleProperties.map((property) => <PropertyCard key={property.id} property={property} listingStatus={statuses[property.id] ?? 'active'} />) : <p className="owner-empty">{query ? 'Nenhum imóvel corresponde à busca.' : 'Você ainda não cadastrou imóveis.'}</p>}</section>
+    {listingsError && <p className="owner-empty" role="alert">{listingsError}</p>}
+    <section className="owner-property-list" aria-label="Imóveis anunciados">{listingsLoading ? <p className="owner-empty" role="status">Carregando seus imóveis…</p> : visibleProperties.length ? visibleProperties.map((property) => <PropertyCard key={property.id} property={property} listingStatus={property.listingStatus} />) : <p className="owner-empty">Nenhum imóvel corresponde à busca.</p>}</section>
   </div>;
 }
 
@@ -888,54 +890,86 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   const { pathname } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [statuses, setStatuses] = useState(() => getDemoListingStatuses());
-  const [ownedListingsState, setOwnedListingsState] = useState({ listings: [], loading: Boolean(getAccessToken()), error: '', refresh: 0 });
+  const [ownedListings, setOwnedListings] = useState([]);
+  const [listingsLoading, setListingsLoading] = useState(Boolean(getAccessToken()));
+  const [listingsError, setListingsError] = useState('');
+  const [statuses, setStatuses] = useState({});
   const [listingConfirmation, setListingConfirmation] = useState(null);
+  const [listingActionLoading, setListingActionLoading] = useState(false);
   const displayName = getDemoUser()?.name;
   const selectedProperty = searchParams.get('imovel') ?? (isOfferer ? offererListings[0]?.id : properties[0]?.id) ?? '';
   const setSelectedProperty = (id) => setSearchParams((current) => { const next = new URLSearchParams(current); next.set('imovel', id); return next; });
   const section = pathname.split('/')[2] ?? '';
-  const roleListings = isOfferer ? offererListings : properties;
+  const roleListings = ownedListings;
 
   useEffect(() => {
     if (!getAccessToken()) {
-      setOwnedListingsState((current) => ({ ...current, listings: [], loading: false, error: '' }));
+      setListingsLoading(false);
       return undefined;
     }
     let cancelled = false;
-    setOwnedListingsState((current) => ({ ...current, loading: true, error: '' }));
-    getOwnedListings()
+    setListingsLoading(true);
+    listMyListings()
       .then((items) => {
-        if (!cancelled) {
-          setOwnedListingsState((current) => ({
-            ...current,
-            listings: items.map(mapOwnedListingToCard),
-            loading: false,
-            error: '',
-          }));
-        }
+        if (cancelled) return;
+        const mapped = items.map(mapOwnedListing);
+        setOwnedListings(mapped);
+        setStatuses(Object.fromEntries(mapped.map((listing) => [listing.id, listing.listingStatus])));
+        setListingsError('');
       })
       .catch((error) => {
-        if (!cancelled) setOwnedListingsState((current) => ({ ...current, loading: false, error: error.message || 'Não foi possível carregar seus imóveis.' }));
+        if (!cancelled) setListingsError(error.message || 'Não foi possível carregar seus anúncios.');
+      })
+      .finally(() => {
+        if (!cancelled) setListingsLoading(false);
       });
     return () => { cancelled = true; };
-  }, [ownedListingsState.refresh]);
+  }, [role]);
 
-  function changeListingStatus(property, status) {
+  async function changeListingStatus(property, status) {
     if (status === 'active') {
-      setDemoListingStatus(property.id, status);
-      setStatuses((current) => ({ ...current, [property.id]: status }));
+      setListingsError('');
+      try {
+        await updateMyListingStatus(property.id, 'APPROVED');
+        setStatuses((current) => ({ ...current, [property.id]: status }));
+        setOwnedListings((current) => current.map((listing) => listing.id === property.id
+          ? { ...listing, listingStatus: 'active', status: 'Publicado' }
+          : listing));
+      } catch (error) {
+        setListingsError(error.message || 'Não foi possível reativar o anúncio.');
+      }
       return;
     }
     setListingConfirmation({ property, status });
   }
 
-  function confirmListingStatus() {
+  async function confirmListingStatus() {
     if (!listingConfirmation) return;
     const { property, status } = listingConfirmation;
-    setDemoListingStatus(property.id, status);
-    setStatuses((current) => ({ ...current, [property.id]: status }));
-    setListingConfirmation(null);
+    setListingActionLoading(true);
+    setListingsError('');
+    try {
+      if (status === 'archived') {
+        await updateMyListingStatus(property.id, 'ARCHIVED');
+        setStatuses((current) => ({ ...current, [property.id]: 'archived' }));
+        setOwnedListings((current) => current.map((listing) => listing.id === property.id
+          ? { ...listing, listingStatus: 'archived', status: 'Arquivado' }
+          : listing));
+      } else {
+        await deleteMyListing(property.id);
+        setOwnedListings((current) => current.filter((listing) => listing.id !== property.id));
+        setStatuses((current) => {
+          const next = { ...current };
+          delete next[property.id];
+          return next;
+        });
+      }
+      setListingConfirmation(null);
+    } catch (error) {
+      setListingsError(error.message || 'Não foi possível atualizar o anúncio.');
+    } finally {
+      setListingActionLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -958,9 +992,9 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
   else if (section === 'contratos') content = <div className="owner-content"><section className="owner-welcome compact"><span className="owner-welcome-icon"><LineIcon name="paperclip" size={28} /></span><div><h1>Contratos e documentos</h1><p>Consulte contratos e documentos reais da sua conta.</p></div></section><div className="owner-section-heading"><h2><LineIcon name="paperclip" size={22} />Enviar convite de contrato</h2><Link className="owner-primary-button" to="/pagamento-aluguel#enviar-convite">Criar convite</Link></div><ContractDocumentsPanel /></div>;
   else if (section === 'pagamentos') content = <PaymentHistoryPage query={query} />;
   else if ((isOfferer && section === 'vagas') || (!isOfferer && section === 'imoveis')) {
-    content = <ListingsManager query={query} listings={listings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} loading={ownedListingsState.loading} loadError={ownedListingsState.error} onRetry={() => setOwnedListingsState((current) => ({ ...current, refresh: current.refresh + 1 }))} />;
-  } else if (isOfferer) content = <OffererHome query={query} displayName={displayName} statuses={statuses} listings={listings} />;
-  else content = <OwnerHome query={query} displayName={displayName} statuses={statuses} properties={listings} />;
+    content = <ListingsManager query={query} listings={roleListings} statuses={statuses} basePath={basePath} isOfferer={isOfferer} onArchive={archiveListing} onDelete={deleteListing} onRestore={restoreListing} loading={listingsLoading} error={listingsError} />;
+  } else if (isOfferer) content = <OffererHome query={query} displayName={displayName} statuses={statuses} listings={roleListings} listingsLoading={listingsLoading} listingsError={listingsError} />;
+  else content = <OwnerHome query={query} displayName={displayName} statuses={statuses} listings={roleListings} listingsLoading={listingsLoading} listingsError={listingsError} />;
 
   const isDeleting = listingConfirmation?.status === 'deleted';
 
@@ -1013,11 +1047,11 @@ export function OwnerDashboardPage({ role = 'proprietario' }) {
               : `O anúncio “${listingConfirmation.property.title}” deixará de aparecer nas buscas. Ele ficará salvo na área de arquivados e poderá ser reativado depois.`}
           </p>
           <div className="listing-confirmation-actions">
-            <button type="button" className="listing-confirmation-cancel" onClick={() => setListingConfirmation(null)}>
+            <button type="button" className="listing-confirmation-cancel" disabled={listingActionLoading} onClick={() => setListingConfirmation(null)}>
               Cancelar
             </button>
-            <button type="button" className="listing-confirmation-accept" onClick={confirmListingStatus}>
-              {isDeleting ? 'Sim, excluir' : 'Sim, arquivar'}
+            <button type="button" className="listing-confirmation-accept" disabled={listingActionLoading} onClick={confirmListingStatus}>
+              {listingActionLoading ? 'Salvando…' : isDeleting ? 'Sim, excluir' : 'Sim, arquivar'}
             </button>
           </div>
         </section>
